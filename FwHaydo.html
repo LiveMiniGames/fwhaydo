@@ -462,7 +462,7 @@ function tlInit() {
   renderTierCfg();
   renderTiers();
   updateQCnt();
-  tryWS();
+  initPusher();
 }
 
 // ═══════════════════════════════════════
@@ -874,25 +874,26 @@ function editTierLabel(tierId){
 }
 
 // ═══════════════════════════════════════
-//  WEBSOCKET (Discord bridge)
+//  PUSHER (Discord bridge)
 // ═══════════════════════════════════════
-let wsRetry=null;
-function tryWS(){
-  try{
-    const ws=new WebSocket('ws://localhost:3001');
-    ws.onmessage=e=>{
-      try{
-        const d=JSON.parse(e.data);
-        if(d.type==='image') addToQ(d.url,d.name||'Discord',d.msgId||null);
-        if(d.type==='delete'&&d.msgId){
-          const iid=discordMap[d.msgId];
-          if(iid){removeItem(iid);toast('Removed (deleted from Discord)','red');}
-        }
-      }catch(err){}
-    };
-    ws.onclose=()=>{clearTimeout(wsRetry);wsRetry=setTimeout(tryWS,10000);};
-    ws.onerror=()=>{};
-  }catch(e){}
+function initPusher(){
+  const script=document.createElement('script');
+  script.src='https://js.pusher.com/8.2.0/pusher.min.js';
+  script.onload=()=>{
+    const pusher=new Pusher('5cca8bf0eec699f22b22',{cluster:'us2'});
+    const channel=pusher.subscribe('tierlist');
+    channel.bind('image',data=>{
+      addToQ(data.url,data.name||'Discord',data.msgId||null);
+    });
+    channel.bind('delete',data=>{
+      if(data.msgId){
+        const iid=discordMap[data.msgId];
+        if(iid){removeItem(iid);toast('Removed (deleted from Discord)','red');}
+      }
+    });
+    console.log('[Pusher] Connected to Discord bridge');
+  };
+  document.head.appendChild(script);
 }
 
 // ═══════════════════════════════════════
