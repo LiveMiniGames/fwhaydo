@@ -1,0 +1,961 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FwHaydo — Stream Tools</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--surface:#16161f;--card:#1c1c28;--border:#2a2a3a;
+  --purple:#9147ff;--purple2:#772ce8;--green:#2ecc71;--red:#e74c3c;
+  --text:#e8e8f0;--muted:#7a7a96;
+}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;min-height:100vh}
+
+/* NAV */
+nav{position:sticky;top:0;z-index:50;background:rgba(14,14,22,0.95);backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 28px;height:56px;gap:20px}
+.nav-logo{font-size:1.15rem;font-weight:900;letter-spacing:3px;color:#fff;cursor:pointer;flex:1}
+.nav-logo span{color:var(--purple)}
+.nav-links{display:flex;gap:4px}
+.nav-links button{color:var(--muted);background:none;border:none;font-size:.82rem;font-weight:600;
+  padding:6px 12px;border-radius:6px;cursor:pointer;transition:color .15s,background .15s;font-family:inherit}
+.nav-links button:hover{color:#fff;background:var(--border)}
+.nav-twitch{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 14px;
+  font-size:.82rem;font-weight:700;cursor:pointer;transition:background .15s;font-family:inherit;
+  text-decoration:none;display:inline-flex;align-items:center;gap:6px}
+.nav-twitch:hover{background:var(--purple2)}
+
+/* PAGES */
+.page{display:none}
+.page.active{display:block}
+#page-tierlist.active{display:flex;flex-direction:column;height:100vh}
+
+/* HOME HERO */
+.hero{padding:72px 28px 52px;text-align:center;max-width:700px;margin:0 auto}
+.hero-badge{display:inline-block;background:rgba(145,71,255,.15);color:var(--purple);
+  border:1px solid rgba(145,71,255,.35);font-size:.72rem;font-weight:700;letter-spacing:2px;
+  text-transform:uppercase;padding:5px 14px;border-radius:20px;margin-bottom:20px}
+.hero h1{font-size:clamp(2rem,5vw,3.2rem);font-weight:900;line-height:1.1;color:#fff;margin-bottom:16px}
+.hero h1 span{color:var(--purple)}
+.hero p{color:var(--muted);font-size:.98rem;line-height:1.7;max-width:480px;margin:0 auto 28px}
+.hero-pills{display:flex;justify-content:center;gap:10px;flex-wrap:wrap}
+.pill{background:var(--surface);border:1px solid var(--border);border-radius:20px;
+  padding:6px 14px;font-size:.78rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+.pill .dot{width:7px;height:7px;border-radius:50%;background:var(--green)}
+.section{max-width:1080px;margin:0 auto;padding:0 24px 80px}
+.sec-header{display:flex;align-items:baseline;gap:12px;margin-bottom:22px;
+  border-bottom:1px solid var(--border);padding-bottom:12px}
+.sec-header h2{font-size:1rem;font-weight:800;color:#fff;letter-spacing:1px;text-transform:uppercase}
+.sec-count{font-size:.73rem;color:var(--muted);background:var(--surface);
+  border:1px solid var(--border);border-radius:10px;padding:2px 8px}
+.game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.game-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
+  display:flex;flex-direction:column;transition:border-color .18s,transform .18s,box-shadow .18s;cursor:pointer}
+.game-card:hover{border-color:var(--purple);transform:translateY(-3px);box-shadow:0 8px 32px rgba(145,71,255,.18)}
+.game-card.soon{opacity:.45;cursor:default}
+.game-card.soon:hover{transform:none;box-shadow:none;border-color:var(--border)}
+.card-thumb{height:120px;display:flex;align-items:center;justify-content:center;font-size:3.2rem;position:relative}
+.card-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,var(--card) 100%)}
+.card-body{padding:12px 14px 14px;flex:1;display:flex;flex-direction:column}
+.card-tags{display:flex;gap:5px;margin-bottom:7px;flex-wrap:wrap}
+.tag{font-size:.63rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:2px 6px;border-radius:4px}
+.tag-twitch{background:rgba(145,71,255,.2);color:var(--purple)}
+.tag-discord{background:rgba(88,101,242,.2);color:#7289da}
+.tag-new{background:rgba(46,204,113,.2);color:var(--green)}
+.tag-soon{background:rgba(255,255,255,.07);color:var(--muted)}
+.card-title{font-size:.92rem;font-weight:800;color:#fff;margin-bottom:5px}
+.card-desc{font-size:.77rem;color:var(--muted);line-height:1.6;flex:1}
+.card-action{margin-top:12px;display:flex;align-items:center;justify-content:space-between}
+.play-btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 14px;
+  font-size:.78rem;font-weight:700;cursor:pointer;transition:background .15s;font-family:inherit}
+.play-btn:hover{background:var(--purple2)}
+.card-players{font-size:.7rem;color:var(--muted)}
+footer{border-top:1px solid var(--border);padding:24px 28px;text-align:center;color:var(--muted);font-size:.77rem}
+footer a{color:var(--purple);text-decoration:none}
+
+/* ---- TIER LIST PAGE ---- */
+#tl-topbar{background:#111;border-bottom:2px solid var(--purple);padding:0 14px;
+  height:48px;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.back-home{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;
+  padding:4px 10px;font-size:.77rem;font-weight:600;cursor:pointer;transition:color .15s,border-color .15s;
+  font-family:inherit;white-space:nowrap}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tl-name{font-size:.92rem;font-weight:800;color:#fff;letter-spacing:1px;flex:1;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:5px 11px;
+  font-size:.75rem;font-weight:700;cursor:pointer;transition:background .15s;
+  white-space:nowrap;flex-shrink:0;font-family:inherit}
+.btn:hover{background:var(--purple2)}
+.btn.sec{background:var(--card);border:1px solid var(--border)}
+.btn.sec:hover{background:var(--border)}
+.btn.dng{background:#5c1010;border:1px solid var(--red)}
+.btn.dng:hover{background:var(--red)}
+.btn.suc{background:#0e3d22;border:1px solid var(--green);color:var(--green)}
+.btn.suc:hover{background:var(--green);color:#000}
+#tl-conn{display:flex;align-items:center;gap:5px;font-size:.73rem;color:var(--muted);white-space:nowrap}
+#tl-dot{width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0;transition:background .3s}
+#tl-dot.connected{background:var(--green)}
+#tl-dot.error{background:var(--red)}
+#tl-dot.connecting{background:#f39c12;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Vote bar */
+#vote-bar{background:#111;border-bottom:1px solid var(--border);padding:10px 14px;
+  display:flex;flex-direction:column;align-items:center;gap:8px;flex-shrink:0}
+#vote-bar-top{display:flex;align-items:center;gap:10px;width:100%}
+#v-status{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;
+  color:var(--muted);min-width:130px}
+#v-status.open{color:var(--green)}
+#v-status.closed{color:var(--red)}
+#v-iname{flex:1;font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#v-iname strong{color:#fff}
+#v-tallies{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;width:100%}
+.tally{display:flex;align-items:center;gap:8px;background:var(--card);border:2px solid var(--border);
+  border-radius:10px;padding:12px 24px;min-width:90px;justify-content:center}
+.t-lbl{font-weight:900;font-size:2.2rem;line-height:1}
+.t-cnt{color:var(--purple);font-weight:900;font-size:2.2rem;line-height:1}
+
+/* Main layout */
+#tl-main{display:flex;flex:1;overflow:hidden}
+#tl-area{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column}
+#tl-heading{text-align:center;font-size:1.25rem;font-weight:900;letter-spacing:3px;color:#fff;
+  margin-bottom:8px;text-transform:uppercase}
+
+/* Tier rows */
+.tier-row{display:flex;align-items:stretch;margin-bottom:3px;border:1px solid #2a2a3a;border-radius:4px;min-height:70px}
+.tier-lbl{width:62px;min-width:62px;display:flex;align-items:center;justify-content:center;
+  position:relative;cursor:pointer;flex-shrink:0}
+.tier-lbl:hover::after{content:'✏️';position:absolute;font-size:.55rem;bottom:3px;right:3px}
+.tier-lbl-t{font-size:1.45rem;font-weight:900;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.5);user-select:none}
+.tier-items{flex:1;display:flex;flex-wrap:wrap;gap:4px;padding:5px;background:#1a1a26;
+  min-height:70px;align-items:flex-start;align-content:flex-start}
+
+/* Item */
+.tier-item{width:80px;height:80px;border-radius:4px;overflow:visible;cursor:pointer;
+  border:2px solid transparent;transition:border-color .15s,transform .15s;position:relative;flex-shrink:0}
+.tier-item:hover{border-color:var(--purple);z-index:2}
+.tier-item img{width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;border-radius:2px}
+.iname{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.75);
+  font-size:.48rem;padding:2px 3px;text-align:center;color:#eee;overflow:hidden;
+  white-space:nowrap;text-overflow:ellipsis;line-height:1.3;pointer-events:none;border-radius:0 0 2px 2px}
+/* Overlay floats above the image as a popup */
+.iov{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+  background:#1a1a2e;border:1px solid var(--purple);border-radius:8px;
+  display:none;flex-direction:column;align-items:center;gap:5px;
+  padding:8px;z-index:100;min-width:80px;box-shadow:0 4px 20px rgba(0,0,0,.6);white-space:nowrap}
+.iov::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:6px solid transparent;border-top-color:#1a1a2e}
+.tier-item.menu-open .iov{display:flex}
+.iov button{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;
+  font-size:.7rem;font-weight:700;padding:5px 10px;border-radius:5px;cursor:pointer;
+  width:100%;text-align:center;white-space:nowrap}
+.iov .i-del{border-color:var(--red);color:var(--red)}
+.iov .i-del:hover{background:var(--red);color:#fff}
+.iov .i-zoom:hover{background:var(--purple);border-color:var(--purple)}
+.iov .i-close{border-color:#444;color:var(--muted);font-size:.62rem}
+.iov .i-close:hover{color:#fff;border-color:#888}
+.tier-item.av{border-color:var(--green)!important;box-shadow:0 0 10px rgba(46,204,113,.45)}
+
+/* Queue */
+#q-wrap{margin-top:8px;flex-shrink:0}
+#q-lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:5px;display:flex;align-items:center;gap:7px}
+#q-cnt{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1px 7px;color:var(--purple);font-weight:700}
+#queue{display:flex;flex-wrap:wrap;gap:4px;background:var(--card);border:2px dashed var(--border);
+  border-radius:6px;padding:7px;min-height:80px;align-items:flex-start;align-content:flex-start;position:relative}
+#queue:empty::after{content:'Images from Discord appear here automatically — or add one using the sidebar';
+  color:#444;font-size:.72rem;position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;padding:0 16px;text-align:center;pointer-events:none}
+
+/* Sidebar */
+#tl-sb{width:252px;background:#111;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#sb-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-tab{flex:1;padding:9px 3px;background:none;border:none;color:var(--muted);font-size:.67rem;font-weight:700;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;font-family:inherit}
+.sb-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+.sb-panel{display:none;flex:1;overflow-y:auto;padding:11px}
+.sb-panel.active{display:block}
+#chat-log{display:flex;flex-direction:column;gap:3px}
+.cmsg{font-size:.73rem;line-height:1.4;padding:3px 6px;border-radius:4px;background:var(--card);word-break:break-word}
+.cmsg.isv{border-left:3px solid var(--purple)}
+.cmsg .un{font-weight:700}
+.cmsg .vtag{font-size:.58rem;font-weight:700;padding:1px 5px;border-radius:3px;margin-left:3px;color:#000}
+.sb-sec{margin-bottom:14px}
+.sb-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;display:block}
+.sb-in{width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:#fff;
+  padding:6px 9px;font-size:.78rem;margin-bottom:5px;font-family:inherit}
+.sb-in:focus{outline:none;border-color:var(--purple)}
+.tcr{display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.tcr input[type="color"]{width:28px;height:24px;border:none;border-radius:4px;cursor:pointer;padding:1px;background:none;flex-shrink:0}
+.tcr input[type="text"]{flex:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:#fff;padding:4px 7px;font-size:.78rem;font-family:inherit}
+.tcr .rm{background:none;border:none;color:#c0392b;cursor:pointer;font-size:.88rem;padding:0 3px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.tog-row label{font-size:.77rem;color:var(--text)}
+.tog{position:relative;width:34px;height:19px;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;inset:0;background:#333;border-radius:20px;cursor:pointer;transition:background .2s}
+.tog-sl::before{content:'';position:absolute;height:13px;width:13px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:transform .2s}
+.tog input:checked+.tog-sl{background:var(--purple)}
+.tog input:checked+.tog-sl::before{transform:translateX(15px)}
+
+/* Lightbox */
+#lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);align-items:center;justify-content:center;cursor:zoom-out}
+#lightbox.active{display:flex}
+#lightbox img{max-width:92vw;max-height:90vh;border-radius:8px;object-fit:contain;box-shadow:0 20px 80px rgba(0,0,0,.8);cursor:default}
+#lb-name{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:6px 18px;border-radius:20px;font-size:.83rem;font-weight:600;white-space:nowrap}
+#lb-x{position:absolute;top:14px;right:18px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+
+/* Modal */
+#modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
+#modal-ov.active{display:flex}
+#modal{background:#1e1e2e;border:1px solid var(--border);border-radius:10px;padding:20px;width:310px}
+#modal h2{font-size:.92rem;margin-bottom:13px;color:#fff}
+#modal input{width:100%;background:#111;border:1px solid #444;border-radius:5px;color:#fff;padding:7px 9px;font-size:.86rem;margin-bottom:11px;font-family:inherit}
+#modal input:focus{outline:none;border-color:var(--purple)}
+.mbtns{display:flex;gap:7px;justify-content:flex-end}
+
+/* Toast */
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.green{border-color:var(--green);color:var(--green)}
+#toast.red{border-color:var(--red);color:var(--red)}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0e0e16}::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--purple)}
+.sortable-ghost{opacity:.25}.sortable-chosen{cursor:grabbing!important;z-index:10}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════
+     HOME PAGE
+═══════════════════════════════════ -->
+<div id="page-home" class="page active">
+  <nav>
+    <span class="nav-logo" onclick="goHome()">FwHaydo<span>.</span></span>
+    <div class="nav-links">
+      <button onclick="document.getElementById('sec-tools').scrollIntoView({behavior:'smooth'})">Tools</button>
+    </div>
+    <a class="nav-twitch" href="https://twitch.tv/FwHaydo" target="_blank">
+      <svg style="width:14px;height:14px;fill:#fff" viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+      Follow on Twitch
+    </a>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-badge">Free Stream Tools</div>
+    <h1>Tools built for<br><span>FwHaydo's stream</span></h1>
+    <p>Interactive stream tools and games with Twitch chat integration. Free, no ads, no BS.</p>
+    <div class="hero-pills">
+      <div class="pill"><span class="dot"></span>Twitch Chat Integrated</div>
+      <div class="pill"><span class="dot"></span>Discord Connected</div>
+      <div class="pill"><span class="dot"></span>Free Forever</div>
+    </div>
+  </div>
+
+  <div class="section" id="sec-tools">
+    <div class="sec-header">
+      <h2>🛠 Stream Tools</h2>
+      <span class="sec-count">1 tool</span>
+    </div>
+    <div class="game-grid">
+
+      <div class="game-card" onclick="showTierList()">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0533,#2d1060)">🏆</div>
+        <div class="card-body">
+          <div class="card-tags">
+            <span class="tag tag-twitch">Twitch</span>
+            <span class="tag tag-discord">Discord</span>
+            <span class="tag tag-new">New</span>
+          </div>
+          <div class="card-title">ROOM TIER LIST</div>
+          <div class="card-desc">Viewers submit room photos in Discord. Chat votes to rank them live on a fully customizable tier list. You control when voting opens and closes — nothing ever auto-places.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();showTierList()">Open Tool →</button>
+            <span class="card-players">👥 Unlimited viewers</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card soon">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a1a,#141428)">🎮</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-soon">Coming Soon</span></div>
+          <div class="card-title">MORE TOOLS</div>
+          <div class="card-desc">New tools drop here as they get built.</div>
+          <div class="card-action"><span style="font-size:.75rem;color:var(--muted)">In development</span></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <footer>
+    <p>© 2026 FwHaydo &nbsp;·&nbsp; <a href="https://twitch.tv/FwHaydo" target="_blank">Twitch</a></p>
+  </footer>
+</div>
+
+<!-- ═══════════════════════════════════
+     TIER LIST PAGE
+═══════════════════════════════════ -->
+<div id="page-tierlist" class="page">
+
+  <div id="tl-topbar">
+    <button class="back-home" onclick="goHome()">← FwHaydo</button>
+    <span id="tl-name">🏆 ROOM TIER LIST</span>
+    <div id="tl-conn"><div id="tl-dot"></div><span id="tl-dot-txt">Not connected</span></div>
+    <button class="btn sec" onclick="showSbTab('settings')">⚙️</button>
+    <button class="btn sec" onclick="tlSave()">💾</button>
+    <button class="btn dng" onclick="tlClear()">🗑️ Clear</button>
+  </div>
+
+  <div id="vote-bar">
+    <div id="vote-bar-top">
+      <span id="v-status" class="closed">● IDLE</span>
+      <span id="v-iname">Click an image in the queue to select it for voting</span>
+      <button class="btn suc"  id="b-open"  onclick="openVoting()"  style="display:none">▶ Open Voting</button>
+      <button class="btn dng"  id="b-close" onclick="closeVoting()" style="display:none">⏹ Close Voting</button>
+      <button class="btn"      id="b-place" onclick="placeByVote()" style="display:none">✅ Place by Vote</button>
+      <button class="btn sec"  id="b-skip"  onclick="skipCurrent()" style="display:none">⏭ Skip</button>
+    </div>
+    <div id="v-tallies"></div>
+  </div>
+
+  <div id="tl-main">
+    <div id="tl-area">
+      <div id="tl-heading">ROOM TIER LIST</div>
+      <div id="tier-rows"></div>
+      <div id="q-wrap">
+        <div id="q-lbl">📥 Queue <span id="q-cnt">0</span>
+          <span style="color:var(--muted);font-size:.62rem">— click to select · drag to place manually</span>
+        </div>
+        <div id="queue"></div>
+      </div>
+    </div>
+
+    <div id="tl-sb">
+      <div id="sb-tabs">
+        <button class="sb-tab active" onclick="showSbTab('chat')">Chat</button>
+        <button class="sb-tab" onclick="showSbTab('add')">Add</button>
+        <button class="sb-tab" onclick="showSbTab('config')">Config</button>
+      </div>
+
+      <div id="sb-chat" class="sb-panel active">
+        <div class="sb-lbl">Live Twitch Chat</div>
+        <div id="chat-log"></div>
+      </div>
+
+      <div id="sb-add" class="sb-panel">
+        <div class="sb-sec">
+          <div class="sb-lbl">Add by URL</div>
+          <input class="sb-in" id="m-url" type="text" placeholder="https://i.imgur.com/..."/>
+          <input class="sb-in" id="m-name" type="text" placeholder="Label (e.g. Viewer's Room)"/>
+          <button class="btn" style="width:100%" onclick="addManual()">Add to Queue</button>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Upload File</div>
+          <input class="sb-in" id="f-lbl" type="text" placeholder="Label for this image"/>
+          <button class="btn sec" style="width:100%;margin-bottom:5px" onclick="document.getElementById('file-in').click()">📁 Pick Image</button>
+          <input type="file" id="file-in" accept="image/*" style="display:none" onchange="addFile(event)"/>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Discord Auto-Feed</div>
+          <p style="font-size:.7rem;color:var(--muted);line-height:1.55">Run the included Discord bot (see <strong style="color:var(--purple)">DISCORD SETUP.md</strong>) and images posted in the channel appear here automatically. If a message is deleted from Discord, it removes itself from the tier list too.</p>
+        </div>
+      </div>
+
+      <div id="sb-config" class="sb-panel">
+        <div class="sb-sec">
+          <div class="sb-lbl">Twitch Channel</div>
+          <input class="sb-in" id="cfg-ch" type="text" placeholder="FwHaydo" value="FwHaydo"/>
+          <button class="btn" style="width:100%;margin-bottom:5px" onclick="tlConnect()">Connect</button>
+          <button class="btn sec" style="width:100%" onclick="tlDisconnect()">Disconnect</button>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Title</div>
+          <input class="sb-in" id="cfg-title" type="text" value="ROOM TIER LIST"
+            oninput="document.getElementById('tl-heading').textContent=this.value;document.getElementById('tl-name').textContent='🏆 '+this.value"/>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Vote Settings</div>
+          <div class="tog-row"><label>Show votes in chat log</label>
+            <label class="tog"><input type="checkbox" id="cfg-sv" checked/><span class="tog-sl"></span></label></div>
+          <div class="tog-row"><label>One vote per viewer</label>
+            <label class="tog"><input type="checkbox" id="cfg-ov" checked/><span class="tog-sl"></span></label></div>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Tiers</div>
+          <div id="tier-cfg"></div>
+          <button class="btn sec" style="width:100%;margin-top:4px" onclick="addTierRow()">+ Add Tier</button>
+          <button class="btn" style="width:100%;margin-top:5px" onclick="applyTiers()">✅ Apply</button>
+        </div>
+        <div class="sb-sec">
+          <div class="sb-lbl">Save / Load</div>
+          <button class="btn sec" style="width:100%;margin-bottom:5px" onclick="tlSave()">💾 Save</button>
+          <button class="btn sec" style="width:100%" onclick="document.getElementById('load-in').click()">📂 Load</button>
+          <input type="file" id="load-in" accept=".json" style="display:none" onchange="tlLoad(event)"/>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Lightbox -->
+<div id="lightbox" onclick="closeLB()">
+  <button id="lb-x" onclick="closeLB()">✕</button>
+  <img id="lb-img" src="" alt="" onclick="event.stopPropagation()"/>
+  <div id="lb-name"></div>
+</div>
+
+<!-- Modal -->
+<div id="modal-ov">
+  <div id="modal">
+    <h2 id="modal-t">Edit</h2>
+    <input type="text" id="modal-in"/>
+    <div class="mbtns">
+      <button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="confirmModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  PAGE ROUTING
+// ═══════════════════════════════════════
+let tlInited = false;
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-home').classList.add('active');
+  window.scrollTo(0,0);
+}
+
+function showTierList() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-tierlist').classList.add('active');
+  if (!tlInited) { tlInit(); tlInited = true; }
+}
+
+// ═══════════════════════════════════════
+//  TIER LIST STATE
+// ═══════════════════════════════════════
+let tiers = [
+  {id:'S',label:'S',color:'#FF7F7F'},
+  {id:'A',label:'A',color:'#FFBF7F'},
+  {id:'B',label:'B',color:'#FFDF80'},
+  {id:'C',label:'C',color:'#FFFF7F'},
+  {id:'D',label:'D',color:'#BFFF7F'},
+  {id:'F',label:'F',color:'#8080FF'},
+];
+let items = {}, queue = [], curVote = null, votingOpen = false, votes = {};
+let tmiClient = null, sortables = {}, modalCb = null, discordMap = {};
+const VEXTS = ['.mp4','.mov','.webm','.avi','.mkv','.m4v','.ogg'];
+
+function tlInit() {
+  renderTierCfg();
+  renderTiers();
+  updateQCnt();
+  tryWS();
+}
+
+// ═══════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════
+function renderTiers() {
+  const cont = document.getElementById('tier-rows');
+  cont.innerHTML = '';
+  Object.values(sortables).forEach(s=>{try{s.destroy()}catch(e){}});
+  sortables = {};
+
+  tiers.forEach(tier => {
+    const row = document.createElement('div');
+    row.className = 'tier-row';
+    row.id = 'row-'+tier.id;
+
+    const lbl = document.createElement('div');
+    lbl.className = 'tier-lbl';
+    lbl.style.background = tier.color;
+    lbl.onclick = () => editTierLabel(tier.id);
+    const lt = document.createElement('div');
+    lt.className = 'tier-lbl-t';
+    lt.textContent = tier.label;
+    lt.id = 'lt-'+tier.id;
+    lbl.appendChild(lt);
+
+    const tItems = document.createElement('div');
+    tItems.className = 'tier-items';
+    tItems.id = 'ti-'+tier.id;
+
+    Object.values(items).filter(i=>i.tier===tier.id).forEach(item=>{
+      tItems.appendChild(mkItem(item, false));
+    });
+
+    row.appendChild(lbl);
+    row.appendChild(tItems);
+    cont.appendChild(row);
+
+    sortables[tier.id] = new Sortable(tItems, {
+      group:'tl', animation:120, ghostClass:'sortable-ghost', chosenClass:'sortable-chosen',
+      onAdd(evt) {
+        const id = evt.item.dataset.id;
+        const wasQ = items[id]?.tier===null||items[id]?.tier===undefined;
+        items[id].tier = tier.id;
+        if (wasQ) {
+          queue = queue.filter(q=>q!==id);
+          if (curVote===id){curVote=null;votingOpen=false;updateVBar();}
+          updateQCnt();
+        }
+      }
+    });
+  });
+
+  sortables['queue'] = new Sortable(document.getElementById('queue'),{
+    group:'tl', animation:120, ghostClass:'sortable-ghost',
+    onAdd(evt){
+      const id=evt.item.dataset.id;
+      items[id].tier=null;
+      if(!queue.includes(id)) queue.push(id);
+      updateQCnt();
+    }
+  });
+}
+
+function mkItem(item, inQ) {
+  const div = document.createElement('div');
+  div.className='tier-item';
+  div.dataset.id=item.id;
+  div.title=item.name+(inQ ? ' — click to select · right-click for options' : ' — right-click for options');
+
+  const img=document.createElement('img');
+  img.src=item.url; img.alt=item.name;
+  img.onerror=()=>{img.src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23222'/><text x='40' y='42' text-anchor='middle' fill='%23666' font-size='8' font-family='sans-serif'>No img</text></svg>";};
+
+  const nm=document.createElement('div'); nm.className='iname'; nm.textContent=item.name;
+
+  const ov=document.createElement('div'); ov.className='iov';
+  const zb=document.createElement('button'); zb.className='i-zoom'; zb.textContent='🔍 Zoom';
+  zb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');openLB(item);};
+  const db=document.createElement('button'); db.className='i-del'; db.textContent='✕ Remove';
+  db.onclick=e=>{e.stopPropagation();removeItem(item.id);};
+  const cb=document.createElement('button'); cb.className='i-close'; cb.textContent='✕ close menu';
+  cb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');};
+  ov.appendChild(zb); ov.appendChild(db); ov.appendChild(cb);
+
+  div.appendChild(img); div.appendChild(nm); div.appendChild(ov);
+
+  // Right-click = show zoom/delete menu
+  div.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    // Close any other open menus
+    document.querySelectorAll('.tier-item.menu-open').forEach(el=>el.classList.remove('menu-open'));
+    div.classList.add('menu-open');
+  });
+
+  // Close menu if clicking elsewhere
+  document.addEventListener('click', ()=>div.classList.remove('menu-open'), {once:false});
+
+  // Left click in queue = select for voting
+  if (inQ) {
+    div.addEventListener('click', e=>{
+      if(div.classList.contains('menu-open')) return;
+      selectVote(item.id);
+    });
+  }
+
+  return div;
+}
+
+function renderQ() {
+  const qel=document.getElementById('queue');
+  qel.innerHTML='';
+  queue.forEach(id=>{
+    const el=mkItem(items[id],true);
+    if(id===curVote) el.classList.add('av');
+    qel.appendChild(el);
+  });
+  updateQCnt();
+}
+
+function updateQCnt(){document.getElementById('q-cnt').textContent=queue.length;}
+
+// ═══════════════════════════════════════
+//  ADD / REMOVE
+// ═══════════════════════════════════════
+function addToQ(url, name, msgId) {
+  const lower=url.toLowerCase().split('?')[0];
+  if (VEXTS.some(e=>lower.endsWith(e))){toast('Videos not supported — images only','red');return null;}
+  const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
+  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
+  queue.push(id);
+  if(msgId) discordMap[msgId]=id;
+  const qel=document.getElementById('queue');
+  if(qel){const el=mkItem(items[id],true);qel.appendChild(el);}
+  updateQCnt();
+  toast('Added: '+(name||'image'),'green');
+  return id;
+}
+
+function addManual(){
+  const url=document.getElementById('m-url').value.trim();
+  const name=document.getElementById('m-name').value.trim()||'Room';
+  if(!url){toast('Enter an image URL','red');return;}
+  addToQ(url,name);
+  document.getElementById('m-url').value='';
+  document.getElementById('m-name').value='';
+}
+
+function addFile(e){
+  const file=e.target.files[0]; if(!file) return;
+  if(!file.type.startsWith('image/')){toast('Videos not supported — images only','red');return;}
+  const name=document.getElementById('f-lbl').value.trim()||file.name.replace(/\.[^.]+$/,'');
+  const r=new FileReader();
+  r.onload=ev=>addToQ(ev.target.result,name);
+  r.readAsDataURL(file);
+  document.getElementById('f-lbl').value='';
+  e.target.value='';
+}
+
+function removeItem(id){
+  if(!items[id]) return;
+  if(items[id].discordMsgId) delete discordMap[items[id].discordMsgId];
+  delete items[id];
+  queue=queue.filter(q=>q!==id);
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>el.remove());
+  if(curVote===id){curVote=null;votingOpen=false;updateVBar();}
+  updateQCnt();
+}
+
+function tlClear(){
+  if(!confirm('Clear everything?')) return;
+  items={};queue=[];curVote=null;votingOpen=false;votes={};discordMap={};
+  renderTiers();renderQ();updateVBar();
+}
+
+// ═══════════════════════════════════════
+//  VOTING
+// ═══════════════════════════════════════
+function selectVote(id){
+  if(votingOpen){toast('Close voting before switching images','red');return;}
+  if(curVote===id) return;
+  curVote=id; votes={};
+  tiers.forEach(t=>{votes[t.id]=new Set();});
+  document.querySelectorAll('.tier-item.av').forEach(e=>e.classList.remove('av'));
+  document.querySelector(`#queue [data-id="${id}"]`)?.classList.add('av');
+  updateVBar(); renderTallies();
+  sh('b-open'); hd('b-close'); hd('b-place'); sh('b-skip');
+}
+
+function openVoting(){
+  if(!curVote){toast('Select an image first','red');return;}
+  votingOpen=true; votes={};
+  tiers.forEach(t=>{votes[t.id]=new Set();});
+  hd('b-open'); sh('b-close'); hd('b-place');
+  updateVBar(); renderTallies();
+  toast('Voting OPEN — chat types a tier label (S, A, B…)','green');
+}
+
+function closeVoting(){
+  votingOpen=false;
+  sh('b-open'); hd('b-close'); sh('b-place');
+  updateVBar();
+  toast('Voting closed');
+}
+
+function updateVBar(){
+  const vs=document.getElementById('v-status');
+  const vi=document.getElementById('v-iname');
+  if(!curVote){
+    vs.textContent='● IDLE'; vs.className='closed';
+    vi.innerHTML='Click an image in the queue to select it for voting';
+    ['b-open','b-close','b-place','b-skip'].forEach(hd);
+    document.getElementById('v-tallies').innerHTML='';
+    return;
+  }
+  vs.textContent=votingOpen?'● VOTING OPEN':'● VOTING CLOSED';
+  vs.className=votingOpen?'open':'closed';
+  vi.innerHTML='Now: <strong>'+esc(items[curVote]?.name||'')+'</strong>';
+}
+
+function renderTallies(){
+  const el=document.getElementById('v-tallies');
+  el.innerHTML='';
+  if(!curVote) return;
+  tiers.forEach(tier=>{
+    const c=document.createElement('div'); c.className='tally';
+    c.innerHTML=`<span class="t-lbl" style="color:${tier.color}">${esc(tier.label)}</span><span class="t-cnt">${votes[tier.id]?.size||0}</span>`;
+    el.appendChild(c);
+  });
+}
+
+function placeByVote(){
+  if(!curVote) return;
+  let max=0,winId=null;
+  tiers.forEach(t=>{const v=votes[t.id]?.size||0;if(v>max){max=v;winId=t.id;}});
+  if(!winId||max===0){toast('No votes yet — drag manually or keep voting','red');return;}
+  const lbl=tiers.find(t=>t.id===winId)?.label||winId;
+  doPlace(curVote,winId);
+  toast(`Placed in ${lbl} tier (${max} votes)`,'green');
+}
+
+function doPlace(itemId,tierId){
+  const item=items[itemId]; if(!item) return;
+  item.tier=tierId;
+  queue=queue.filter(q=>q!==itemId);
+  document.querySelector(`#queue [data-id="${itemId}"]`)?.remove();
+  const td=document.getElementById('ti-'+tierId);
+  if(td) td.appendChild(mkItem(item,false));
+  curVote=null;votingOpen=false;votes={};
+  updateVBar();updateQCnt();
+}
+
+function skipCurrent(){
+  if(!curVote) return;
+  const id=curVote;
+  document.querySelector(`#queue [data-id="${id}"]`)?.classList.remove('av');
+  curVote=null;votingOpen=false;votes={};
+  queue=queue.filter(q=>q!==id);queue.push(id);
+  renderQ();updateVBar();
+}
+
+// ═══════════════════════════════════════
+//  TWITCH — direct WebSocket IRC (no tmi.js needed)
+// ═══════════════════════════════════════
+function tlConnect(){
+  const ch=document.getElementById('cfg-ch').value.trim().toLowerCase();
+  if(!ch){toast('Enter channel name','red');return;}
+  tlDisconnect();
+  setDot('connecting','Connecting...');
+  try{
+    tmiClient=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    tmiClient.onopen=()=>{
+      tmiClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      tmiClient.send('PASS SCHMOOPIIE');
+      tmiClient.send('NICK justinfan'+Math.floor(Math.random()*99999));
+      tmiClient.send('JOIN #'+ch);
+    };
+    tmiClient.onmessage=e=>{
+      const raw=e.data;
+      // Keep alive
+      if(raw.startsWith('PING')){tmiClient.send('PONG :tmi.twitch.tv');return;}
+      // Confirm joined
+      if(raw.includes('366')||raw.includes('JOIN #'+ch)){
+        setDot('connected','#'+ch);
+      }
+      // Parse chat messages
+      if(raw.includes('PRIVMSG')){
+        try{
+          // Extract tags
+          let color='#9147ff', user='user', msg='';
+          const tagMatch=raw.match(/^@([^ ]+)/);
+          if(tagMatch){
+            const tags={};
+            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
+            color=tags['color']||'#9147ff';
+            user=tags['display-name']||tags['login']||'user';
+          }
+          const msgMatch=raw.match(/PRIVMSG #\S+ :(.+)/);
+          if(msgMatch) msg=msgMatch[1].replace(/\r?\n/,'');
+          if(user&&msg) handleMsg(user,color,msg);
+        }catch(err){}
+      }
+    };
+    tmiClient.onerror=()=>setDot('error','Connection failed');
+    tmiClient.onclose=()=>{
+      if(document.getElementById('tl-dot').className==='connected'){
+        setDot('error','Disconnected');
+      }
+    };
+  }catch(e){setDot('error','Error: '+e.message);}
+}
+
+function tlDisconnect(){
+  if(tmiClient){try{tmiClient.close()}catch(e){}tmiClient=null;}
+  setDot('','Not connected');
+}
+
+function setDot(type,text){
+  document.getElementById('tl-dot').className=type;
+  document.getElementById('tl-dot-txt').textContent=text;
+}
+
+function handleMsg(user,color,message){
+  const msg=message.trim();
+  let isV=false,vTier=null;
+  if(votingOpen&&curVote){
+    const match=tiers.find(t=>t.label.toLowerCase()===msg.toLowerCase());
+    if(match){
+      isV=true;vTier=match;
+      if(document.getElementById('cfg-ov')?.checked) tiers.forEach(t=>votes[t.id]?.delete(user));
+      votes[match.id].add(user);
+      renderTallies();
+    }
+  }
+  const showV=document.getElementById('cfg-sv')?.checked??true;
+  if(showV||!isV) addChatMsg(user,color,msg,isV,vTier);
+}
+
+// ═══════════════════════════════════════
+//  CHAT LOG
+// ═══════════════════════════════════════
+function addChatMsg(user,color,msg,isV,vTier){
+  const log=document.getElementById('chat-log');
+  const div=document.createElement('div');
+  div.className='cmsg'+(isV?' isv':'');
+  let html=`<span class="un" style="color:${esc(color)}">${esc(user)}</span>: ${esc(msg)}`;
+  if(isV&&vTier) html+=` <span class="vtag" style="background:${esc(vTier.color)}">${esc(vTier.label)}</span>`;
+  div.innerHTML=html;
+  log.appendChild(div);
+  while(log.children.length>100) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
+}
+
+// ═══════════════════════════════════════
+//  LIGHTBOX
+// ═══════════════════════════════════════
+function openLB(item){
+  document.getElementById('lb-img').src=item.url;
+  document.getElementById('lb-name').textContent=item.name;
+  document.getElementById('lightbox').classList.add('active');
+}
+function closeLB(){
+  document.getElementById('lightbox').classList.remove('active');
+  document.getElementById('lb-img').src='';
+}
+
+// ═══════════════════════════════════════
+//  TIER CONFIG
+// ═══════════════════════════════════════
+function renderTierCfg(){
+  const list=document.getElementById('tier-cfg');
+  list.innerHTML='';
+  tiers.forEach((tier,i)=>{
+    const row=document.createElement('div'); row.className='tcr';
+    row.innerHTML=`<input type="color" value="${tier.color}" onchange="tiers[${i}].color=this.value"/>
+      <input type="text" value="${tier.label}" placeholder="Label" onchange="tiers[${i}].label=this.value;tiers[${i}].id=this.value"/>
+      <button class="rm" onclick="removeTierRow(${i})">✕</button>`;
+    list.appendChild(row);
+  });
+}
+
+function addTierRow(){tiers.push({id:'NEW'+Date.now(),label:'NEW',color:'#888888'});renderTierCfg();}
+
+function removeTierRow(i){
+  const tid=tiers[i].id;
+  Object.values(items).forEach(item=>{if(item.tier===tid){item.tier=null;if(!queue.includes(item.id))queue.push(item.id);}});
+  tiers.splice(i,1);renderTierCfg();renderTiers();renderQ();
+}
+
+function applyTiers(){
+  renderTierCfg();renderTiers();
+  const qel=document.getElementById('queue');qel.innerHTML='';
+  queue.forEach(id=>{const el=mkItem(items[id],true);if(id===curVote)el.classList.add('av');qel.appendChild(el);});
+  updateQCnt();toast('Tiers updated!','green');
+}
+
+function editTierLabel(tierId){
+  const tier=tiers.find(t=>t.id===tierId); if(!tier) return;
+  openModal('Rename Tier',tier.label,val=>{
+    const old=tier.id; tier.label=val; tier.id=val;
+    const lt=document.getElementById('lt-'+old);
+    if(lt){lt.textContent=val;lt.id='lt-'+val;}
+    const row=document.getElementById('row-'+old);if(row)row.id='row-'+val;
+    const ti=document.getElementById('ti-'+old);if(ti){ti.id='ti-'+val;ti.dataset.tid=val;}
+    Object.values(items).forEach(item=>{if(item.tier===old)item.tier=val;});
+    if(votes[old]){votes[val]=votes[old];delete votes[old];}
+    renderTierCfg();renderTallies();
+  });
+}
+
+// ═══════════════════════════════════════
+//  WEBSOCKET (Discord bridge)
+// ═══════════════════════════════════════
+let wsRetry=null;
+function tryWS(){
+  try{
+    const ws=new WebSocket('ws://localhost:3001');
+    ws.onmessage=e=>{
+      try{
+        const d=JSON.parse(e.data);
+        if(d.type==='image') addToQ(d.url,d.name||'Discord',d.msgId||null);
+        if(d.type==='delete'&&d.msgId){
+          const iid=discordMap[d.msgId];
+          if(iid){removeItem(iid);toast('Removed (deleted from Discord)','red');}
+        }
+      }catch(err){}
+    };
+    ws.onclose=()=>{clearTimeout(wsRetry);wsRetry=setTimeout(tryWS,10000);};
+    ws.onerror=()=>{};
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════════════
+function tlSave(){
+  const state={tiers,items,queue,title:document.getElementById('cfg-title').value,channel:document.getElementById('cfg-ch').value};
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fwhaydo-tierlist.json';a.click();
+  toast('Saved!','green');
+}
+
+function tlLoad(e){
+  const file=e.target.files[0];if(!file) return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    try{
+      const s=JSON.parse(ev.target.result);
+      tiers=s.tiers||tiers;items=s.items||{};queue=s.queue||[];discordMap={};
+      Object.values(items).forEach(item=>{if(item.discordMsgId)discordMap[item.discordMsgId]=item.id;});
+      if(s.title){document.getElementById('cfg-title').value=s.title;document.getElementById('tl-heading').textContent=s.title;}
+      if(s.channel)document.getElementById('cfg-ch').value=s.channel;
+      renderTierCfg();renderTiers();renderQ();toast('Loaded!','green');
+    }catch(err){toast('Load failed: '+err.message,'red');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+
+// ═══════════════════════════════════════
+//  MODAL / TABS / UTILS
+// ═══════════════════════════════════════
+function openModal(title,def,cb){
+  document.getElementById('modal-t').textContent=title;
+  document.getElementById('modal-in').value=def||'';
+  modalCb=cb;
+  document.getElementById('modal-ov').classList.add('active');
+  setTimeout(()=>document.getElementById('modal-in').focus(),50);
+}
+function closeModal(){document.getElementById('modal-ov').classList.remove('active');modalCb=null;}
+function confirmModal(){const v=document.getElementById('modal-in').value.trim();if(v&&modalCb)modalCb(v);closeModal();}
+document.getElementById('modal-in').addEventListener('keydown',e=>{if(e.key==='Enter')confirmModal();if(e.key==='Escape')closeModal();});
+document.getElementById('modal-ov').addEventListener('click',e=>{if(e.target===document.getElementById('modal-ov'))closeModal();});
+
+function showSbTab(name){
+  const names=['chat','add','config'];
+  document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sb-'+name)?.classList.add('active');
+}
+
+function sh(id){document.getElementById(id).style.display='';}
+function hd(id){document.getElementById(id).style.display='none';}
+
+let toastT=null;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show'+(type?' '+type:'');
+  clearTimeout(toastT);toastT=setTimeout(()=>{el.className='';},2800);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeModal();}});
+</script>
+</body>
+</html>
