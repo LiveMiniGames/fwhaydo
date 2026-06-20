@@ -25,6 +25,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #mode-btn{color:var(--muted);font-size:.78rem;border:1px solid var(--border);border-radius:6px;
   padding:5px 10px;background:none;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
 #mode-btn:hover{color:#fff;border-color:var(--purple)}
+#sound-btn{color:var(--muted);font-size:.85rem;border:1px solid var(--border);border-radius:6px;
+  padding:5px 9px;background:none;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
+#sound-btn:hover{color:#fff;border-color:var(--purple)}
 
 #main{width:100%;max-width:500px;display:flex;flex-direction:column;align-items:center;
   padding:20px 16px 40px;flex:1}
@@ -138,7 +141,10 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 <div id="topbar">
   <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
   <div id="title">Codle</div>
-  <button id="mode-btn" onclick="backToModeSelect()">Menu</button>
+  <div style="display:flex;gap:6px">
+    <button id="sound-btn" onclick="toggleSound()">🔊</button>
+    <button id="mode-btn" onclick="backToModeSelect()">Menu</button>
+  </div>
 </div>
 
 <div id="main">
@@ -220,6 +226,74 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
 <script>
 // ═══════════════════════════════════════
+//  SOUND ENGINE (generated tones, no audio files needed)
+// ═══════════════════════════════════════
+let audioCtx = null;
+let soundEnabled = localStorage.getItem('codle-sound') !== 'off';
+
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('codle-sound', soundEnabled ? 'on' : 'off');
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function playTone(freq, duration, type='sine', volume=0.15, delay=0){
+  if(!soundEnabled) return;
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    gain.gain.value = volume;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const startTime = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.start(startTime);
+    osc.stop(startTime + duration);
+  }catch(e){}
+}
+
+function playKeyClick(){
+  playTone(440, 0.06, 'sine', 0.08);
+}
+
+function playDeleteClick(){
+  playTone(280, 0.07, 'sine', 0.08);
+}
+
+function playTileReveal(result, indexInRow){
+  // Slight pitch variation per tile color, staggered to match the flip animation timing
+  const delay = indexInRow * 0.08;
+  if(result === 'green') playTone(523, 0.18, 'sine', 0.13, delay);       // bright, pleasant
+  else if(result === 'yellow') playTone(392, 0.16, 'sine', 0.11, delay); // neutral-ish
+  else playTone(220, 0.14, 'sine', 0.08, delay);                         // low, dull thud
+}
+
+function playWinSound(){
+  // Short ascending arpeggio
+  const notes = [523, 659, 784, 1047];
+  notes.forEach((freq, i) => playTone(freq, 0.3, 'sine', 0.14, i * 0.12));
+}
+
+function playLoseSound(){
+  // Short descending tone
+  playTone(330, 0.25, 'sine', 0.12, 0);
+  playTone(220, 0.4, 'sine', 0.12, 0.18);
+}
+
+function playErrorShake(){
+  playTone(180, 0.15, 'square', 0.06);
+}
+
+// ═══════════════════════════════════════
 //  STATE
 // ═══════════════════════════════════════
 let codeLength = 5;
@@ -237,6 +311,7 @@ let challengeCodeInput = [];
 //  INIT — check for challenge link in URL
 // ═══════════════════════════════════════
 function init(){
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
   const params = new URLSearchParams(window.location.search);
   const challenge = params.get('c');
   if(challenge){
@@ -515,12 +590,14 @@ function pressDigit(n){
   if(gameOver) return;
   if(currentInput.length >= codeLength) return;
   currentInput.push(n);
+  playKeyClick();
   renderGuessGrid();
 }
 
 function pressDelete(){
   if(gameOver) return;
   currentInput.pop();
+  playDeleteClick();
   renderGuessGrid();
 }
 
@@ -528,6 +605,7 @@ function submitGuess(){
   if(gameOver) return;
   if(currentInput.length !== codeLength){
     toast(`Enter all ${codeLength} digits`);
+    playErrorShake();
     shakeCurrentRow();
     return;
   }
@@ -539,15 +617,15 @@ function submitGuess(){
 
   updateKeyColors(guess, results);
   renderGuessGrid();
-  animateLastRow();
+  animateLastRow(results);
 
   const won = results.every(r => r==='green');
   if(won){
-    setTimeout(()=>endGame(true), 600);
+    setTimeout(()=>{ playWinSound(); endGame(true); }, 600);
     return;
   }
   if(guesses.length >= guessLimit){
-    setTimeout(()=>endGame(false), 600);
+    setTimeout(()=>{ playLoseSound(); endGame(false); }, 600);
   }
 }
 
@@ -597,13 +675,14 @@ function shakeCurrentRow(){
   });
 }
 
-function animateLastRow(){
+function animateLastRow(results){
   const rows = document.querySelectorAll('.guess-row');
   const row = rows[guesses.length - 1];
   if(!row) return;
   row.querySelectorAll('.tile').forEach((t,i)=>{
     setTimeout(()=>{ t.classList.add('flip'); }, i*80);
   });
+  if(results) results.forEach((res, i) => playTileReveal(res, i));
 }
 
 function endGame(won){
