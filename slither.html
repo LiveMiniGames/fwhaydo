@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>FwHaydo Slither — Join the Lobby</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--card:#1c1c28;--border:#2a2a3a;--purple:#9147ff;--purple2:#772ce8;
+  --green:#2ecc71;--red:#e74c3c;--text:#e8e8f0;--muted:#7a7a96;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  height:100vh;overflow:hidden;position:relative}
+
+/* ── GAME CANVAS ── */
+#game-canvas{position:fixed;inset:0;background:#0a0a12;cursor:none}
+
+/* ── JOIN SCREEN ── */
+#join-screen{position:fixed;inset:0;background:rgba(10,10,18,.95);z-index:200;
+  display:flex;align-items:center;justify-content:center;backdrop-filter:blur(8px)}
+#join-screen.hidden{display:none}
+#join-box{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:32px;width:340px;text-align:center}
+#join-box h1{font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:6px}
+#join-box h1 span{color:var(--purple)}
+#join-box p{font-size:.82rem;color:var(--muted);margin-bottom:20px}
+#join-name{width:100%;background:#111;border:1px solid var(--border);border-radius:8px;
+  color:#fff;padding:11px 14px;font-size:.95rem;font-family:inherit;margin-bottom:12px;text-align:center}
+#join-name:focus{outline:none;border-color:var(--purple)}
+#join-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:8px;
+  padding:12px;font-size:.95rem;font-weight:800;cursor:pointer;font-family:inherit;transition:background .15s}
+#join-btn:hover{background:var(--purple2)}
+#join-status{margin-top:14px;font-size:.78rem;color:var(--muted)}
+#join-status.waiting{color:#f1c40f}
+#join-status.live{color:var(--green)}
+
+/* ── HUD ── */
+#hud{position:fixed;top:0;left:0;right:0;z-index:50;pointer-events:none;
+  display:flex;justify-content:space-between;align-items:flex-start;padding:14px}
+#hud-left{display:flex;flex-direction:column;gap:8px}
+#timer-box{background:rgba(17,17,17,.85);border:1px solid var(--purple);border-radius:8px;
+  padding:8px 16px;font-size:1.2rem;font-weight:900;color:#fff;backdrop-filter:blur(6px)}
+#timer-box.unlimited{border-color:var(--green);color:var(--green);font-size:.9rem}
+#score-box{background:rgba(17,17,17,.85);border:1px solid var(--border);border-radius:8px;
+  padding:6px 14px;font-size:.85rem;color:var(--muted);backdrop-filter:blur(6px)}
+#score-box strong{color:#fff}
+
+#leaderboard-box{background:rgba(17,17,17,.85);border:1px solid var(--border);border-radius:8px;
+  padding:10px 14px;backdrop-filter:blur(6px);min-width:160px;pointer-events:none}
+#leaderboard-box h3{font-size:.65rem;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:6px}
+.lb-entry{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;padding:2px 0}
+.lb-entry.me{color:var(--purple);font-weight:800}
+
+/* ── DEATH SCREEN ── */
+#death-screen{position:fixed;inset:0;background:rgba(10,10,18,.92);z-index:150;
+  display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
+#death-screen.show{display:flex}
+#death-box{background:var(--card);border:2px solid var(--red);border-radius:14px;
+  padding:32px;width:320px;text-align:center}
+#death-box h2{font-size:1.3rem;font-weight:900;color:var(--red);margin-bottom:8px}
+#death-box .ds-score{font-size:2rem;font-weight:900;color:#fff;margin-bottom:4px}
+#death-box .ds-sub{font-size:.78rem;color:var(--muted);margin-bottom:18px}
+#respawn-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:8px;
+  padding:12px;font-size:.92rem;font-weight:800;cursor:pointer;font-family:inherit;transition:background .15s}
+#respawn-btn:hover{background:var(--purple2)}
+
+/* ── ROUND END BANNER ── */
+#round-end-banner{position:fixed;top:80px;left:50%;transform:translateX(-50%);z-index:160;
+  background:linear-gradient(135deg,#0e3d22,#1a5c35);border:2px solid var(--green);border-radius:12px;
+  padding:16px 28px;display:none;text-align:center}
+#round-end-banner.show{display:block}
+#round-end-banner .reb-title{font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--green)}
+#round-end-banner .reb-name{font-size:1.4rem;font-weight:900;color:#fff;margin-top:4px}
+
+/* ── MOBILE BOOST BUTTON ── */
+#boost-btn{position:fixed;bottom:24px;right:24px;width:74px;height:74px;border-radius:50%;
+  background:rgba(145,71,255,.25);border:2px solid var(--purple);z-index:60;display:none;
+  align-items:center;justify-content:center;font-size:1.6rem;-webkit-tap-highlight-color:transparent}
+#boost-btn.show{display:flex}
+#boost-btn.active{background:rgba(145,71,255,.5)}
+
+/* ── HOST PANEL ── */
+#host-toggle{position:fixed;top:14px;right:14px;z-index:80;background:rgba(17,17,17,.85);
+  border:1px solid var(--border);border-radius:8px;padding:6px 12px;font-size:.72rem;
+  color:var(--muted);cursor:pointer;backdrop-filter:blur(6px);font-family:inherit}
+#host-panel{position:fixed;top:14px;right:14px;z-index:90;background:var(--card);
+  border:1px solid var(--purple);border-radius:10px;padding:16px;width:240px;display:none}
+#host-panel.show{display:block}
+#host-panel h3{font-size:.7rem;text-transform:uppercase;letter-spacing:1px;color:var(--purple);margin-bottom:10px}
+.host-row{margin-bottom:10px}
+.host-row label{font-size:.7rem;color:var(--muted);display:block;margin-bottom:5px}
+.host-row input{width:100%;background:#111;border:1px solid var(--border);border-radius:5px;
+  color:#fff;padding:6px 9px;font-size:.8rem;font-family:inherit}
+.host-row input:focus{outline:none;border-color:var(--purple)}
+.host-btn{width:100%;background:var(--purple);color:#fff;border:none;border-radius:6px;
+  padding:8px;font-size:.78rem;font-weight:700;cursor:pointer;font-family:inherit;margin-bottom:6px}
+.host-btn:hover{background:var(--purple2)}
+.host-btn.dng{background:#5c1010;border:1px solid var(--red)}
+.host-btn.dng:hover{background:var(--red)}
+.host-btn.sec{background:#111;border:1px solid var(--border)}
+#host-close{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--muted);
+  font-size:1rem;cursor:pointer;font-family:inherit}
+#player-count{font-size:.72rem;color:var(--muted);margin-top:8px;text-align:center}
+
+::-webkit-scrollbar{width:5px}
+</style>
+</head>
+<body>
+
+<canvas id="game-canvas"></canvas>
+
+<!-- JOIN SCREEN -->
+<div id="join-screen">
+  <div id="join-box">
+    <h1>FwHaydo<span>.io</span></h1>
+    <p>Grow your snake. Avoid other players. Biggest snake wins the round.</p>
+    <input type="text" id="join-name" placeholder="Your name" maxlength="20" />
+    <input type="text" id="server-url-input" placeholder="wss://your-server.up.railway.app" style="display:none" />
+    <button id="join-btn" onclick="joinGame()">Join Lobby</button>
+    <div id="join-status">Connecting to server...</div>
+    <div id="server-config-link" style="margin-top:10px;font-size:.7rem;color:var(--muted);cursor:pointer;text-decoration:underline" onclick="toggleServerConfig()">Streamer? Set server URL</div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div id="hud-left">
+    <div id="timer-box">No round active</div>
+    <div id="score-box">Length: <strong id="my-length">0</strong></div>
+  </div>
+  <div id="leaderboard-box">
+    <h3>🏆 Leaderboard</h3>
+    <div id="leaderboard-list"></div>
+  </div>
+</div>
+
+<!-- Round end banner -->
+<div id="round-end-banner">
+  <div class="reb-title">Round Winner</div>
+  <div class="reb-name" id="reb-name"></div>
+</div>
+
+<!-- Death screen -->
+<div id="death-screen">
+  <div id="death-box">
+    <h2>You Died</h2>
+    <div class="ds-score" id="ds-score">0</div>
+    <div class="ds-sub">final length</div>
+    <button id="respawn-btn" onclick="respawn()">Respawn</button>
+  </div>
+</div>
+
+<!-- Mobile boost button -->
+<div id="boost-btn">⚡</div>
+
+<!-- Host controls -->
+<button id="host-toggle" onclick="toggleHostPanel()">⚙️ Host</button>
+<div id="host-panel">
+  <button id="host-close" onclick="toggleHostPanel()">✕</button>
+  <h3>Host Controls</h3>
+  <div class="host-row">
+    <label>Host Key</label>
+    <input type="password" id="host-key-input" placeholder="Enter host key" />
+  </div>
+  <button class="host-btn sec" onclick="authHost()">Authenticate</button>
+  <div class="host-row" style="margin-top:14px">
+    <label>Round Duration (minutes, blank = unlimited)</label>
+    <input type="number" id="round-minutes" placeholder="e.g. 15" />
+  </div>
+  <button class="host-btn" onclick="hostStartRound()">▶ Start Round</button>
+  <button class="host-btn dng" onclick="hostEndRound()">⏹ End Round Now</button>
+  <div id="player-count">0 players online</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════
+let SERVER_URL = localStorage.getItem('slither-server') || '';
+let ws = null;
+let myId = null;
+let isHost = false;
+let worldSize = 4000;
+
+// Game state from server
+let players = [];
+let food = [];
+let leaderboard = [];
+let roundActive = false;
+let roundEndTime = null;
+let alive = false;
+let myLength = 0;
+
+// Camera / canvas
+const canvas = document.getElementById('game-canvas');
+const ctx = canvas.getContext('2d');
+let camX = 0, camY = 0;
+let mouseAngle = 0;
+let boosting = false;
+
+function resizeCanvas(){
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ═══════════════════════════════════════
+//  CONNECTION
+// ═══════════════════════════════════════
+function toggleServerConfig(){
+  const input = document.getElementById('server-url-input');
+  if(input.style.display === 'none'){
+    input.style.display = 'block';
+    input.value = SERVER_URL;
+    input.onkeydown = (e) => {
+      if(e.key === 'Enter'){
+        SERVER_URL = input.value.trim();
+        localStorage.setItem('slither-server', SERVER_URL);
+        input.style.display = 'none';
+        connect();
+      }
+    };
+    input.focus();
+  } else {
+    SERVER_URL = input.value.trim();
+    localStorage.setItem('slither-server', SERVER_URL);
+    input.style.display = 'none';
+    connect();
+  }
+}
+
+function connect(){
+  if(!SERVER_URL){
+    document.getElementById('join-status').textContent = 'No server configured — ask the streamer to set it up';
+    document.getElementById('join-status').className = '';
+    return;
+  }
+  document.getElementById('join-status').textContent = 'Connecting...';
+  try{
+    ws = new WebSocket(SERVER_URL);
+  }catch(e){
+    document.getElementById('join-status').textContent = 'Could not connect to server';
+    return;
+  }
+
+  ws.onopen = () => {
+    document.getElementById('join-status').textContent = 'Connected — enter your name and join!';
+    document.getElementById('join-status').className = 'live';
+  };
+
+  ws.onmessage = (e) => {
+    const data = JSON.parse(e.data);
+    handleMessage(data);
+  };
+
+  ws.onclose = () => {
+    document.getElementById('join-status').textContent = 'Disconnected — refresh to reconnect';
+    document.getElementById('join-status').className = '';
+  };
+
+  ws.onerror = () => {
+    document.getElementById('join-status').textContent = 'Connection error';
+    document.getElementById('join-status').className = '';
+  };
+}
+
+function handleMessage(data){
+  if(data.type === 'welcome'){
+    myId = data.id;
+    worldSize = data.worldSize;
+    roundActive = data.roundActive;
+    roundEndTime = data.roundEndTime;
+  }
+  if(data.type === 'state'){
+    players = data.players;
+    food = data.food;
+    leaderboard = data.leaderboard;
+    roundActive = data.roundActive;
+    roundEndTime = data.roundEndTime;
+    document.getElementById('player-count').textContent = data.playerCount + ' players online';
+
+    const me = players.find(p => p.id === myId);
+    if(me){
+      myLength = me.length;
+      document.getElementById('my-length').textContent = myLength;
+      if(me.segments && me.segments[0]){
+        camX = me.segments[0].x;
+        camY = me.segments[0].y;
+      }
+    }
+    updateTimer();
+    updateLeaderboard();
+  }
+  if(data.type === 'died'){
+    alive = false;
+    document.getElementById('ds-score').textContent = data.score;
+    document.getElementById('death-screen').classList.add('show');
+  }
+  if(data.type === 'round-start'){
+    roundActive = true;
+    roundEndTime = data.roundEndTime;
+    document.getElementById('round-end-banner').classList.remove('show');
+  }
+  if(data.type === 'round-end'){
+    roundActive = false;
+    if(data.winner){
+      document.getElementById('reb-name').textContent = `${data.winner.name} — length ${data.winner.length}`;
+      document.getElementById('round-end-banner').classList.add('show');
+      setTimeout(()=>document.getElementById('round-end-banner').classList.remove('show'), 8000);
+    }
+  }
+  if(data.type === 'host-confirmed'){
+    isHost = true;
+    alert('Host authenticated! You can now start/end rounds.');
+  }
+}
+
+// ═══════════════════════════════════════
+//  JOIN / RESPAWN
+// ═══════════════════════════════════════
+function joinGame(){
+  const name = document.getElementById('join-name').value.trim() || 'Player';
+  if(!ws || ws.readyState !== WebSocket.OPEN){
+    document.getElementById('join-status').textContent = 'Not connected yet, try again in a moment';
+    return;
+  }
+  ws.send(JSON.stringify({ type: 'join', name }));
+  alive = true;
+  document.getElementById('join-screen').classList.add('hidden');
+  document.getElementById('death-screen').classList.remove('show');
+  if('ontouchstart' in window) document.getElementById('boost-btn').classList.add('show');
+}
+
+function respawn(){
+  const name = document.getElementById('join-name').value.trim() || 'Player';
+  ws.send(JSON.stringify({ type: 'join', name }));
+  alive = true;
+  document.getElementById('death-screen').classList.remove('show');
+}
+
+// ═══════════════════════════════════════
+//  HOST CONTROLS
+// ═══════════════════════════════════════
+function toggleHostPanel(){
+  document.getElementById('host-panel').classList.toggle('show');
+}
+function authHost(){
+  const key = document.getElementById('host-key-input').value.trim();
+  if(!key){ alert('Enter the host key first'); return; }
+  ws.send(JSON.stringify({ type: 'host-auth', hostKey: key }));
+}
+function hostStartRound(){
+  if(!isHost){ alert('Authenticate as host first'); return; }
+  const minutesVal = document.getElementById('round-minutes').value.trim();
+  const minutes = minutesVal ? parseFloat(minutesVal) : null;
+  ws.send(JSON.stringify({ type: 'host-start-round', minutes }));
+}
+function hostEndRound(){
+  if(!isHost){ alert('Authenticate as host first'); return; }
+  ws.send(JSON.stringify({ type: 'host-end-round' }));
+}
+
+// ═══════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════
+canvas.addEventListener('mousemove', e => {
+  const dx = e.clientX - canvas.width/2;
+  const dy = e.clientY - canvas.height/2;
+  mouseAngle = Math.atan2(dy, dx);
+});
+canvas.addEventListener('mousedown', () => boosting = true);
+canvas.addEventListener('mouseup', () => boosting = false);
+
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  const t = e.touches[0];
+  const dx = t.clientX - canvas.width/2;
+  const dy = t.clientY - canvas.height/2;
+  mouseAngle = Math.atan2(dy, dx);
+}, {passive:false});
+
+document.getElementById('boost-btn').addEventListener('touchstart', e => {
+  e.preventDefault();
+  boosting = true;
+  document.getElementById('boost-btn').classList.add('active');
+});
+document.getElementById('boost-btn').addEventListener('touchend', e => {
+  e.preventDefault();
+  boosting = false;
+  document.getElementById('boost-btn').classList.remove('active');
+});
+
+// Send input to server ~15x/sec
+setInterval(() => {
+  if(ws && ws.readyState === WebSocket.OPEN && alive){
+    ws.send(JSON.stringify({ type: 'input', angle: mouseAngle, boosting }));
+  }
+}, 66);
+
+// ═══════════════════════════════════════
+//  RENDER LOOP
+// ═══════════════════════════════════════
+function worldToScreen(x, y){
+  return { x: x - camX + canvas.width/2, y: y - camY + canvas.height/2 };
+}
+
+function render(){
+  ctx.fillStyle = '#0a0a12';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid background
+  ctx.strokeStyle = 'rgba(255,255,255,0.03)';
+  ctx.lineWidth = 1;
+  const gridSize = 100;
+  const offsetX = -camX % gridSize;
+  const offsetY = -camY % gridSize;
+  for(let x = offsetX; x < canvas.width; x += gridSize){
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for(let y = offsetY; y < canvas.height; y += gridSize){
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Food
+  food.forEach(f => {
+    const s = worldToScreen(f.x, f.y);
+    if(s.x < -20 || s.x > canvas.width+20 || s.y < -20 || s.y > canvas.height+20) return;
+    ctx.fillStyle = '#f1c40f';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 4, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Players
+  players.forEach(p => {
+    if(!p.segments || p.segments.length === 0) return;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = 10;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    p.segments.forEach((seg, i) => {
+      const s = worldToScreen(seg.x, seg.y);
+      if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+    });
+    ctx.stroke();
+
+    // Head highlight
+    const head = worldToScreen(p.segments[0].x, p.segments[0].y);
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.arc(head.x, head.y, 3, 0, Math.PI*2);
+    ctx.fill();
+
+    // Name label
+    ctx.fillStyle = p.id === myId ? '#fff' : 'rgba(255,255,255,0.7)';
+    ctx.font = p.id === myId ? 'bold 13px Inter, sans-serif' : '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(p.name, head.x, head.y - 18);
+  });
+
+  requestAnimationFrame(render);
+}
+render();
+
+// ═══════════════════════════════════════
+//  TIMER / LEADERBOARD UI
+// ═══════════════════════════════════════
+function updateTimer(){
+  const box = document.getElementById('timer-box');
+  if(!roundActive){
+    box.textContent = 'No round active — waiting for host';
+    box.className = '';
+    return;
+  }
+  if(!roundEndTime){
+    box.textContent = '∞ Unlimited round';
+    box.className = 'unlimited';
+    return;
+  }
+  const remaining = Math.max(0, roundEndTime - Date.now());
+  const mins = Math.floor(remaining / 60000);
+  const secs = Math.floor((remaining % 60000) / 1000);
+  box.textContent = `⏱ ${mins}:${secs.toString().padStart(2,'0')}`;
+  box.className = '';
+}
+setInterval(updateTimer, 500);
+
+function updateLeaderboard(){
+  const el = document.getElementById('leaderboard-list');
+  el.innerHTML = '';
+  if(leaderboard.length === 0){
+    el.innerHTML = '<div style="color:var(--muted);font-size:.75rem">No players yet</div>';
+    return;
+  }
+  leaderboard.forEach((p, i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-entry' + (p.id === myId ? ' me' : '');
+    row.innerHTML = `<span>#${i+1} ${esc(p.name)}</span><span>${p.length}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+connect();
+</script>
+</body>
+</html>
