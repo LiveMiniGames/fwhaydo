@@ -230,7 +230,7 @@ let predictedSegments = null;
 let predictedAngle = 0;
 let correctionX = 0, correctionY = 0; // small drift error, bled off smoothly each frame
 let locallyEatenFood = new Set(); // food IDs my prediction already "ate" — hide instantly, server confirms later
-const PRED_TURN_RATE = 0.22;   // must match server TURN_RATE
+const PRED_TURN_RATE = 0.35;   // must match server TURN_RATE
 const PRED_BASE_SPEED = 3.6;   // must match server BASE_SPEED
 const PRED_BOOST_SPEED = 6.5;  // must match server BOOST_SPEED
 const PRED_SEGMENT_SPACING = 4; // must match server SEGMENT_SPACING
@@ -340,12 +340,13 @@ function handleMessage(data){
           const dx = me.segments[0].x - predictedSegments[0].x;
           const dy = me.segments[0].y - predictedSegments[0].y;
           const dist = Math.sqrt(dx*dx + dy*dy);
-          // If we've drifted too far (e.g. just ate food / round restart), snap fully;
-          // otherwise just remember the small error and bleed it off gradually in render()
-          // instead of nudging the head directly (which was causing the body to kink).
-          if(dist > 120){
+          // If we've drifted too far (e.g. just ate food / round restart), snap position only.
+          // IMPORTANT: we deliberately never overwrite predictedAngle from the server here —
+          // the server's angle is always at least one network round-trip behind your real mouse
+          // position, so trusting it was actively fighting your live turning input and made the
+          // snake feel like it kept reverting to going straight. Local angle is always more current.
+          if(dist > 150){
             predictedSegments = me.segments.map(s => ({x:s.x, y:s.y}));
-            predictedAngle = me.angle || predictedAngle;
             correctionX = 0; correctionY = 0;
           } else {
             correctionX = dx;
@@ -440,7 +441,7 @@ function hostEndRound(){
 // ═══════════════════════════════════════
 let virtualCursorX = 0, virtualCursorY = 0; // offset from canvas center, used while pointer-locked
 let pointerLocked = false;
-const MAX_CURSOR_DIST = 220; // how far the virtual cursor can travel from center
+const MAX_CURSOR_DIST = 110; // how far the virtual cursor can travel from center (smaller = more sensitive turning, closer to real slither.io feel)
 
 canvas.addEventListener('click', () => {
   if(alive && !pointerLocked) canvas.requestPointerLock();
