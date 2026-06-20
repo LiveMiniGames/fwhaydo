@@ -199,6 +199,16 @@ const ctx = canvas.getContext('2d');
 let camX = 0, camY = 0;
 let targetCamX = 0, targetCamY = 0;
 let mouseAngle = 0;
+let zoom = 1;
+let targetZoom = 1;
+
+// Local client-side prediction for my own snake (removes input delay feel)
+let predictedSegments = null;
+let predictedAngle = 0;
+const PRED_TURN_RATE = 0.18;   // must match server TURN_RATE
+const PRED_BASE_SPEED = 3.6;   // must match server BASE_SPEED
+const PRED_BOOST_SPEED = 6.5;  // must match server BOOST_SPEED
+const PRED_SEGMENT_SPACING = 6;
 let boosting = false;
 
 function resizeCanvas(){
@@ -290,13 +300,33 @@ function handleMessage(data){
       if(me.segments && me.segments[0]){
         targetCamX = me.segments[0].x;
         targetCamY = me.segments[0].y;
+        // Gently correct prediction toward server truth rather than snapping —
+        // keeps the instant-feel while staying in sync over time
+        if(!predictedSegments){
+          predictedSegments = me.segments.map(s => ({x:s.x, y:s.y}));
+          predictedAngle = me.angle || mouseAngle;
+        } else {
+          const dx = me.segments[0].x - predictedSegments[0].x;
+          const dy = me.segments[0].y - predictedSegments[0].y;
+          const dist = Math.sqrt(dx*dx + dy*dy);
+          // If we've drifted too far (e.g. just ate food / round restart), snap; otherwise nudge gently
+          if(dist > 80){
+            predictedSegments = me.segments.map(s => ({x:s.x, y:s.y}));
+          } else {
+            predictedSegments[0].x += dx * 0.15;
+            predictedSegments[0].y += dy * 0.15;
+          }
+        }
       }
+      // Zoom out as snake grows, like real slither.io
+      targetZoom = Math.max(0.55, Math.min(1, 1 - (myLength - 12) / 600));
     }
     updateTimer();
     updateLeaderboard();
   }
   if(data.type === 'died'){
     alive = false;
+    predictedSegments = null;
     document.getElementById('ds-score').textContent = data.score;
     document.getElementById('death-screen').classList.add('show');
   }
@@ -330,6 +360,7 @@ function joinGame(){
   }
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
+  predictedSegments = null; // reset prediction, will rebuild from next server state
   document.getElementById('join-screen').classList.add('hidden');
   document.getElementById('death-screen').classList.remove('show');
   if('ontouchstart' in window) document.getElementById('boost-btn').classList.add('show');
@@ -339,6 +370,7 @@ function respawn(){
   const name = document.getElementById('join-name').value.trim() || 'Player';
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
+  predictedSegments = null; // reset prediction, will rebuild from next server state
   document.getElementById('death-screen').classList.remove('show');
 }
 
@@ -394,6 +426,38 @@ document.getElementById('boost-btn').addEventListener('touchend', e => {
   document.getElementById('boost-btn').classList.remove('active');
 });
 
+// ═══════════════════════════════════════
+//  CLIENT-SIDE PREDICTION (removes input delay feel)
+// ═══════════════════════════════════════
+function simulatePrediction(){
+  if(!predictedSegments || !alive) return;
+
+  // Turn toward mouse angle smoothly, same math as server
+  let diff = mouseAngle - predictedAngle;
+  while(diff > Math.PI) diff -= Math.PI*2;
+  while(diff < -Math.PI) diff += Math.PI*2;
+  predictedAngle += Math.max(-PRED_TURN_RATE, Math.min(PRED_TURN_RATE, diff));
+
+  const speed = boosting && myLength > 14 ? PRED_BOOST_SPEED : PRED_BASE_SPEED;
+  const head = predictedSegments[0];
+  let newHead = {
+    x: head.x + Math.cos(predictedAngle) * speed,
+    y: head.y + Math.sin(predictedAngle) * speed
+  };
+  // World wrap, matches server
+  if(newHead.x > worldSize/2) newHead.x = -worldSize/2;
+  if(newHead.x < -worldSize/2) newHead.x = worldSize/2;
+  if(newHead.y > worldSize/2) newHead.y = -worldSize/2;
+  if(newHead.y < -worldSize/2) newHead.y = worldSize/2;
+
+  predictedSegments.unshift(newHead);
+  const targetCount = Math.max(12, Math.floor(myLength));
+  while(predictedSegments.length > targetCount) predictedSegments.pop();
+
+  targetCamX = newHead.x;
+  targetCamY = newHead.y;
+}
+
 // Send input to server ~15x/sec
 setInterval(() => {
   if(ws && ws.readyState === WebSocket.OPEN && alive){
@@ -405,13 +469,20 @@ setInterval(() => {
 //  RENDER LOOP
 // ═══════════════════════════════════════
 function worldToScreen(x, y){
-  return { x: x - camX + canvas.width/2, y: y - camY + canvas.height/2 };
+  return {
+    x: (x - camX) * zoom + canvas.width/2,
+    y: (y - camY) * zoom + canvas.height/2
+  };
 }
 
 function render(){
+  // Run local prediction so my snake responds instantly to mouse movement
+  simulatePrediction();
+
   // Smoothly move camera toward target position (eliminates choppy snapping)
-  camX += (targetCamX - camX) * 0.25;
-  camY += (targetCamY - camY) * 0.25;
+  camX += (targetCamX - camX) * 0.3;
+  camY += (targetCamY - camY) * 0.3;
+  zoom += (targetZoom - zoom) * 0.05;
 
   ctx.fillStyle = '#0a0a12';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -419,9 +490,9 @@ function render(){
   // Grid background
   ctx.strokeStyle = 'rgba(255,255,255,0.03)';
   ctx.lineWidth = 1;
-  const gridSize = 100;
-  const offsetX = -camX % gridSize;
-  const offsetY = -camY % gridSize;
+  const gridSize = 100 * zoom;
+  const offsetX = (-camX * zoom) % gridSize;
+  const offsetY = (-camY * zoom) % gridSize;
   for(let x = offsetX; x < canvas.width; x += gridSize){
     ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
   }
@@ -435,11 +506,11 @@ function render(){
     const s = worldToScreen(f.x, f.y);
     if(s.x < -20 || s.x > canvas.width+20 || s.y < -20 || s.y > canvas.height+20) return;
     const color = f.color || '#f1c40f';
-    const radius = (f.value > 1 ? 6 : 4) * pulseScale;
+    const radius = (f.value > 1 ? 6 : 4) * pulseScale * zoom;
 
     // Glow
     ctx.shadowColor = color;
-    ctx.shadowBlur = 8;
+    ctx.shadowBlur = 8 * zoom;
     ctx.fillStyle = color;
     ctx.beginPath();
     ctx.arc(s.x, s.y, radius, 0, Math.PI*2);
@@ -451,15 +522,19 @@ function render(){
   players.forEach(p => {
     if(!p.segments || p.segments.length === 0) return;
 
+    // Use locally-predicted segments for my own snake (instant response to input),
+    // server segments for everyone else
+    const segs = (p.id === myId && predictedSegments) ? predictedSegments : p.segments;
+
     // Glow under the snake body
     ctx.shadowColor = p.color;
-    ctx.shadowBlur = p.id === myId ? 14 : 6;
+    ctx.shadowBlur = (p.id === myId ? 14 : 6) * zoom;
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 10;
+    ctx.lineWidth = 10 * zoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
     ctx.beginPath();
-    p.segments.forEach((seg, i) => {
+    segs.forEach((seg, i) => {
       const s = worldToScreen(seg.x, seg.y);
       if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
     });
@@ -467,17 +542,17 @@ function render(){
     ctx.shadowBlur = 0;
 
     // Head highlight
-    const head = worldToScreen(p.segments[0].x, p.segments[0].y);
+    const head = worldToScreen(segs[0].x, segs[0].y);
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(head.x, head.y, 3, 0, Math.PI*2);
+    ctx.arc(head.x, head.y, 3 * zoom, 0, Math.PI*2);
     ctx.fill();
 
     // Name label
     ctx.fillStyle = p.id === myId ? '#fff' : 'rgba(255,255,255,0.7)';
-    ctx.font = p.id === myId ? 'bold 13px Inter, sans-serif' : '11px Inter, sans-serif';
+    ctx.font = (p.id === myId ? 'bold ' : '') + Math.max(9, 13*zoom) + 'px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(p.name, head.x, head.y - 18);
+    ctx.fillText(p.name, head.x, head.y - 18*zoom);
   });
 
   requestAnimationFrame(render);
