@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bracket Royale — Submit Your Entry</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--card:#1c1c28;--border:#2a2a3a;--purple:#9147ff;--purple2:#772ce8;
+  --green:#2ecc71;--red:#e74c3c;--text:#e8e8f0;--muted:#7a7a96;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+#topbar{width:100%;background:#111;border-bottom:2px solid var(--purple);padding:0 16px;
+  height:50px;display:flex;align-items:center;gap:10px}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 11px}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:1px}
+
+#main{flex:1;display:flex;flex-direction:column;align-items:center;padding:32px 16px;width:100%;max-width:480px}
+
+#login-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:32px;
+  text-align:center;width:100%}
+#login-card h1{font-size:1.5rem;font-weight:900;color:#fff;margin-bottom:8px}
+#login-card p{font-size:.85rem;color:var(--muted);margin-bottom:22px;line-height:1.5}
+.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:13px 22px;
+  font-size:.92rem;font-weight:800;cursor:pointer;font-family:inherit;width:100%;transition:background .15s}
+.btn:hover{background:var(--purple2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+#twitch-login-btn{background:#9147ff;display:flex;align-items:center;justify-content:center;gap:8px}
+
+#submit-card{display:none;background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:28px;width:100%}
+#submit-card.show{display:block}
+#logged-in-as{font-size:.78rem;color:var(--green);margin-bottom:18px;text-align:center;
+  background:rgba(46,204,113,.1);border:1px solid var(--green);border-radius:6px;padding:8px}
+#submit-card h2{font-size:1.2rem;font-weight:800;color:#fff;margin-bottom:6px;text-align:center}
+#submission-status{font-size:.8rem;color:var(--muted);margin-bottom:18px;text-align:center}
+
+.field-lbl{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  display:block;margin-bottom:8px;margin-top:16px}
+.field-lbl:first-of-type{margin-top:0}
+.form-input{width:100%;background:#111;border:1px solid var(--border);border-radius:6px;
+  color:#fff;padding:11px 13px;font-size:.88rem;font-family:inherit}
+.form-input:focus{outline:none;border-color:var(--purple)}
+textarea.form-input{resize:vertical;min-height:80px}
+
+#img-preview{display:none;margin-top:10px;border-radius:8px;overflow:hidden}
+#img-preview.show{display:block}
+#img-preview img{width:100%;display:block}
+
+#submitted-list{margin-top:24px}
+#submitted-list h3{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+.sub-chip{background:#111;border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+  font-size:.8rem;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
+
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
+  transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.green{border-color:var(--green);color:var(--green)}
+#toast.red{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <span id="tb-title">🏆 BRACKET ROYALE</span>
+</div>
+
+<div id="main">
+
+  <div id="login-card">
+    <h1>Bracket Royale</h1>
+    <p>Log in with your Twitch account to submit an entry for this round. Your verified Twitch username gets attached to your submission automatically.</p>
+    <button class="btn" id="twitch-login-btn" onclick="loginWithTwitch()">
+      Log in with Twitch
+    </button>
+  </div>
+
+  <div id="submit-card">
+    <div id="logged-in-as"></div>
+    <h2 id="submit-title">Submit Your Entry</h2>
+    <p id="submission-status"></p>
+
+    <div id="text-submit-fields">
+      <span class="field-lbl">Your Submission</span>
+      <textarea class="form-input" id="text-content" placeholder="Type your submission..." maxlength="200"></textarea>
+    </div>
+
+    <div id="image-submit-fields" style="display:none">
+      <span class="field-lbl">Upload Image</span>
+      <input type="file" class="form-input" id="image-file" accept="image/*"/>
+      <div id="img-preview"><img id="img-preview-img"/></div>
+    </div>
+
+    <div id="video-submit-fields" style="display:none">
+      <span class="field-lbl">TikTok or YouTube Shorts Link</span>
+      <input class="form-input" id="video-url" placeholder="https://www.tiktok.com/@user/video/... or https://youtube.com/shorts/..."/>
+    </div>
+
+    <button class="btn" style="margin-top:18px" onclick="submitEntry()">Submit Entry</button>
+
+    <div id="submitted-list"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  CONFIG — set these once, persisted via localStorage
+// ═══════════════════════════════════════
+const TWITCH_CLIENT_ID = localStorage.getItem('br-twitch-client-id') || '';
+const WS_URL = localStorage.getItem('br-ws-url') || 'wss://bracketroyale-service-production.up.railway.app';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+let ws = null;
+let twitchUsername = null;
+let mySubmissionCount = 0;
+let maxSubmissionsPerUser = 1;
+let submissionType = 'text';
+let currentPhase = 'lobby';
+let pendingImageData = null;
+
+// ═══════════════════════════════════════
+//  FIRST-RUN CONFIG (only runs if not yet configured)
+// ═══════════════════════════════════════
+function ensureConfig(){
+  if(!localStorage.getItem('br-twitch-client-id')){
+    const id = prompt('Enter your Twitch Application Client ID (from dev.twitch.tv):');
+    if(id) localStorage.setItem('br-twitch-client-id', id.trim());
+  }
+  if(!localStorage.getItem('br-ws-url')){
+    const url = prompt('Enter the Bracket Royale backend WebSocket URL (wss://...):', WS_URL);
+    if(url) localStorage.setItem('br-ws-url', url.trim());
+  }
+}
+
+// ═══════════════════════════════════════
+//  TWITCH OAUTH (implicit grant — no backend needed for login itself)
+// ═══════════════════════════════════════
+function loginWithTwitch(){
+  ensureConfig();
+  const clientId = localStorage.getItem('br-twitch-client-id');
+  if(!clientId){ toast('Twitch Client ID not configured', 'red'); return; }
+  const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
+  window.location.href = authUrl;
+}
+
+function checkForOAuthReturn(){
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if(token){
+      fetchTwitchUsername(token);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }
+}
+
+function fetchTwitchUsername(token){
+  const clientId = localStorage.getItem('br-twitch-client-id');
+  fetch('https://api.twitch.tv/helix/users', {
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Client-Id': clientId
+    }
+  })
+  .then(r => r.json())
+  .then(data => {
+    if(data.data && data.data[0]){
+      twitchUsername = data.data[0].display_name;
+      onLoggedIn();
+    } else {
+      toast('Could not verify Twitch account', 'red');
+    }
+  })
+  .catch(() => toast('Twitch login failed — try again', 'red'));
+}
+
+function onLoggedIn(){
+  document.getElementById('login-card').style.display = 'none';
+  document.getElementById('submit-card').classList.add('show');
+  document.getElementById('logged-in-as').textContent = `✓ Logged in as ${twitchUsername}`;
+  connectWS();
+}
+
+// ═══════════════════════════════════════
+//  WEBSOCKET CONNECTION (live lobby state)
+// ═══════════════════════════════════════
+function connectWS(){
+  try{
+    ws = new WebSocket(WS_URL);
+    ws.onmessage = (e) => {
+      const data = JSON.parse(e.data);
+      if(data.type === 'state') handleState(data);
+      if(data.type === 'submit-ok'){ toast('Submission added!', 'green'); mySubmissionCount++; renderStatus(); }
+      if(data.type === 'submit-fail'){ toast(data.reason, 'red'); }
+    };
+    ws.onerror = () => toast('Connection error — refresh and try again', 'red');
+  }catch(e){ toast('Could not connect to lobby', 'red'); }
+}
+
+function handleState(data){
+  currentPhase = data.phase;
+  submissionType = data.submissionType;
+  maxSubmissionsPerUser = data.maxSubmissionsPerUser;
+  renderSubmissionFields();
+  renderStatus();
+}
+
+function renderSubmissionFields(){
+  document.getElementById('text-submit-fields').style.display = submissionType === 'text' ? 'block' : 'none';
+  document.getElementById('image-submit-fields').style.display = submissionType === 'image' ? 'block' : 'none';
+  document.getElementById('video-submit-fields').style.display = submissionType === 'video' ? 'block' : 'none';
+}
+
+function renderStatus(){
+  const statusEl = document.getElementById('submission-status');
+  if(currentPhase !== 'lobby'){
+    statusEl.textContent = 'Submissions are closed — the bracket has started.';
+    document.querySelector('#submit-card .btn').disabled = true;
+    return;
+  }
+  statusEl.textContent = `You've submitted ${mySubmissionCount} of ${maxSubmissionsPerUser} allowed.`;
+  document.querySelector('#submit-card .btn').disabled = mySubmissionCount >= maxSubmissionsPerUser;
+}
+
+// ═══════════════════════════════════════
+//  IMAGE UPLOAD PREVIEW
+// ═══════════════════════════════════════
+document.getElementById('image-file').addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    pendingImageData = ev.target.result;
+    document.getElementById('img-preview-img').src = pendingImageData;
+    document.getElementById('img-preview').classList.add('show');
+  };
+  reader.readAsDataURL(file);
+});
+
+// ═══════════════════════════════════════
+//  SUBMIT ENTRY
+// ═══════════════════════════════════════
+function submitEntry(){
+  if(!ws || ws.readyState !== WebSocket.OPEN){ toast('Not connected to lobby yet', 'red'); return; }
+  if(currentPhase !== 'lobby'){ toast('Submissions are closed', 'red'); return; }
+
+  let content = null;
+  if(submissionType === 'text'){
+    content = document.getElementById('text-content').value.trim();
+    if(!content){ toast('Type something first', 'red'); return; }
+  } else if(submissionType === 'image'){
+    content = pendingImageData;
+    if(!content){ toast('Choose an image first', 'red'); return; }
+  } else if(submissionType === 'video'){
+    content = document.getElementById('video-url').value.trim();
+    if(!content || !/tiktok\.com|youtube\.com\/shorts|youtu\.be/.test(content)){
+      toast('Paste a valid TikTok or YouTube Shorts link', 'red');
+      return;
+    }
+  }
+
+  ws.send(JSON.stringify({ type: 'submit', twitchUsername, content }));
+
+  document.getElementById('text-content').value = '';
+  document.getElementById('video-url').value = '';
+  document.getElementById('image-file').value = '';
+  document.getElementById('img-preview').classList.remove('show');
+  pendingImageData = null;
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+let toastT = null;
+function toast(msg, type=''){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show' + (type?' '+type:'');
+  clearTimeout(toastT); toastT = setTimeout(()=>{el.className='';}, 3200);
+}
+
+checkForOAuthReturn();
+</script>
+</body>
+</html>
