@@ -118,8 +118,8 @@ textarea.form-input{resize:vertical;min-height:80px}
 // ═══════════════════════════════════════
 //  CONFIG — set these once, persisted via localStorage
 // ═══════════════════════════════════════
-const TWITCH_CLIENT_ID = localStorage.getItem('br-twitch-client-id') || '';
-const WS_URL = localStorage.getItem('br-ws-url') || 'wss://bracketroyale-service-production.up.railway.app';
+const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
+const WS_URL = 'wss://bracketroyale-service-production.up.railway.app';
 const REDIRECT_URI = window.location.origin + window.location.pathname;
 
 let ws = null;
@@ -131,27 +131,10 @@ let currentPhase = 'lobby';
 let pendingImageData = null;
 
 // ═══════════════════════════════════════
-//  FIRST-RUN CONFIG (only runs if not yet configured)
-// ═══════════════════════════════════════
-function ensureConfig(){
-  if(!localStorage.getItem('br-twitch-client-id')){
-    const id = prompt('Enter your Twitch Application Client ID (from dev.twitch.tv):');
-    if(id) localStorage.setItem('br-twitch-client-id', id.trim());
-  }
-  if(!localStorage.getItem('br-ws-url')){
-    const url = prompt('Enter the Bracket Royale backend WebSocket URL (wss://...):', WS_URL);
-    if(url) localStorage.setItem('br-ws-url', url.trim());
-  }
-}
-
-// ═══════════════════════════════════════
 //  TWITCH OAUTH (implicit grant — no backend needed for login itself)
 // ═══════════════════════════════════════
 function loginWithTwitch(){
-  ensureConfig();
-  const clientId = localStorage.getItem('br-twitch-client-id');
-  if(!clientId){ toast('Twitch Client ID not configured', 'red'); return; }
-  const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
+  const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=`;
   window.location.href = authUrl;
 }
 
@@ -168,7 +151,7 @@ function checkForOAuthReturn(){
 }
 
 function fetchTwitchUsername(token){
-  const clientId = localStorage.getItem('br-twitch-client-id');
+  const clientId = TWITCH_CLIENT_ID;
   fetch('https://api.twitch.tv/helix/users', {
     headers: {
       'Authorization': 'Bearer ' + token,
