@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Hunt — Stream Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--surface:#16161f;--card:#1c1c28;--border:#2a2a3a;
+  --purple:#9147ff;--purple2:#772ce8;--green:#2ecc71;--red:#e74c3c;--yellow:#f1c40f;--orange:#e67e22;
+  --text:#e8e8f0;--muted:#7a7a96;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  height:100vh;display:flex;flex-direction:column;overflow:hidden}
+
+/* Top bar */
+#topbar{background:#111;border-bottom:2px solid var(--purple);padding:0 16px;
+  height:50px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.back-home{background:none;border:1px solid var(--border);color:var(--muted);border-radius:6px;
+  padding:5px 11px;font-size:.78rem;font-weight:600;cursor:pointer;transition:color .15s,border-color .15s;
+  font-family:inherit;white-space:nowrap;text-decoration:none}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:1px;flex:1}
+.btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 13px;
+  font-size:.78rem;font-weight:700;cursor:pointer;transition:background .15s;
+  white-space:nowrap;flex-shrink:0;font-family:inherit}
+.btn:hover{background:var(--purple2)}
+.btn.sec{background:var(--card);border:1px solid var(--border)}
+.btn.sec:hover{background:var(--border)}
+.btn.dng{background:#5c1010;border:1px solid var(--red)}
+.btn.dng:hover{background:var(--red)}
+.btn.suc{background:#0e3d22;border:1px solid var(--green);color:var(--green)}
+.btn.suc:hover{background:var(--green);color:#000}
+#conn{display:flex;align-items:center;gap:5px;font-size:.73rem;color:var(--muted);white-space:nowrap}
+#conn-dot{width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0;transition:background .3s}
+#conn-dot.connected{background:var(--green)}
+#conn-dot.error{background:var(--red)}
+#conn-dot.connecting{background:#f39c12;animation:pulse 1s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+/* Main layout */
+#main{display:flex;flex:1;overflow:hidden}
+#game-area{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;align-items:center}
+
+/* Round control */
+#round-panel{background:var(--card);border:1px solid var(--border);border-radius:12px;
+  padding:20px 28px;width:100%;max-width:680px;margin-bottom:20px;text-align:center}
+#round-status{font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;
+  color:var(--muted);margin-bottom:8px}
+#round-status.live{color:var(--green)}
+#round-status.idle{color:var(--muted)}
+#round-headline{font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:14px;letter-spacing:.5px}
+#round-sub{font-size:.85rem;color:var(--muted);margin-bottom:16px}
+#round-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+#wordlen-display{display:flex;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap}
+.wl-box{width:36px;height:42px;border:2px solid var(--purple);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;color:var(--purple)}
+
+/* Custom word input */
+#custom-word-row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
+#custom-word-input{background:#111;border:1px solid var(--border);border-radius:6px;
+  color:#fff;padding:8px 12px;font-size:.85rem;font-family:inherit;width:200px}
+#custom-word-input:focus{outline:none;border-color:var(--purple)}
+
+/* Reveal */
+#reveal-box{display:none;background:rgba(241,196,15,.1);border:1px solid var(--yellow);
+  border-radius:8px;padding:10px 16px;margin-top:14px;font-size:.85rem;color:var(--yellow)}
+#reveal-box.show{display:block}
+
+/* Winner banner */
+#winner-banner{display:none;background:linear-gradient(135deg,#0e3d22,#1a5c35);
+  border:2px solid var(--green);border-radius:10px;padding:18px 24px;width:100%;max-width:680px;
+  margin-bottom:20px;text-align:center}
+#winner-banner.show{display:block}
+#winner-banner .wb-title{font-size:.72rem;text-transform:uppercase;letter-spacing:2px;color:var(--green);margin-bottom:6px}
+#winner-banner .wb-name{font-size:1.8rem;font-weight:900;color:#fff}
+#winner-banner .wb-sub{font-size:.85rem;color:#bdf0d2;margin-top:6px}
+
+/* Guess feed */
+#guess-feed-wrap{width:100%;max-width:680px;flex:1;display:flex;flex-direction:column;min-height:0}
+#guess-feed-label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:8px;display:flex;align-items:center;gap:8px}
+#guess-count{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1px 8px;color:var(--purple);font-weight:700}
+#guess-feed{display:flex;flex-direction:column-reverse;gap:6px;overflow-y:auto;flex:1;padding-right:4px}
+.guess-row{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:8px 14px;animation:slideIn .25s ease}
+@keyframes slideIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.guess-row.correct{background:linear-gradient(135deg,#0e3d22,#1a5c35);border-color:var(--green)}
+.gr-user{font-weight:700;font-size:.82rem;min-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.gr-word{flex:1;font-size:.88rem;font-weight:600;color:#fff}
+.gr-rank{font-size:1rem;font-weight:900;min-width:50px;text-align:right}
+.gr-bar-wrap{flex:1;max-width:140px;height:6px;background:#0e0e16;border-radius:3px;overflow:hidden}
+.gr-bar{height:100%;border-radius:3px;transition:width .3s}
+.gr-unknown{color:var(--muted);font-size:.78rem;font-style:italic}
+
+/* Sidebar */
+#sidebar{width:260px;background:#111;border-left:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+#sb-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-tab{flex:1;padding:9px 3px;background:none;border:none;color:var(--muted);font-size:.67rem;font-weight:700;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid transparent;
+  transition:color .15s,border-color .15s;font-family:inherit}
+.sb-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+.sb-panel{display:none;flex:1;overflow-y:auto;padding:12px}
+.sb-panel.active{display:block}
+#chat-log{display:flex;flex-direction:column;gap:3px}
+.cmsg{font-size:.73rem;line-height:1.4;padding:3px 6px;border-radius:4px;background:var(--card);word-break:break-word}
+.cmsg .un{font-weight:700}
+
+.sb-sec{margin-bottom:14px}
+.sb-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:7px;display:block}
+.sb-in{width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:#fff;
+  padding:6px 9px;font-size:.78rem;margin-bottom:5px;font-family:inherit}
+.sb-in:focus{outline:none;border-color:var(--purple)}
+
+/* Leaderboard */
+#leaderboard{display:flex;flex-direction:column;gap:5px}
+.lb-row{display:flex;align-items:center;gap:8px;padding:6px 9px;background:var(--card);border-radius:6px;font-size:.8rem}
+.lb-rank{color:var(--purple);font-weight:800;width:22px}
+.lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{color:var(--yellow);font-weight:800}
+.lb-empty{color:var(--muted);font-size:.78rem;padding:10px;text-align:center}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0e0e16}
+::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--purple)}
+
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
+  transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.green{border-color:var(--green);color:var(--green)}
+#toast.red{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <span id="tb-title">🔎 WORD HUNT</span>
+  <div id="conn"><div id="conn-dot"></div><span id="conn-txt">Not connected</span></div>
+  <button class="btn sec" onclick="showSbTab('config')">⚙️</button>
+</div>
+
+<div id="main">
+  <div id="game-area">
+
+    <div id="winner-banner">
+      <div class="wb-title">🏆 Word Found!</div>
+      <div class="wb-name" id="wb-name"></div>
+      <div class="wb-sub" id="wb-sub"></div>
+    </div>
+
+    <div id="round-panel">
+      <div id="round-status" class="idle">● NO ROUND ACTIVE</div>
+      <div id="round-headline">Start a round to begin</div>
+      <div id="round-sub">Chat guesses words in chat — closer guesses score lower (1 = the answer)</div>
+
+      <div id="wordlen-display"></div>
+
+      <div id="round-controls">
+        <button class="btn suc" id="btn-random" onclick="startRandomRound()">🎲 Random Word</button>
+        <button class="btn sec" id="btn-reveal" onclick="revealWord()" style="display:none">👁 Peek Word</button>
+        <button class="btn dng" id="btn-end" onclick="endRound()" style="display:none">⏹ End Round</button>
+      </div>
+
+      <div id="custom-word-row">
+        <input type="text" id="custom-word-input" placeholder="Or type your own secret word..." />
+        <button class="btn sec" onclick="startCustomRound()">Use This Word</button>
+      </div>
+
+      <div id="reveal-box"></div>
+    </div>
+
+    <div id="guess-feed-wrap">
+      <div id="guess-feed-label">💬 Live Guesses <span id="guess-count">0</span></div>
+      <div id="guess-feed"></div>
+    </div>
+
+  </div>
+
+  <div id="sidebar">
+    <div id="sb-tabs">
+      <button class="sb-tab active" onclick="showSbTab('chat')">Chat</button>
+      <button class="sb-tab" onclick="showSbTab('leaderboard')">Stats</button>
+      <button class="sb-tab" onclick="showSbTab('config')">Config</button>
+    </div>
+
+    <div id="sb-chat" class="sb-panel active">
+      <div class="sb-lbl">Live Twitch Chat</div>
+      <div id="chat-log"></div>
+    </div>
+
+    <div id="sb-leaderboard" class="sb-panel">
+      <div class="sb-lbl">Words Found This Session</div>
+      <div id="leaderboard"></div>
+    </div>
+
+    <div id="sb-config" class="sb-panel">
+      <div class="sb-sec">
+        <div class="sb-lbl">Twitch Channel</div>
+        <input class="sb-in" id="cfg-ch" type="text" placeholder="FwHaydo" value="FwHaydo"/>
+        <button class="btn" style="width:100%;margin-bottom:5px" onclick="tlConnect()">Connect</button>
+        <button class="btn sec" style="width:100%" onclick="tlDisconnect()">Disconnect</button>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">Game Server</div>
+        <input class="sb-in" id="cfg-server" type="text" placeholder="https://your-service.up.railway.app" value=""/>
+        <button class="btn sec" style="width:100%" onclick="saveServerUrl()">Save Server URL</button>
+        <p style="font-size:.65rem;color:var(--muted);margin-top:6px;line-height:1.5">This is the address of the word-similarity service. See WORD HUNT SETUP.md for how to deploy it.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let tmiClient=null;
+let currentRoundId=null;
+let currentWordLen=0;
+let roundActive=false;
+let scores={}; // username -> count of words found
+let bestGuesses={}; // username -> best rank this round (for "closest" tracking, optional future use)
+let SERVER_URL=localStorage.getItem('wordhunt-server')||'';
+
+function init(){
+  document.getElementById('cfg-server').value=SERVER_URL;
+  renderLeaderboard();
+}
+
+// ═══════════════════════════════════════
+//  SERVER CONFIG
+// ═══════════════════════════════════════
+function saveServerUrl(){
+  let url=document.getElementById('cfg-server').value.trim();
+  if(url.endsWith('/')) url=url.slice(0,-1);
+  SERVER_URL=url;
+  localStorage.setItem('wordhunt-server',url);
+  toast('Server URL saved!','green');
+}
+
+async function apiCall(path,opts={}){
+  if(!SERVER_URL){toast('Set the Game Server URL in Config first','red');return null;}
+  try{
+    const res=await fetch(SERVER_URL+path,{
+      method:opts.method||'GET',
+      headers:{'Content-Type':'application/json'},
+      body:opts.body?JSON.stringify(opts.body):undefined
+    });
+    return await res.json();
+  }catch(e){
+    toast('Could not reach game server — check the URL or wait for it to wake up','red');
+    return null;
+  }
+}
+
+// ═══════════════════════════════════════
+//  ROUND CONTROL
+// ═══════════════════════════════════════
+async function startRandomRound(){
+  toast('Starting round...');
+  const data=await apiCall('/new-round',{method:'POST',body:{}});
+  if(!data||data.error){toast(data?.error||'Failed to start round','red');return;}
+  beginRound(data);
+}
+
+async function startCustomRound(){
+  const word=document.getElementById('custom-word-input').value.trim().toLowerCase();
+  if(!word){toast('Type a word first','red');return;}
+  toast('Starting round...');
+  const data=await apiCall('/new-round',{method:'POST',body:{word}});
+  if(!data||data.error){toast(data?.error||'Word not recognized — try a simpler common word','red');return;}
+  document.getElementById('custom-word-input').value='';
+  beginRound(data);
+}
+
+function beginRound(data){
+  currentRoundId=data.round_id;
+  currentWordLen=data.word_length;
+  roundActive=true;
+  scores={}; // reset session? No — keep persistent scores across rounds
+  document.getElementById('round-status').textContent='● ROUND LIVE';
+  document.getElementById('round-status').className='live';
+  document.getElementById('round-headline').textContent='Guess the secret word!';
+  document.getElementById('round-sub').textContent='Type any word in Twitch chat — lower rank = closer. Rank 1 wins!';
+  renderWordLen();
+  document.getElementById('btn-random').style.display='none';
+  document.getElementById('btn-reveal').style.display='';
+  document.getElementById('btn-end').style.display='';
+  document.getElementById('custom-word-row').style.display='none';
+  document.getElementById('reveal-box').classList.remove('show');
+  document.getElementById('winner-banner').classList.remove('show');
+  document.getElementById('guess-feed').innerHTML='';
+  document.getElementById('guess-count').textContent='0';
+}
+
+function renderWordLen(){
+  const el=document.getElementById('wordlen-display');
+  el.innerHTML='';
+  for(let i=0;i<currentWordLen;i++){
+    const box=document.createElement('div');
+    box.className='wl-box';
+    box.textContent='?';
+    el.appendChild(box);
+  }
+}
+
+async function revealWord(){
+  const data=await apiCall('/reveal/'+currentRoundId);
+  if(!data||data.error){toast('Could not reveal word','red');return;}
+  const box=document.getElementById('reveal-box');
+  box.textContent='👁 Secret word: '+data.secret_word.toUpperCase()+' (only you can see this)';
+  box.classList.add('show');
+}
+
+function endRound(){
+  roundActive=false;
+  currentRoundId=null;
+  document.getElementById('round-status').textContent='● NO ROUND ACTIVE';
+  document.getElementById('round-status').className='idle';
+  document.getElementById('round-headline').textContent='Start a round to begin';
+  document.getElementById('round-sub').textContent='Chat guesses words in chat — closer guesses score lower (1 = the answer)';
+  document.getElementById('wordlen-display').innerHTML='';
+  document.getElementById('btn-random').style.display='';
+  document.getElementById('btn-reveal').style.display='none';
+  document.getElementById('btn-end').style.display='none';
+  document.getElementById('custom-word-row').style.display='flex';
+  document.getElementById('reveal-box').classList.remove('show');
+  toast('Round ended');
+}
+
+// ═══════════════════════════════════════
+//  GUESS PROCESSING
+// ═══════════════════════════════════════
+let guessCount=0;
+async function processGuess(username,color,message){
+  if(!roundActive||!currentRoundId) return;
+  const word=message.trim().toLowerCase();
+  if(!word||word.includes(' ')) return; // contexto guesses are single words
+  if(!SERVER_URL) return;
+
+  const data=await apiCall('/guess',{method:'POST',body:{round_id:currentRoundId,guess:word}});
+  if(!data) return;
+
+  if(data.error==='unknown_word'){
+    addGuessRow(username,color,word,null,false,true);
+    return;
+  }
+  if(data.error) return;
+
+  guessCount++;
+  document.getElementById('guess-count').textContent=guessCount;
+  addGuessRow(username,color,word,data.rank,data.correct,false);
+
+  if(data.correct){
+    scores[username]=(scores[username]||0)+1;
+    renderLeaderboard();
+    showWinner(username,word);
+    roundActive=false; // streamer must manually start next round
+    document.getElementById('round-status').textContent='● ROUND WON';
+    document.getElementById('round-status').className='idle';
+    document.getElementById('btn-random').style.display='';
+    document.getElementById('btn-reveal').style.display='none';
+    document.getElementById('btn-end').style.display='none';
+    document.getElementById('custom-word-row').style.display='flex';
+  }
+}
+
+function addGuessRow(username,color,word,rank,correct,unknown){
+  const feed=document.getElementById('guess-feed');
+  const row=document.createElement('div');
+  row.className='guess-row'+(correct?' correct':'');
+
+  if(unknown){
+    row.innerHTML=`
+      <span class="gr-user" style="color:${esc(color)}">${esc(username)}</span>
+      <span class="gr-word">${esc(word)}</span>
+      <span class="gr-unknown">not recognized</span>
+    `;
+  } else {
+    const pct=Math.max(2,100-Math.min(99,(rank/2000)*100));
+    let barColor='var(--red)';
+    if(rank<=20) barColor='var(--green)';
+    else if(rank<=200) barColor='var(--yellow)';
+    else if(rank<=800) barColor='var(--orange)';
+
+    row.innerHTML=`
+      <span class="gr-user" style="color:${esc(color)}">${esc(username)}</span>
+      <span class="gr-word">${esc(word)}</span>
+      <div class="gr-bar-wrap"><div class="gr-bar" style="width:${pct}%;background:${barColor}"></div></div>
+      <span class="gr-rank" style="color:${barColor}">${correct?'🎯':'#'+rank}</span>
+    `;
+  }
+  feed.appendChild(row);
+  while(feed.children.length>60) feed.removeChild(feed.firstChild);
+}
+
+function showWinner(username,word){
+  document.getElementById('wb-name').textContent=username;
+  document.getElementById('wb-sub').textContent=`found "${word}" — click Random Word or type a new word to start the next round`;
+  document.getElementById('winner-banner').classList.add('show');
+}
+
+// ═══════════════════════════════════════
+//  LEADERBOARD
+// ═══════════════════════════════════════
+function renderLeaderboard(){
+  const sorted=Object.entries(scores).sort((a,b)=>b[1]-a[1]).slice(0,15);
+  const el=document.getElementById('leaderboard');
+  if(sorted.length===0){
+    el.innerHTML='<div class="lb-empty">No words found yet this session</div>';
+    return;
+  }
+  el.innerHTML='';
+  sorted.forEach(([name,count],i)=>{
+    const row=document.createElement('div');
+    row.className='lb-row';
+    row.innerHTML=`<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${count} 🏆</span>`;
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════
+//  TWITCH — direct WebSocket IRC
+// ═══════════════════════════════════════
+function tlConnect(){
+  const ch=document.getElementById('cfg-ch').value.trim().toLowerCase();
+  if(!ch){toast('Enter channel name','red');return;}
+  tlDisconnect();
+  setDot('connecting','Connecting...');
+  try{
+    tmiClient=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    tmiClient.onopen=()=>{
+      tmiClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      tmiClient.send('PASS SCHMOOPIIE');
+      tmiClient.send('NICK justinfan'+Math.floor(Math.random()*99999));
+      tmiClient.send('JOIN #'+ch);
+    };
+    tmiClient.onmessage=e=>{
+      const raw=e.data;
+      if(raw.startsWith('PING')){tmiClient.send('PONG :tmi.twitch.tv');return;}
+      if(raw.includes('366')||raw.includes('JOIN #'+ch)){setDot('connected','#'+ch);}
+      if(raw.includes('PRIVMSG')){
+        try{
+          let color='#9147ff',user='user',msg='';
+          const tagMatch=raw.match(/^@([^ ]+)/);
+          if(tagMatch){
+            const tags={};
+            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
+            color=tags['color']||'#9147ff';
+            user=tags['display-name']||tags['login']||'user';
+          }
+          const msgMatch=raw.match(/PRIVMSG #\S+ :(.+)/);
+          if(msgMatch) msg=msgMatch[1].replace(/\r?\n/,'');
+          if(user&&msg){
+            addChatMsg(user,color,msg);
+            processGuess(user,color,msg);
+          }
+        }catch(err){}
+      }
+    };
+    tmiClient.onerror=()=>setDot('error','Connection failed');
+    tmiClient.onclose=()=>{
+      if(document.getElementById('conn-dot').className==='connected') setDot('error','Disconnected');
+    };
+  }catch(e){setDot('error','Error: '+e.message);}
+}
+
+function tlDisconnect(){
+  if(tmiClient){try{tmiClient.close()}catch(e){}tmiClient=null;}
+  setDot('','Not connected');
+}
+
+function setDot(type,text){
+  document.getElementById('conn-dot').className=type;
+  document.getElementById('conn-txt').textContent=text;
+}
+
+function addChatMsg(user,color,msg){
+  const log=document.getElementById('chat-log');
+  const div=document.createElement('div');
+  div.className='cmsg';
+  div.innerHTML=`<span class="un" style="color:${esc(color)}">${esc(user)}</span>: ${esc(msg)}`;
+  log.appendChild(div);
+  while(log.children.length>100) log.removeChild(log.firstChild);
+  log.scrollTop=log.scrollHeight;
+}
+
+// ═══════════════════════════════════════
+//  TABS / UTILS
+// ═══════════════════════════════════════
+function showSbTab(name){
+  const names=['chat','leaderboard','config'];
+  document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('sb-'+name)?.classList.add('active');
+}
+
+let toastT=null;
+function toast(msg,type=''){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.className='show'+(type?' '+type:'');
+  clearTimeout(toastT);toastT=setTimeout(()=>{el.className='';},3200);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+init();
+</script>
+</body>
+</html>
