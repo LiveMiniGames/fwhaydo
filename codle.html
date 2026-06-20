@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codle — Crack the Code</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#121213;--border:#3a3a3c;--border-light:#565758;
+  --green:#538d4e;--yellow:#b59f3b;--grey:#3a3a3c;
+  --text:#fff;--muted:#818384;--purple:#9147ff;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center}
+
+/* ── HEADER (Wordle-style top bar) ── */
+#topbar{width:100%;max-width:500px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;padding:10px 16px;position:relative}
+.back-home{color:var(--muted);font-size:.78rem;text-decoration:none;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 10px;transition:color .15s,border-color .15s}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#title{font-size:1.6rem;font-weight:900;letter-spacing:2px;text-align:center;flex:1}
+#mode-btn{color:var(--muted);font-size:.78rem;border:1px solid var(--border);border-radius:6px;
+  padding:5px 10px;background:none;cursor:pointer;font-family:inherit;transition:color .15s,border-color .15s}
+#mode-btn:hover{color:#fff;border-color:var(--purple)}
+
+#main{width:100%;max-width:500px;display:flex;flex-direction:column;align-items:center;
+  padding:20px 16px 40px;flex:1}
+
+/* ── MODE SELECT SCREEN ── */
+#mode-select{display:flex;flex-direction:column;gap:14px;width:100%;max-width:380px;margin-top:30px}
+#mode-select.hidden{display:none}
+.mode-card{background:#1a1a1b;border:1px solid var(--border);border-radius:10px;padding:20px;
+  cursor:pointer;transition:border-color .15s,background .15s;text-align:left}
+.mode-card:hover{border-color:var(--purple);background:#1e1e20}
+.mode-card h3{font-size:1.05rem;font-weight:700;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+.mode-card p{font-size:.8rem;color:var(--muted);line-height:1.5}
+
+/* ── SETUP FORMS (custom / challenge link) ── */
+.setup-form{display:none;flex-direction:column;gap:18px;width:100%;max-width:360px;margin-top:20px}
+.setup-form.active{display:flex}
+.setup-form h2{font-size:1.2rem;font-weight:800;text-align:center;margin-bottom:4px}
+.setup-form .sub{font-size:.8rem;color:var(--muted);text-align:center;margin-bottom:8px;line-height:1.5}
+.setup-row label{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  display:block;margin-bottom:8px}
+.pill-row{display:flex;gap:6px;flex-wrap:wrap}
+.pill-btn{flex:1;background:#1a1a1b;border:1px solid var(--border);border-radius:6px;color:var(--text);
+  padding:9px 6px;font-size:.82rem;font-weight:700;cursor:pointer;font-family:inherit;
+  transition:all .15s;min-width:38px}
+.pill-btn:hover{border-color:var(--purple)}
+.pill-btn.active{background:var(--purple);border-color:var(--purple);color:#fff}
+
+.code-input-row{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.code-set-box{width:42px;height:50px;border-radius:6px;background:#1a1a1b;border:2px solid var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:1.2rem;font-weight:800;color:#fff}
+.code-set-box.filled{border-color:var(--purple)}
+
+.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:13px;
+  font-size:.92rem;font-weight:800;cursor:pointer;transition:background .15s;font-family:inherit;width:100%}
+.btn:hover{background:#7d39e0}
+.btn.sec{background:#1a1a1b;border:1px solid var(--border);font-weight:700}
+.btn.sec:hover{border-color:var(--purple)}
+
+#share-link-box{display:none;background:#1a1a1b;border:1px solid var(--green);border-radius:8px;
+  padding:14px;text-align:center;width:100%;max-width:360px;margin-top:18px}
+#share-link-box.show{display:block}
+#share-link-box p{font-size:.78rem;color:var(--muted);margin-bottom:10px}
+#share-link-text{background:#111;border:1px solid var(--border);border-radius:6px;padding:9px 12px;
+  font-size:.75rem;color:#fff;word-break:break-all;margin-bottom:10px;font-family:monospace}
+
+/* ── GAME SCREEN ── */
+#game-screen{display:none;flex-direction:column;align-items:center;width:100%;flex:1}
+#game-screen.active{display:flex}
+
+#challenge-note{font-size:.75rem;color:var(--muted);margin-bottom:14px;text-align:center}
+
+/* Guess grid - Wordle tile style */
+#guess-grid{display:flex;flex-direction:column;gap:5px;margin-bottom:24px}
+.guess-row{display:flex;gap:5px;justify-content:center}
+.tile{width:52px;height:52px;border:2px solid var(--border);border-radius:4px;
+  display:flex;align-items:center;justify-content:center;font-size:1.6rem;font-weight:900;
+  color:#fff;text-transform:uppercase;background:transparent;transition:transform .15s}
+.tile.filled{border-color:var(--border-light)}
+.tile.green{background:var(--green);border-color:var(--green)}
+.tile.yellow{background:var(--yellow);border-color:var(--yellow)}
+.tile.grey{background:var(--grey);border-color:var(--grey)}
+.tile.flip{animation:flipTile .5s ease}
+@keyframes flipTile{
+  0%{transform:rotateX(0)}
+  50%{transform:rotateX(90deg)}
+  100%{transform:rotateX(0)}
+}
+.tile.shake{animation:shakeTile .4s ease}
+@keyframes shakeTile{
+  10%,90%{transform:translateX(-2px)}
+  20%,80%{transform:translateX(4px)}
+  30%,50%,70%{transform:translateX(-6px)}
+  40%,60%{transform:translateX(6px)}
+}
+
+/* Number pad (Wordle keyboard style) */
+#numpad{display:flex;flex-direction:column;gap:8px;width:100%;max-width:420px}
+.pad-row{display:flex;gap:6px;justify-content:center}
+.numkey{flex:1;max-width:46px;height:54px;background:var(--border-light);border:none;border-radius:5px;
+  color:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .1s}
+.numkey:hover{background:#6b6c6e}
+.numkey:active{transform:scale(.95)}
+.numkey.wide{max-width:76px;font-size:.72rem;font-weight:700}
+.numkey.used-grey{background:var(--grey);color:#818384}
+.numkey:disabled{opacity:.4;cursor:not-allowed}
+
+/* Result */
+#result-screen{display:none;flex-direction:column;align-items:center;gap:14px;margin-top:24px;
+  width:100%;max-width:360px;text-align:center}
+#result-screen.show{display:flex}
+#result-title{font-size:1.5rem;font-weight:900}
+#result-screen.win #result-title{color:var(--green)}
+#result-screen.lose #result-title{color:#e74c3c}
+#result-code-display{font-size:1.6rem;font-weight:900;letter-spacing:8px;color:#fff}
+#result-sub{font-size:.82rem;color:var(--muted)}
+
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%) translateY(-20px);
+  background:#fff;color:#111;border-radius:6px;padding:13px 22px;font-size:.85rem;font-weight:700;
+  z-index:998;opacity:0;transition:all .25s;pointer-events:none}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:420px){
+  .tile{width:44px;height:44px;font-size:1.3rem}
+  .numkey{height:48px;font-size:1rem}
+  #title{font-size:1.3rem}
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <div id="title">Codle</div>
+  <button id="mode-btn" onclick="backToModeSelect()">Menu</button>
+</div>
+
+<div id="main">
+
+  <!-- MODE SELECT -->
+  <div id="mode-select">
+    <div class="mode-card" onclick="startClassic()">
+      <h3>🎯 Classic</h3>
+      <p>The standard Codle. 5-digit code, 6 guesses. Same as it ever is.</p>
+    </div>
+    <div class="mode-card" onclick="showCustomSetup()">
+      <h3>⚙️ Custom Game</h3>
+      <p>Pick your own code length (3-8 digits) and guess limit (4-8 guesses), then crack a fresh random code.</p>
+    </div>
+    <div class="mode-card" onclick="showChallengeSetup()">
+      <h3>🔗 Create a Challenge Link</h3>
+      <p>Set your own secret code yourself, then get a link to send to someone — they try to crack the code you picked.</p>
+    </div>
+  </div>
+
+  <!-- CUSTOM GAME SETUP -->
+  <div class="setup-form" id="custom-setup">
+    <h2>Custom Game</h2>
+    <div class="setup-row">
+      <label>Code Length</label>
+      <div class="pill-row" id="custom-length-pills"></div>
+    </div>
+    <div class="setup-row">
+      <label>Guess Limit</label>
+      <div class="pill-row" id="custom-guess-pills"></div>
+    </div>
+    <button class="btn" onclick="startCustomGame()">Start Game</button>
+    <button class="btn sec" onclick="backToModeSelect()">Back</button>
+  </div>
+
+  <!-- CHALLENGE LINK SETUP -->
+  <div class="setup-form" id="challenge-setup">
+    <h2>Create a Challenge</h2>
+    <div class="sub">Type the secret code you want your friend to crack.</div>
+    <div class="setup-row">
+      <label>Code Length</label>
+      <div class="pill-row" id="challenge-length-pills"></div>
+    </div>
+    <div class="setup-row">
+      <label>Guess Limit (for them)</label>
+      <div class="pill-row" id="challenge-guess-pills"></div>
+    </div>
+    <div class="setup-row">
+      <label>Your Secret Code</label>
+      <div class="code-input-row" id="challenge-code-input"></div>
+    </div>
+    <button class="btn" onclick="generateChallengeLink()">Generate Link</button>
+    <button class="btn sec" onclick="backToModeSelect()">Back</button>
+  </div>
+
+  <div id="share-link-box">
+    <p>Send this link to your friend:</p>
+    <div id="share-link-text"></div>
+    <button class="btn sec" onclick="copyShareLink()">📋 Copy Link</button>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen">
+    <div id="challenge-note"></div>
+    <div id="guess-grid"></div>
+    <div id="numpad"></div>
+
+    <div id="result-screen">
+      <div id="result-title"></div>
+      <div id="result-code-display"></div>
+      <div id="result-sub"></div>
+      <button class="btn" onclick="backToModeSelect()">Play Again</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let codeLength = 5;
+let guessLimit = 6;
+let secretCode = [];
+let guesses = [];
+let currentInput = [];
+let gameOver = false;
+let isChallengeMode = false;
+let customCodeLength = 5;
+let customGuessLimit = 6;
+let challengeCodeInput = [];
+
+// ═══════════════════════════════════════
+//  INIT — check for challenge link in URL
+// ═══════════════════════════════════════
+function init(){
+  const params = new URLSearchParams(window.location.search);
+  const challenge = params.get('c');
+  if(challenge){
+    try{
+      const decoded = decodeChallenge(challenge);
+      if(decoded){
+        isChallengeMode = true;
+        secretCode = decoded.code;
+        codeLength = decoded.code.length;
+        guessLimit = decoded.guesses;
+        document.getElementById('mode-select').classList.add('hidden');
+        beginGame();
+        document.getElementById('challenge-note').textContent = `🔗 Challenge mode — someone set this ${codeLength}-digit code just for you. ${guessLimit} guesses.`;
+        return;
+      }
+    }catch(e){}
+  }
+  buildPillRow('custom-length-pills', [3,4,5,6,7,8], 5, (v)=>customCodeLength=v);
+  buildPillRow('custom-guess-pills', [4,5,6,7,8], 6, (v)=>customGuessLimit=v);
+  buildPillRow('challenge-length-pills', [3,4,5,6,7,8], 5, (v)=>{
+    challengeCodeLength = v;
+    renderChallengeCodeInput();
+  });
+  buildPillRow('challenge-guess-pills', [4,5,6,7,8], 6, (v)=>challengeGuessLimit=v);
+  challengeCodeLength = 5;
+  challengeGuessLimit = 6;
+  renderChallengeCodeInput();
+}
+
+let challengeCodeLength = 5;
+let challengeGuessLimit = 6;
+
+function buildPillRow(containerId, values, defaultVal, onSelect){
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  values.forEach(v => {
+    const btn = document.createElement('button');
+    btn.className = 'pill-btn' + (v === defaultVal ? ' active' : '');
+    btn.textContent = v;
+    btn.onclick = () => {
+      el.querySelectorAll('.pill-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      onSelect(v);
+    };
+    el.appendChild(btn);
+  });
+}
+
+// ═══════════════════════════════════════
+//  MODE NAVIGATION
+// ═══════════════════════════════════════
+function backToModeSelect(){
+  document.getElementById('mode-select').classList.remove('hidden');
+  document.getElementById('custom-setup').classList.remove('active');
+  document.getElementById('challenge-setup').classList.remove('active');
+  document.getElementById('share-link-box').classList.remove('show');
+  document.getElementById('game-screen').classList.remove('active');
+  document.getElementById('result-screen').classList.remove('show','win','lose');
+  // Clear the URL challenge param if present
+  if(window.location.search){
+    window.history.replaceState({}, '', window.location.pathname);
+  }
+}
+
+function showCustomSetup(){
+  document.getElementById('mode-select').classList.add('hidden');
+  document.getElementById('custom-setup').classList.add('active');
+}
+
+function showChallengeSetup(){
+  document.getElementById('mode-select').classList.add('hidden');
+  document.getElementById('challenge-setup').classList.add('active');
+}
+
+// ═══════════════════════════════════════
+//  START GAMES
+// ═══════════════════════════════════════
+function startClassic(){
+  codeLength = 5;
+  guessLimit = 6;
+  isChallengeMode = false;
+  secretCode = generateRandomCode(codeLength);
+  document.getElementById('mode-select').classList.add('hidden');
+  document.getElementById('challenge-note').textContent = '';
+  beginGame();
+}
+
+function startCustomGame(){
+  codeLength = customCodeLength;
+  guessLimit = customGuessLimit;
+  isChallengeMode = false;
+  secretCode = generateRandomCode(codeLength);
+  document.getElementById('custom-setup').classList.remove('active');
+  document.getElementById('challenge-note').textContent = `⚙️ Custom game — ${codeLength}-digit code, ${guessLimit} guesses.`;
+  beginGame();
+}
+
+function generateRandomCode(length){
+  const code = [];
+  for(let i=0;i<length;i++) code.push(Math.floor(Math.random()*10));
+  return code;
+}
+
+// ═══════════════════════════════════════
+//  CHALLENGE LINK CREATION
+// ═══════════════════════════════════════
+function renderChallengeCodeInput(){
+  challengeCodeInput = [];
+  const row = document.getElementById('challenge-code-input');
+  row.innerHTML = '';
+  for(let i=0;i<challengeCodeLength;i++){
+    const box = document.createElement('input');
+    box.type = 'tel';
+    box.maxLength = 1;
+    box.className = 'code-set-box';
+    box.inputMode = 'numeric';
+    box.addEventListener('input', (e) => {
+      const val = e.target.value.replace(/[^0-9]/g,'');
+      e.target.value = val;
+      if(val){
+        e.target.classList.add('filled');
+        const next = row.children[i+1];
+        if(next) next.focus();
+      }
+    });
+    box.addEventListener('keydown', (e) => {
+      if(e.key === 'Backspace' && !e.target.value){
+        const prev = row.children[i-1];
+        if(prev) prev.focus();
+      }
+    });
+    row.appendChild(box);
+  }
+}
+
+function generateChallengeLink(){
+  const boxes = document.querySelectorAll('#challenge-code-input .code-set-box');
+  const code = [];
+  for(const box of boxes){
+    if(!box.value || isNaN(parseInt(box.value))){
+      toast('Fill in every digit of the code first');
+      return;
+    }
+    code.push(parseInt(box.value));
+  }
+  const encoded = encodeChallenge(code, challengeGuessLimit);
+  const url = `${window.location.origin}${window.location.pathname}?c=${encoded}`;
+  document.getElementById('share-link-text').textContent = url;
+  document.getElementById('share-link-box').classList.add('show');
+  window._lastShareUrl = url;
+}
+
+function copyShareLink(){
+  if(navigator.clipboard && window._lastShareUrl){
+    navigator.clipboard.writeText(window._lastShareUrl).then(()=>toast('Link copied!'));
+  } else {
+    toast('Copy the link manually above');
+  }
+}
+
+// Simple encode/decode for the challenge code + guess limit into a URL-safe string.
+// Not meant to be cryptographically secure — just obfuscated enough that someone
+// can't trivially read the answer at a glance in the URL bar.
+function encodeChallenge(code, guesses){
+  const payload = code.join('') + '-' + guesses;
+  return btoa(payload).replace(/\+/g,'-').replace(/\//g,'_').replace(/=/g,'');
+}
+function decodeChallenge(str){
+  const restored = str.replace(/-/g,'+').replace(/_/g,'/');
+  const padded = restored + '='.repeat((4 - restored.length % 4) % 4);
+  const payload = atob(padded);
+  const [codeStr, guessesStr] = payload.split('-');
+  if(!codeStr || !guessesStr) return null;
+  const code = codeStr.split('').map(d=>parseInt(d));
+  if(code.some(isNaN)) return null;
+  return { code, guesses: parseInt(guessesStr) };
+}
+
+// ═══════════════════════════════════════
+//  GAME LOGIC
+// ═══════════════════════════════════════
+function beginGame(){
+  guesses = [];
+  currentInput = [];
+  gameOver = false;
+  document.getElementById('game-screen').classList.add('active');
+  document.getElementById('result-screen').classList.remove('show','win','lose');
+  renderGuessGrid();
+  renderNumpad();
+}
+
+function renderGuessGrid(){
+  const grid = document.getElementById('guess-grid');
+  grid.innerHTML = '';
+
+  // Past guesses
+  guesses.forEach(g => {
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+    g.results.forEach((res,i) => {
+      const tile = document.createElement('div');
+      tile.className = 'tile filled ' + res;
+      tile.textContent = g.digits[i];
+      row.appendChild(tile);
+    });
+    grid.appendChild(row);
+  });
+
+  // Current input row (if game not over)
+  if(!gameOver){
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+    for(let i=0;i<codeLength;i++){
+      const tile = document.createElement('div');
+      tile.className = 'tile' + (currentInput[i]!==undefined ? ' filled':'');
+      tile.textContent = currentInput[i]!==undefined ? currentInput[i] : '';
+      row.appendChild(tile);
+    }
+    grid.appendChild(row);
+  }
+
+  // Empty future rows
+  const remaining = guessLimit - guesses.length - (gameOver?0:1);
+  for(let r=0;r<remaining;r++){
+    const row = document.createElement('div');
+    row.className = 'guess-row';
+    for(let i=0;i<codeLength;i++){
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      row.appendChild(tile);
+    }
+    grid.appendChild(row);
+  }
+}
+
+function renderNumpad(){
+  const pad = document.getElementById('numpad');
+  pad.innerHTML = '';
+
+  const row1 = document.createElement('div');
+  row1.className = 'pad-row';
+  for(let n=1;n<=5;n++) row1.appendChild(makeKey(n));
+  pad.appendChild(row1);
+
+  const row2 = document.createElement('div');
+  row2.className = 'pad-row';
+  for(let n=6;n<=9;n++) row2.appendChild(makeKey(n));
+  row2.appendChild(makeKey(0));
+  pad.appendChild(row2);
+
+  const row3 = document.createElement('div');
+  row3.className = 'pad-row';
+  const del = document.createElement('button');
+  del.className = 'numkey wide';
+  del.textContent = 'DEL';
+  del.onclick = pressDelete;
+  row3.appendChild(del);
+  const enter = document.createElement('button');
+  enter.className = 'numkey wide';
+  enter.textContent = 'ENTER';
+  enter.onclick = submitGuess;
+  row3.appendChild(enter);
+  pad.appendChild(row3);
+}
+
+function makeKey(n){
+  const key = document.createElement('button');
+  key.className = 'numkey';
+  key.textContent = n;
+  key.id = 'key-'+n;
+  key.onclick = () => pressDigit(n);
+  return key;
+}
+
+function pressDigit(n){
+  if(gameOver) return;
+  if(currentInput.length >= codeLength) return;
+  currentInput.push(n);
+  renderGuessGrid();
+}
+
+function pressDelete(){
+  if(gameOver) return;
+  currentInput.pop();
+  renderGuessGrid();
+}
+
+function submitGuess(){
+  if(gameOver) return;
+  if(currentInput.length !== codeLength){
+    toast(`Enter all ${codeLength} digits`);
+    shakeCurrentRow();
+    return;
+  }
+
+  const guess = [...currentInput];
+  const results = scoreGuess(guess, secretCode);
+  guesses.push({ digits: guess, results });
+  currentInput = [];
+
+  updateKeyColors(guess, results);
+  renderGuessGrid();
+  animateLastRow();
+
+  const won = results.every(r => r==='green');
+  if(won){
+    setTimeout(()=>endGame(true), 600);
+    return;
+  }
+  if(guesses.length >= guessLimit){
+    setTimeout(()=>endGame(false), 600);
+  }
+}
+
+function scoreGuess(guess, code){
+  const results = new Array(guess.length).fill('grey');
+  const codeRemaining = [...code];
+  for(let i=0;i<guess.length;i++){
+    if(guess[i] === code[i]){
+      results[i] = 'green';
+      codeRemaining[i] = null;
+    }
+  }
+  for(let i=0;i<guess.length;i++){
+    if(results[i] === 'green') continue;
+    const idx = codeRemaining.indexOf(guess[i]);
+    if(idx !== -1){
+      results[i] = 'yellow';
+      codeRemaining[idx] = null;
+    }
+  }
+  return results;
+}
+
+function updateKeyColors(guess, results){
+  guess.forEach((digit, i) => {
+    const key = document.getElementById('key-'+digit);
+    if(!key) return;
+    const res = results[i];
+    // Don't downgrade a key that's already green/yellow to grey
+    if(res === 'green'){
+      key.classList.remove('used-grey');
+      key.style.background = 'var(--green)';
+    } else if(res === 'yellow' && key.style.background !== 'var(--green)'){
+      key.style.background = 'var(--yellow)';
+    } else if(res === 'grey' && !key.style.background){
+      key.classList.add('used-grey');
+    }
+  });
+}
+
+function shakeCurrentRow(){
+  const rows = document.querySelectorAll('.guess-row');
+  const currentRow = rows[guesses.length];
+  if(currentRow) currentRow.querySelectorAll('.tile').forEach(t=>{
+    t.classList.add('shake');
+    setTimeout(()=>t.classList.remove('shake'), 400);
+  });
+}
+
+function animateLastRow(){
+  const rows = document.querySelectorAll('.guess-row');
+  const row = rows[guesses.length - 1];
+  if(!row) return;
+  row.querySelectorAll('.tile').forEach((t,i)=>{
+    setTimeout(()=>{ t.classList.add('flip'); }, i*80);
+  });
+}
+
+function endGame(won){
+  gameOver = true;
+  renderGuessGrid();
+  const screen = document.getElementById('result-screen');
+  screen.classList.add('show', won?'win':'lose');
+  document.getElementById('result-title').textContent = won ? '🎉 You cracked it!' : '💥 Out of guesses';
+  document.getElementById('result-code-display').textContent = secretCode.join(' ');
+  document.getElementById('result-sub').textContent = won
+    ? `Solved in ${guesses.length} guess${guesses.length===1?'':'es'}.`
+    : 'The code is shown above.';
+}
+
+// ═══════════════════════════════════════
+//  KEYBOARD SUPPORT
+// ═══════════════════════════════════════
+document.addEventListener('keydown', e => {
+  if(!document.getElementById('game-screen').classList.contains('active')) return;
+  if(gameOver) return;
+  if(e.key >= '0' && e.key <= '9') pressDigit(parseInt(e.key));
+  if(e.key === 'Backspace') pressDelete();
+  if(e.key === 'Enter') submitGuess();
+});
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+let toastT = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>el.classList.remove('show'), 2200);
+}
+
+init();
+</script>
+</body>
+</html>
