@@ -521,10 +521,13 @@ function simulatePrediction(){
     x: head.x + Math.cos(predictedAngle) * speed,
     y: head.y + Math.sin(predictedAngle) * speed
   };
-  // World wrap, matches server
+  // Circular world boundary, matches server — predicted death at the wall.
+  // We mark prediction as dead immediately so the snake visually stops responding
+  // to input right at the wall instead of silently freezing in place every frame
+  // while still drawing as if alive (which looked like a glitch/hang).
   const distFromCenter = Math.sqrt(newHead.x*newHead.x + newHead.y*newHead.y);
-  if(distFromCenter > worldRadius){
-    // Predicted death at the wall — server will confirm shortly with a 'died' message
+  if(!isFinite(distFromCenter) || distFromCenter > worldRadius){
+    predictedSegments = null; // server's 'died' message will follow shortly and show the death screen
     return;
   }
 
@@ -548,7 +551,7 @@ function simulatePrediction(){
 
 // Send input to server ~15x/sec
 setInterval(() => {
-  if(ws && ws.readyState === WebSocket.OPEN && alive){
+  if(ws && ws.readyState === WebSocket.OPEN && alive && isFinite(mouseAngle)){
     ws.send(JSON.stringify({ type: 'input', angle: mouseAngle, boosting }));
   }
 }, 66);
