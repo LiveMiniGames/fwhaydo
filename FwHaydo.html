@@ -205,11 +205,38 @@ footer a{color:var(--purple);text-decoration:none}
 .tog input:checked+.tog-sl::before{transform:translateX(15px)}
 
 /* Lightbox */
-#lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.92);align-items:center;justify-content:center;cursor:zoom-out}
-#lightbox.active{display:flex}
-#lightbox img{max-width:92vw;max-height:90vh;border-radius:8px;object-fit:contain;box-shadow:0 20px 80px rgba(0,0,0,.8);cursor:default}
-#lb-name{position:absolute;bottom:22px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.7);color:#fff;padding:6px 18px;border-radius:20px;font-size:.83rem;font-weight:600;white-space:nowrap}
-#lb-x{position:absolute;top:14px;right:18px;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.2);color:#fff;width:34px;height:34px;border-radius:50%;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit}
+/* Spotlight panel — floats over the tier list area, draggable & resizable */
+#spotlight{display:none;position:fixed;top:50%;left:calc((100% - 252px) / 2);
+  transform:translate(-50%,-50%);
+  background:#111;border:2px solid var(--purple);border-radius:12px;
+  padding:0;z-index:150;flex-direction:column;align-items:stretch;
+  box-shadow:0 20px 60px rgba(0,0,0,.7);width:min(70vh,calc(100% - 320px));
+  min-width:200px;min-height:240px;overflow:hidden}
+#spotlight.active{display:flex}
+#sp-handle{cursor:move;background:#1a1a26;padding:10px 14px;display:flex;
+  align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--border);
+  user-select:none;flex-shrink:0}
+#sp-handle-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;display:flex;align-items:center;gap:6px}
+#sp-handle-label::before{content:'⠿';font-size:1rem;color:var(--purple)}
+#spotlight-body{padding:16px;display:flex;flex-direction:column;align-items:center;
+  gap:10px;flex:1;overflow:hidden;min-height:0}
+#spotlight img{width:100%;flex:1;border-radius:8px;object-fit:cover;
+  box-shadow:0 8px 30px rgba(0,0,0,.6);min-height:0}
+#spotlight-info{display:flex;flex-direction:column;align-items:center;gap:3px;width:100%;flex-shrink:0}
+#spotlight-name{font-size:1.3rem;font-weight:800;color:#fff;text-align:center;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+#spotlight-sub{font-size:.78rem;color:var(--muted);text-align:center}
+#sp-close{background:rgba(255,255,255,.08);border:1px solid var(--border);color:#fff;
+  width:26px;height:26px;border-radius:50%;font-size:.85rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-family:inherit;flex-shrink:0}
+#sp-close:hover{background:var(--red);border-color:var(--red)}
+#sp-resize{position:absolute;bottom:0;right:0;width:22px;height:22px;cursor:nwse-resize;
+  display:flex;align-items:flex-end;justify-content:flex-end;padding:4px;z-index:5}
+#sp-resize::before{content:'';width:10px;height:10px;
+  border-right:3px solid var(--purple);border-bottom:3px solid var(--purple);
+  border-radius:0 0 4px 0;opacity:.7}
+#sp-resize:hover::before{opacity:1}
 
 /* Modal */
 #modal-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;align-items:center;justify-content:center}
@@ -411,11 +438,22 @@ footer a{color:var(--purple);text-decoration:none}
   </div>
 </div>
 
-<!-- Lightbox -->
-<div id="lightbox" onclick="closeLB()">
-  <button id="lb-x" onclick="closeLB()">✕</button>
-  <img id="lb-img" src="" alt="" onclick="event.stopPropagation()"/>
-  <div id="lb-name"></div>
+
+
+<!-- Spotlight (floating zoom panel) -->
+<div id="spotlight">
+  <div id="sp-handle">
+    <span id="sp-handle-label">Drag to move</span>
+    <button id="sp-close" onclick="closeSpotlight()">✕</button>
+  </div>
+  <div id="spotlight-body">
+    <img id="spotlight-img" src="" alt=""/>
+    <div id="spotlight-info">
+      <div id="spotlight-name"></div>
+      <div id="spotlight-sub">Zoomed in — votes and tier list still visible</div>
+    </div>
+  </div>
+  <div id="sp-resize"></div>
 </div>
 
 <!-- Modal -->
@@ -873,17 +911,146 @@ function addChatMsg(user,color,msg,isV,vTier){
 }
 
 // ═══════════════════════════════════════
-//  LIGHTBOX
+//  SPOTLIGHT (persistent zoom panel — draggable & resizable)
 // ═══════════════════════════════════════
+let spPositioned=false; // tracks if user has moved/resized it manually
+
 function openLB(item){
-  document.getElementById('lb-img').src=item.url;
-  document.getElementById('lb-name').textContent=item.name;
-  document.getElementById('lightbox').classList.add('active');
+  document.getElementById('spotlight-img').src=item.url;
+  document.getElementById('spotlight-name').textContent=item.name;
+  document.getElementById('spotlight-sub').textContent='Zoomed in — votes and tier list still visible below';
+  document.getElementById('spotlight').classList.add('active');
 }
-function closeLB(){
-  document.getElementById('lightbox').classList.remove('active');
-  document.getElementById('lb-img').src='';
+function closeSpotlight(){
+  document.getElementById('spotlight').classList.remove('active');
+  document.getElementById('spotlight-img').src='';
 }
+function closeLB(){closeSpotlight();}
+
+// ── Dragging ──
+(function initSpotlightDrag(){
+  const panel=document.getElementById('spotlight');
+  const handle=document.getElementById('sp-handle');
+  let dragging=false, startX=0, startY=0, startLeft=0, startTop=0;
+
+  function toPixelPosition(){
+    // Convert centered transform-based position into explicit left/top pixels
+    // so dragging can take over from there
+    if(spPositioned) return;
+    const rect=panel.getBoundingClientRect();
+    panel.style.left=rect.left+'px';
+    panel.style.top=rect.top+'px';
+    panel.style.transform='none';
+    spPositioned=true;
+  }
+
+  handle.addEventListener('mousedown',e=>{
+    if(e.target.id==='sp-close') return;
+    toPixelPosition();
+    dragging=true;
+    startX=e.clientX; startY=e.clientY;
+    const rect=panel.getBoundingClientRect();
+    startLeft=rect.left; startTop=rect.top;
+    document.body.style.userSelect='none';
+  });
+
+  document.addEventListener('mousemove',e=>{
+    if(!dragging) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    let newLeft=startLeft+dx, newTop=startTop+dy;
+    // Keep on screen
+    const rect=panel.getBoundingClientRect();
+    newLeft=Math.max(0,Math.min(newLeft,window.innerWidth-rect.width));
+    newTop=Math.max(0,Math.min(newTop,window.innerHeight-rect.height));
+    panel.style.left=newLeft+'px';
+    panel.style.top=newTop+'px';
+  });
+
+  document.addEventListener('mouseup',()=>{
+    dragging=false;
+    document.body.style.userSelect='';
+  });
+
+  // Touch support for streamers on tablets etc
+  handle.addEventListener('touchstart',e=>{
+    if(e.target.id==='sp-close') return;
+    toPixelPosition();
+    dragging=true;
+    const t=e.touches[0];
+    startX=t.clientX; startY=t.clientY;
+    const rect=panel.getBoundingClientRect();
+    startLeft=rect.left; startTop=rect.top;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!dragging) return;
+    const t=e.touches[0];
+    const dx=t.clientX-startX, dy=t.clientY-startY;
+    let newLeft=startLeft+dx, newTop=startTop+dy;
+    const rect=panel.getBoundingClientRect();
+    newLeft=Math.max(0,Math.min(newLeft,window.innerWidth-rect.width));
+    newTop=Math.max(0,Math.min(newTop,window.innerHeight-rect.height));
+    panel.style.left=newLeft+'px';
+    panel.style.top=newTop+'px';
+  },{passive:true});
+  document.addEventListener('touchend',()=>{dragging=false;});
+})();
+
+// ── Resizing ──
+(function initSpotlightResize(){
+  const panel=document.getElementById('spotlight');
+  const handle=document.getElementById('sp-resize');
+  let resizing=false, startX=0, startY=0, startW=0, startH=0;
+
+  function toPixelPosition(){
+    if(spPositioned) return;
+    const rect=panel.getBoundingClientRect();
+    panel.style.left=rect.left+'px';
+    panel.style.top=rect.top+'px';
+    panel.style.transform='none';
+    spPositioned=true;
+  }
+
+  handle.addEventListener('mousedown',e=>{
+    e.stopPropagation();
+    toPixelPosition();
+    resizing=true;
+    startX=e.clientX; startY=e.clientY;
+    const rect=panel.getBoundingClientRect();
+    startW=rect.width; startH=rect.height;
+    document.body.style.userSelect='none';
+  });
+
+  document.addEventListener('mousemove',e=>{
+    if(!resizing) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    const newW=Math.max(220,startW+dx);
+    const newH=Math.max(240,startH+dy);
+    panel.style.width=newW+'px';
+  });
+
+  document.addEventListener('mouseup',()=>{
+    resizing=false;
+    document.body.style.userSelect='';
+  });
+
+  handle.addEventListener('touchstart',e=>{
+    e.stopPropagation();
+    toPixelPosition();
+    resizing=true;
+    const t=e.touches[0];
+    startX=t.clientX; startY=t.clientY;
+    const rect=panel.getBoundingClientRect();
+    startW=rect.width; startH=rect.height;
+  },{passive:true});
+  document.addEventListener('touchmove',e=>{
+    if(!resizing) return;
+    const t=e.touches[0];
+    const dx=t.clientX-startX;
+    const newW=Math.max(220,startW+dx);
+    panel.style.width=newW+'px';
+  },{passive:true});
+  document.addEventListener('touchend',()=>{resizing=false;});
+})();
 
 // ═══════════════════════════════════════
 //  TIER CONFIG
