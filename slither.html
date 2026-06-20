@@ -53,6 +53,18 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 .lb-entry{display:flex;justify-content:space-between;gap:10px;font-size:.78rem;padding:2px 0}
 .lb-entry.me{color:var(--purple);font-weight:800}
 
+/* ── MINIMAP ── */
+#minimap-wrap{position:fixed;bottom:20px;left:20px;z-index:55;background:rgba(17,17,17,.85);
+  border:1px solid var(--border);border-radius:50%;padding:6px;backdrop-filter:blur(6px)}
+#minimap-canvas{display:block;border-radius:50%}
+
+/* ── POINTER LOCK HINT ── */
+#pointerlock-hint{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:55;
+  background:rgba(17,17,17,.85);border:1px solid var(--purple);border-radius:20px;
+  padding:7px 16px;font-size:.74rem;color:var(--purple);backdrop-filter:blur(6px);
+  display:none;pointer-events:none}
+#pointerlock-hint.show{display:block}
+
 /* ── DEATH SCREEN ── */
 #death-screen{position:fixed;inset:0;background:rgba(10,10,18,.92);z-index:150;
   display:none;align-items:center;justify-content:center;backdrop-filter:blur(6px)}
@@ -136,6 +148,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   </div>
 </div>
 
+<!-- Minimap -->
+<div id="minimap-wrap">
+  <canvas id="minimap-canvas" width="140" height="140"></canvas>
+</div>
+
+<!-- Pointer lock hint -->
+<div id="pointerlock-hint">🔒 Mouse locked to game — press ESC to release</div>
+
 <!-- Round end banner -->
 <div id="round-end-banner">
   <div class="reb-title">Round Winner</div>
@@ -182,7 +202,7 @@ let SERVER_URL = localStorage.getItem('slither-server') || '';
 let ws = null;
 let myId = null;
 let isHost = false;
-let worldSize = 4000;
+let worldRadius = 2200;
 
 // Game state from server
 let players = [];
@@ -281,7 +301,7 @@ function connect(){
 function handleMessage(data){
   if(data.type === 'welcome'){
     myId = data.id;
-    worldSize = data.worldSize;
+    worldRadius = data.worldRadius;
     roundActive = data.roundActive;
     roundEndTime = data.roundEndTime;
   }
@@ -361,9 +381,11 @@ function joinGame(){
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
   predictedSegments = null; // reset prediction, will rebuild from next server state
+  virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('join-screen').classList.add('hidden');
   document.getElementById('death-screen').classList.remove('show');
   if('ontouchstart' in window) document.getElementById('boost-btn').classList.add('show');
+  else canvas.requestPointerLock(); // lock mouse immediately on desktop
 }
 
 function respawn(){
@@ -371,7 +393,9 @@ function respawn(){
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
   predictedSegments = null; // reset prediction, will rebuild from next server state
+  virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('death-screen').classList.remove('show');
+  if(!('ontouchstart' in window)) canvas.requestPointerLock();
 }
 
 // ═══════════════════════════════════════
@@ -397,12 +421,38 @@ function hostEndRound(){
 }
 
 // ═══════════════════════════════════════
-//  INPUT
+//  INPUT (with Pointer Lock to keep mouse from leaving the game)
 // ═══════════════════════════════════════
+let virtualCursorX = 0, virtualCursorY = 0; // offset from canvas center, used while pointer-locked
+let pointerLocked = false;
+const MAX_CURSOR_DIST = 220; // how far the virtual cursor can travel from center
+
+canvas.addEventListener('click', () => {
+  if(alive && !pointerLocked) canvas.requestPointerLock();
+});
+
+document.addEventListener('pointerlockchange', () => {
+  pointerLocked = document.pointerLockElement === canvas;
+  document.getElementById('pointerlock-hint').classList.toggle('show', pointerLocked);
+});
+
 canvas.addEventListener('mousemove', e => {
-  const dx = e.clientX - canvas.width/2;
-  const dy = e.clientY - canvas.height/2;
-  mouseAngle = Math.atan2(dy, dx);
+  if(pointerLocked){
+    // Relative movement while locked — build a virtual cursor position
+    virtualCursorX += e.movementX;
+    virtualCursorY += e.movementY;
+    const dist = Math.sqrt(virtualCursorX**2 + virtualCursorY**2);
+    if(dist > MAX_CURSOR_DIST){
+      virtualCursorX = (virtualCursorX / dist) * MAX_CURSOR_DIST;
+      virtualCursorY = (virtualCursorY / dist) * MAX_CURSOR_DIST;
+    }
+    mouseAngle = Math.atan2(virtualCursorY, virtualCursorX);
+  } else {
+    // Fallback: normal absolute mouse position (before pointer lock is engaged)
+    const dx = e.clientX - canvas.width/2;
+    const dy = e.clientY - canvas.height/2;
+    mouseAngle = Math.atan2(dy, dx);
+  }
 });
 canvas.addEventListener('mousedown', () => boosting = true);
 canvas.addEventListener('mouseup', () => boosting = false);
@@ -445,10 +495,11 @@ function simulatePrediction(){
     y: head.y + Math.sin(predictedAngle) * speed
   };
   // World wrap, matches server
-  if(newHead.x > worldSize/2) newHead.x = -worldSize/2;
-  if(newHead.x < -worldSize/2) newHead.x = worldSize/2;
-  if(newHead.y > worldSize/2) newHead.y = -worldSize/2;
-  if(newHead.y < -worldSize/2) newHead.y = worldSize/2;
+  const distFromCenter = Math.sqrt(newHead.x*newHead.x + newHead.y*newHead.y);
+  if(distFromCenter > worldRadius){
+    // Predicted death at the wall — server will confirm shortly with a 'died' message
+    return;
+  }
 
   predictedSegments.unshift(newHead);
   const targetCount = Math.max(12, Math.floor(myLength));
@@ -499,6 +550,18 @@ function render(){
   for(let y = offsetY; y < canvas.height; y += gridSize){
     ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
   }
+
+  // World boundary wall (circular, glowing red edge — visible when nearby)
+  const wallCenter = worldToScreen(0, 0);
+  const wallRadiusPx = worldRadius * zoom;
+  ctx.strokeStyle = 'rgba(231,76,60,0.6)';
+  ctx.lineWidth = 6 * zoom;
+  ctx.shadowColor = '#e74c3c';
+  ctx.shadowBlur = 20 * zoom;
+  ctx.beginPath();
+  ctx.arc(wallCenter.x, wallCenter.y, wallRadiusPx, 0, Math.PI*2);
+  ctx.stroke();
+  ctx.shadowBlur = 0;
 
   // Food
   const pulseScale = 1 + Math.sin(Date.now() / 300) * 0.15;
@@ -558,6 +621,56 @@ function render(){
   requestAnimationFrame(render);
 }
 render();
+
+// ═══════════════════════════════════════
+//  MINIMAP
+// ═══════════════════════════════════════
+const miniCanvas = document.getElementById('minimap-canvas');
+const miniCtx = miniCanvas.getContext('2d');
+
+function renderMinimap(){
+  const size = 140;
+  const scale = size / (worldRadius * 2);
+  const center = size / 2;
+
+  miniCtx.clearRect(0, 0, size, size);
+  miniCtx.fillStyle = '#0a0a12';
+  miniCtx.beginPath();
+  miniCtx.arc(center, center, center - 2, 0, Math.PI*2);
+  miniCtx.fill();
+  miniCtx.strokeStyle = 'rgba(231,76,60,0.6)';
+  miniCtx.lineWidth = 2;
+  miniCtx.beginPath();
+  miniCtx.arc(center, center, center - 2, 0, Math.PI*2);
+  miniCtx.stroke();
+
+  // Top 5 leaderboard positions
+  leaderboard.forEach((p, i) => {
+    const mx = center + p.x * scale;
+    const my = center + p.y * scale;
+    miniCtx.fillStyle = p.id === myId ? '#fff' : '#9147ff';
+    miniCtx.beginPath();
+    miniCtx.arc(mx, my, p.id === myId ? 4 : 3, 0, Math.PI*2);
+    miniCtx.fill();
+  });
+
+  // My own position (always shown even if not top 5)
+  const me = players.find(p => p.id === myId);
+  if(me && me.segments && me.segments[0]){
+    const mx = center + me.segments[0].x * scale;
+    const my = center + me.segments[0].y * scale;
+    miniCtx.fillStyle = '#fff';
+    miniCtx.strokeStyle = '#9147ff';
+    miniCtx.lineWidth = 2;
+    miniCtx.beginPath();
+    miniCtx.arc(mx, my, 4, 0, Math.PI*2);
+    miniCtx.fill();
+    miniCtx.stroke();
+  }
+
+  requestAnimationFrame(renderMinimap);
+}
+renderMinimap();
 
 // ═══════════════════════════════════════
 //  TIMER / LEADERBOARD UI
