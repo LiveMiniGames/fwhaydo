@@ -837,7 +837,15 @@ function handleMsg(user,color,message){
   const msg=message.trim();
   let isV=false,vTier=null;
   if(votingOpen&&curVote){
-    const match=tiers.find(t=>t.label.toLowerCase()===msg.toLowerCase());
+    const lowerMsg=msg.toLowerCase();
+    // First try exact match (handles multi-letter tier names normally)
+    let match=tiers.find(t=>t.label.toLowerCase()===lowerMsg);
+    // If no exact match, check if message is just one character repeated
+    // (e.g. "ff", "fff", "ssss") and match it to a single-letter tier
+    if(!match && /^(.)\1*$/.test(lowerMsg)){
+      const singleChar=lowerMsg[0];
+      match=tiers.find(t=>t.label.toLowerCase()===singleChar);
+    }
     if(match){
       isV=true;vTier=match;
       if(document.getElementById('cfg-ov')?.checked) tiers.forEach(t=>votes[t.id]?.delete(user));
