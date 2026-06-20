@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz Live — Stream Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&family=Lilita+One&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--card:#1c1c28;--border:#2a2a3a;--purple:#9147ff;--purple2:#772ce8;
+  --green:#2ecc71;--red:#e74c3c;--yellow:#f1c40f;--blue:#3498db;--orange:#e67e22;
+  --text:#e8e8f0;--muted:#7a7a96;
+  --tile-a:#e21b3c;--tile-b:#1368ce;--tile-c:#d89e00;--tile-d:#26890c;
+  --top5:#f1c40f;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  height:100vh;overflow:hidden;display:flex;flex-direction:column}
+
+#topbar{background:#111;border-bottom:2px solid var(--purple);padding:0 16px;
+  height:50px;display:flex;align-items:center;gap:10px;flex-shrink:0;z-index:10}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 11px;transition:color .15s,border-color .15s}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-family:'Lilita One',cursive;font-size:1.2rem;letter-spacing:1px;color:#fff;flex:1}
+#conn{display:flex;align-items:center;gap:5px;font-size:.73rem;color:var(--muted)}
+#conn-dot{width:8px;height:8px;border-radius:50%;background:#444}
+#conn-dot.connected{background:var(--green)}
+#sound-btn{color:var(--muted);font-size:.85rem;border:1px solid var(--border);border-radius:6px;
+  padding:5px 9px;background:none;cursor:pointer}
+.btn{background:var(--purple);color:#fff;border:none;border-radius:6px;padding:6px 13px;
+  font-size:.78rem;font-weight:700;cursor:pointer;transition:background .15s;font-family:inherit}
+.btn:hover{background:var(--purple2)}
+.btn.sec{background:var(--card);border:1px solid var(--border)}
+.btn.sec:hover{background:var(--border)}
+.btn.lg{font-size:.95rem;padding:13px 28px}
+
+#main{flex:1;overflow:hidden;display:flex}
+
+/* ═══════════════════════════════════════
+   BUILDER VIEW
+   ═══════════════════════════════════════ */
+#builder-view{flex:1;display:flex;overflow:hidden}
+#builder-view.hidden{display:none}
+
+#builder-left{width:380px;flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;background:#111}
+#builder-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.b-tab{flex:1;padding:11px 4px;background:none;border:none;color:var(--muted);font-size:.72rem;font-weight:700;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid transparent;font-family:inherit}
+.b-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+#builder-panels{flex:1;overflow-y:auto;padding:16px}
+.b-panel{display:none}
+.b-panel.active{display:block}
+
+.field-lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:7px;display:block;margin-top:16px}
+.field-lbl:first-child{margin-top:0}
+textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;
+  color:#fff;padding:12px;font-size:.78rem;font-family:monospace;resize:vertical;min-height:240px;line-height:1.6}
+textarea.paste-box:focus{outline:none;border-color:var(--purple)}
+.paste-hint{font-size:.68rem;color:var(--muted);line-height:1.6;margin-top:8px;background:var(--card);
+  border:1px solid var(--border);border-radius:6px;padding:10px}
+.paste-hint code{color:var(--yellow)}
+
+.form-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;
+  color:#fff;padding:9px 11px;font-size:.82rem;margin-bottom:8px;font-family:inherit}
+.form-input:focus{outline:none;border-color:var(--purple)}
+.answer-input-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.answer-color-dot{width:14px;height:14px;border-radius:4px;flex-shrink:0}
+.correct-radio{flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:var(--green)}
+
+#question-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.q-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px}
+.q-item-num{background:var(--purple);color:#fff;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0}
+.q-item-text{flex:1;font-size:.78rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;flex-shrink:0}
+.q-item-del:hover{color:var(--red)}
+
+#builder-right{flex:1;overflow-y:auto;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+#builder-right h2{font-family:'Lilita One',cursive;font-size:1.5rem;color:#fff;margin-bottom:6px}
+#builder-right p.sub{font-size:.82rem;color:var(--muted);margin-bottom:24px;text-align:center;max-width:420px}
+
+/* ═══════════════════════════════════════
+   LOBBY VIEW (waiting for !join)
+   ═══════════════════════════════════════ */
+#lobby-view{flex:1;display:none;flex-direction:column;align-items:center;justify-content:center;padding:32px}
+#lobby-view.active{display:flex}
+#lobby-view h1{font-family:'Lilita One',cursive;font-size:2.2rem;color:#fff;margin-bottom:4px;text-align:center}
+#lobby-view .lobby-sub{font-size:.95rem;color:var(--muted);margin-bottom:6px;text-align:center}
+#lobby-join-cmd{background:var(--card);border:2px solid var(--purple);border-radius:10px;padding:10px 22px;
+  font-family:'Lilita One',cursive;font-size:1.3rem;color:var(--purple);margin-bottom:26px}
+#lobby-count{font-size:1.1rem;color:#fff;font-weight:800;margin-bottom:16px}
+#lobby-count span{color:var(--green)}
+#lobby-players{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:700px;
+  max-height:240px;overflow-y:auto;margin-bottom:30px;padding:4px}
+.lobby-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:7px 16px;font-size:.85rem;font-weight:700;color:#fff;animation:chipIn .3s ease}
+@keyframes chipIn{from{transform:scale(.8);opacity:0}to{transform:scale(1);opacity:1}}
+#lobby-empty{color:var(--muted);font-size:.85rem}
+
+/* ═══════════════════════════════════════
+   PLAY VIEW
+   ═══════════════════════════════════════ */
+#play-view{flex:1;display:none;flex-direction:column;overflow:hidden}
+#play-view.active{display:flex}
+
+#play-stage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;position:relative;overflow:hidden}
+#play-stage.hidden{display:none}
+
+#q-counter{font-size:.78rem;color:var(--muted);margin-bottom:10px;letter-spacing:1px}
+#q-timer{font-family:'Lilita One',cursive;font-size:2.4rem;color:#fff;margin-bottom:14px;
+  width:70px;height:70px;border-radius:50%;border:4px solid var(--purple);display:flex;
+  align-items:center;justify-content:center;flex-shrink:0}
+#q-timer.urgent{border-color:var(--red);color:var(--red);animation:pulseTimer .5s infinite}
+@keyframes pulseTimer{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+
+#q-text-box{background:var(--card);border:1px solid var(--border);border-radius:14px;
+  padding:24px 32px;max-width:700px;width:100%;text-align:center;margin-bottom:18px}
+#q-text{font-size:1.4rem;font-weight:800;color:#fff;line-height:1.4}
+
+#q-image-wrap{max-width:420px;width:100%;border-radius:12px;overflow:hidden;margin-bottom:18px;
+  display:none;position:relative;aspect-ratio:16/9;background:#000}
+#q-image-wrap.show{display:block}
+#q-image-wrap img{width:100%;height:100%;object-fit:cover;filter:blur(24px);transition:filter 1s linear}
+
+#answer-tiles{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;max-width:700px}
+.answer-tile{border-radius:10px;padding:18px 20px;display:flex;align-items:center;gap:12px;
+  color:#fff;font-weight:700;font-size:1.05rem;min-height:64px;position:relative;overflow:hidden}
+.answer-tile.a{background:var(--tile-a)}
+.answer-tile.b{background:var(--tile-b)}
+.answer-tile.c{background:var(--tile-c)}
+.answer-tile.d{background:var(--tile-d)}
+.answer-tile .letter{font-family:'Lilita One',cursive;font-size:1.3rem;background:rgba(0,0,0,.25);
+  width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.answer-tile.revealed-correct{outline:4px solid #fff;outline-offset:-4px}
+.answer-tile.revealed-wrong{opacity:.35}
+.answer-tile .live-count{position:absolute;top:8px;right:12px;font-size:.72rem;background:rgba(0,0,0,.3);
+  padding:2px 8px;border-radius:10px}
+
+#reveal-banner{display:none;text-align:center;margin-top:18px}
+#reveal-banner.show{display:block}
+#reveal-banner h3{font-family:'Lilita One',cursive;font-size:1.3rem;color:var(--green)}
+#reveal-banner p{font-size:.85rem;color:var(--muted);margin-top:4px}
+
+#host-controls-bar{display:flex;gap:10px;justify-content:center;padding:14px;border-top:1px solid var(--border);
+  flex-shrink:0;background:#111}
+
+/* Between-question leaderboard (manual trigger) */
+#interim-leaderboard{display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+#interim-leaderboard.show{display:flex}
+#interim-leaderboard h2{font-family:'Lilita One',cursive;font-size:1.6rem;color:#fff;margin-bottom:18px}
+#interim-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;margin-bottom:20px}
+
+/* Sidebar */
+#play-sidebar{width:280px;flex-shrink:0;border-left:1px solid var(--border);display:flex;
+  flex-direction:column;overflow:hidden;background:#111}
+#sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.s-tab{flex:1;padding:10px 4px;background:none;border:none;color:var(--muted);font-size:.7rem;font-weight:700;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid transparent;font-family:inherit}
+.s-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+#sidebar-panels{flex:1;overflow-y:auto;padding:12px}
+.s-panel{display:none}
+.s-panel.active{display:block}
+
+#chat-log{display:flex;flex-direction:column;gap:3px}
+.cmsg{font-size:.73rem;line-height:1.4;padding:3px 6px;border-radius:4px;background:var(--card);word-break:break-word}
+.cmsg .un{font-weight:700}
+.cmsg.isans{border-left:2px solid var(--purple)}
+
+#leaderboard-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--card);border-radius:8px;font-size:.8rem;
+  border:1px solid var(--border)}
+.lb-row.top5{border-color:var(--top5);background:rgba(241,196,15,.08)}
+.lb-row.top5 .lb-name{color:var(--top5)}
+.lb-row.top5 .lb-rank{color:var(--top5)}
+.lb-rank{color:var(--purple);font-weight:800;width:24px;flex-shrink:0}
+.lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.lb-score{color:var(--yellow);font-weight:800;flex-shrink:0}
+.lb-empty{color:var(--muted);font-size:.78rem;padding:14px;text-align:center}
+
+.cfg-row{margin-bottom:14px;width:100%;max-width:320px}
+.cfg-row label{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  display:block;margin-bottom:6px}
+.sb-in{width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;color:#fff;
+  padding:7px 9px;font-size:.78rem;font-family:inherit}
+
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
+  transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.green{border-color:var(--green);color:var(--green)}
+#toast.red{border-color:var(--red);color:var(--red)}
+
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0e0e16}
+::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}
+
+/* Final podium screen */
+#final-screen{display:none;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:24px}
+#final-screen.show{display:flex}
+#final-screen h1{font-family:'Lilita One',cursive;font-size:2rem;color:#fff;margin-bottom:24px}
+#podium{display:flex;align-items:flex-end;gap:14px;margin-bottom:30px}
+.podium-spot{display:flex;flex-direction:column;align-items:center;gap:8px}
+.podium-bar{width:100px;border-radius:8px 8px 0 0;display:flex;align-items:flex-start;justify-content:center;
+  padding-top:10px;font-family:'Lilita One',cursive;font-size:1.6rem;color:#fff}
+.podium-bar.s1{height:150px;background:linear-gradient(180deg,#f1c40f,#b8930a)}
+.podium-bar.s2{height:105px;background:linear-gradient(180deg,#bdc3c7,#8a9094)}
+.podium-bar.s3{height:75px;background:linear-gradient(180deg,#e67e22,#a85c14)}
+.podium-name{font-size:.85rem;font-weight:700;color:#fff;text-align:center;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.podium-score{font-size:.72rem;color:var(--yellow)}
+#full-results{width:100%;max-width:420px;display:flex;flex-direction:column;gap:6px;margin-bottom:20px;max-height:30vh;overflow-y:auto}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <span id="tb-title">🧠 QUIZ LIVE</span>
+  <div id="conn"><div id="conn-dot"></div><span id="conn-txt">Not connected</span></div>
+  <button id="sound-btn" onclick="toggleSound()">🔊</button>
+</div>
+
+<div id="main">
+
+  <!-- ═══════════════════ BUILDER VIEW ═══════════════════ -->
+  <div id="builder-view">
+    <div id="builder-left">
+      <div id="builder-tabs">
+        <button class="b-tab active" onclick="showBTab('paste')">Paste Quiz</button>
+        <button class="b-tab" onclick="showBTab('form')">Add One</button>
+        <button class="b-tab" onclick="showBTab('list')">Questions</button>
+      </div>
+      <div id="builder-panels">
+
+        <div id="b-paste" class="b-panel active">
+          <span class="field-lbl">Paste Your Quiz</span>
+          <textarea class="paste-box" id="paste-input" placeholder="What color is the sky?
+A) Red
+B) Blue *
+C) Green
+D) Yellow
+
+What is 2+2?
+A) 3
+B) 5
+C) 4 *
+D) 22"></textarea>
+          <div class="paste-hint">
+            One question per block, separated by a blank line. Mark the correct answer with <code>*</code> right after it. Add an image with a line starting <code>img:</code> followed by a URL.
+          </div>
+          <button class="btn" style="width:100%;margin-top:12px" onclick="parsePastedQuiz()">📋 Add These Questions</button>
+        </div>
+
+        <div id="b-form" class="b-panel">
+          <span class="field-lbl">Question</span>
+          <input class="form-input" id="f-question" placeholder="What is the capital of France?"/>
+
+          <span class="field-lbl">Image (optional)</span>
+          <input class="form-input" id="f-image-url" placeholder="Paste image URL..."/>
+          <button class="btn sec" style="width:100%;margin-bottom:8px" onclick="document.getElementById('f-image-file').click()">📁 Or Upload Image</button>
+          <input type="file" id="f-image-file" accept="image/*" style="display:none" onchange="handleImageUpload(event)"/>
+          <div id="f-image-preview" style="display:none;margin-bottom:10px">
+            <img id="f-image-preview-img" style="width:100%;border-radius:8px"/>
+          </div>
+
+          <span class="field-lbl">Answers (select the correct one)</span>
+          <div class="answer-input-row">
+            <span class="answer-color-dot" style="background:var(--tile-a)"></span>
+            <input type="radio" name="f-correct" value="0" class="correct-radio" checked/>
+            <input class="form-input" id="f-ans-0" placeholder="Answer A" style="margin-bottom:0"/>
+          </div>
+          <div class="answer-input-row">
+            <span class="answer-color-dot" style="background:var(--tile-b)"></span>
+            <input type="radio" name="f-correct" value="1" class="correct-radio"/>
+            <input class="form-input" id="f-ans-1" placeholder="Answer B" style="margin-bottom:0"/>
+          </div>
+          <div class="answer-input-row">
+            <span class="answer-color-dot" style="background:var(--tile-c)"></span>
+            <input type="radio" name="f-correct" value="2" class="correct-radio"/>
+            <input class="form-input" id="f-ans-2" placeholder="Answer C" style="margin-bottom:0"/>
+          </div>
+          <div class="answer-input-row">
+            <span class="answer-color-dot" style="background:var(--tile-d)"></span>
+            <input type="radio" name="f-correct" value="3" class="correct-radio"/>
+            <input class="form-input" id="f-ans-3" placeholder="Answer D" style="margin-bottom:0"/>
+          </div>
+
+          <span class="field-lbl">Time Limit (seconds)</span>
+          <input class="form-input" id="f-time" type="number" value="20" min="5" max="120"/>
+
+          <button class="btn" style="width:100%;margin-top:8px" onclick="addFormQuestion()">+ Add Question</button>
+        </div>
+
+        <div id="b-list" class="b-panel">
+          <span class="field-lbl">Quiz Order <span id="q-count-lbl"></span></span>
+          <div id="question-list"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="builder-right">
+      <h2>Build your quiz</h2>
+      <p class="sub">Paste a full quiz or add questions one at a time on the left. Once you've got at least one question, connect Twitch chat and open the lobby — viewers type !join to hop in.</p>
+
+      <div class="cfg-row">
+        <label>Twitch Channel</label>
+        <input class="sb-in" id="cfg-channel" type="text" placeholder="FwHaydo" value="FwHaydo"/>
+      </div>
+      <button class="btn sec" style="width:100%;max-width:320px;margin-bottom:18px" onclick="connectTwitch()">Connect Twitch Chat</button>
+
+      <button class="btn lg" onclick="openLobby()">👥 Open Lobby</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ LOBBY VIEW ═══════════════════ -->
+  <div id="lobby-view">
+    <h1>🧠 Quiz Live</h1>
+    <p class="lobby-sub">Type this in Twitch chat to join the game:</p>
+    <div id="lobby-join-cmd">!join</div>
+    <div id="lobby-count">Players in lobby: <span id="lobby-num">0</span></div>
+    <div id="lobby-players"><span id="lobby-empty">Waiting for players to join...</span></div>
+    <button class="btn lg" onclick="goLive()">▶ Start Quiz</button>
+  </div>
+
+  <!-- ═══════════════════ PLAY VIEW ═══════════════════ -->
+  <div id="play-view">
+    <div id="play-stage">
+      <div id="q-counter">Question 1 of 1</div>
+      <div id="q-timer">20</div>
+      <div id="q-text-box"><div id="q-text"></div></div>
+      <div id="q-image-wrap"><img id="q-image" src="" alt=""/></div>
+      <div id="answer-tiles"></div>
+      <div id="reveal-banner">
+        <h3 id="reveal-title"></h3>
+        <p id="reveal-sub"></p>
+      </div>
+    </div>
+
+    <div id="interim-leaderboard">
+      <h2>📊 Standings</h2>
+      <div id="interim-list"></div>
+      <button class="btn lg" onclick="nextQuestion()">Next Question →</button>
+    </div>
+
+    <div id="final-screen">
+      <h1>🏆 Final Results</h1>
+      <div id="podium"></div>
+      <div id="full-results"></div>
+      <button class="btn" onclick="backToBuilder()">Build Another Quiz</button>
+    </div>
+
+    <div id="host-controls-bar">
+      <button class="btn sec" onclick="revealAnswerNow()">⏩ Reveal Now</button>
+      <button class="btn" onclick="showInterimLeaderboard()">📊 Show Standings</button>
+      <button class="btn sec" onclick="endQuizEarly()">⏹ End Quiz</button>
+    </div>
+
+    <div id="play-sidebar">
+      <div id="sidebar-tabs">
+        <button class="s-tab active" onclick="showSTab('leaderboard')">Leaderboard</button>
+        <button class="s-tab" onclick="showSTab('chat')">Chat</button>
+      </div>
+      <div id="sidebar-panels">
+        <div id="s-leaderboard" class="s-panel active">
+          <div id="leaderboard-list"></div>
+        </div>
+        <div id="s-chat" class="s-panel">
+          <div id="chat-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  SOUND ENGINE (generated tones, no audio files needed)
+// ═══════════════════════════════════════
+let audioCtx = null;
+let soundEnabled = localStorage.getItem('quizlive-sound') !== 'off';
+function toggleSound(){
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('quizlive-sound', soundEnabled ? 'on' : 'off');
+  document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+}
+function getAudioCtx(){
+  if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  return audioCtx;
+}
+function playTone(freq, duration, type='sine', volume=0.15, delay=0){
+  if(!soundEnabled) return;
+  try{
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type; osc.frequency.value = freq; gain.gain.value = volume;
+    osc.connect(gain); gain.connect(ctx.destination);
+    const startTime = ctx.currentTime + delay;
+    gain.gain.setValueAtTime(volume, startTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.start(startTime); osc.stop(startTime + duration);
+  }catch(e){}
+}
+function playJoinSound(){ playTone(660, 0.08, 'sine', 0.07); }
+function playQuestionStartSound(){
+  [440,554,659].forEach((f,i)=>playTone(f, 0.15, 'sine', 0.1, i*0.08));
+}
+function playTickSound(){ playTone(880, 0.04, 'square', 0.04); }
+function playRevealCorrect(){ playTone(523, 0.2, 'sine', 0.13); playTone(784, 0.25, 'sine', 0.12, 0.1); }
+function playRevealWrong(){ playTone(200, 0.25, 'square', 0.06); }
+function playLeaderboardSound(){ [392,523,659].forEach((f,i)=>playTone(f, 0.18, 'sine', 0.1, i*0.1)); }
+function playWinSound(){
+  [523,659,784,1047].forEach((f,i)=>playTone(f, 0.3, 'sine', 0.14, i*0.12));
+}
+
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let questions = [];
+let scores = {};
+let joinedPlayers = {};
+let tmiClient = null;
+let currentQIndex = -1;
+let questionLive = false;
+let questionStartTime = 0;
+let timerInterval = null;
+let answeredThisRound = {};
+let timePerQuestion = 20;
+let lobbyOpen = false;
+
+// ═══════════════════════════════════════
+//  BUILDER TABS
+// ═══════════════════════════════════════
+function showBTab(name){
+  const names = ['paste','form','list'];
+  document.querySelectorAll('.b-tab').forEach((b,i)=>b.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.b-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('b-'+name).classList.add('active');
+  if(name === 'list') renderQuestionList();
+}
+function showSTab(name){
+  const names = ['leaderboard','chat'];
+  document.querySelectorAll('.s-tab').forEach((b,i)=>b.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.s-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('s-'+name).classList.add('active');
+}
+
+// ═══════════════════════════════════════
+//  PASTE PARSER
+// ═══════════════════════════════════════
+function parsePastedQuiz(){
+  const raw = document.getElementById('paste-input').value.trim();
+  if(!raw){ toast('Paste a quiz first', 'red'); return; }
+  const blocks = raw.split(/\n\s*\n/).map(b=>b.trim()).filter(b=>b);
+  let added = 0, skipped = 0;
+  blocks.forEach(block => {
+    const lines = block.split('\n').map(l=>l.trim()).filter(l=>l);
+    if(lines.length < 3){ skipped++; return; }
+    let questionText = lines[0], image = null, answerLines = [];
+    for(let i=1;i<lines.length;i++){
+      if(/^img:/i.test(lines[i])) image = lines[i].replace(/^img:/i,'').trim();
+      else if(/^[A-Da-d][\)\.\:]/.test(lines[i])) answerLines.push(lines[i]);
+    }
+    if(answerLines.length < 2){ skipped++; return; }
+    const answers = answerLines.slice(0,4).map(line => {
+      const correct = /\*\s*$/.test(line);
+      const cleaned = line.replace(/^[A-Da-d][\)\.\:]\s*/, '').replace(/\*\s*$/,'').trim();
+      return { text: cleaned, correct };
+    });
+    if(!answers.some(a=>a.correct)){ skipped++; return; }
+    questions.push({ text: questionText, image, answers, time: 20 });
+    added++;
+  });
+  document.getElementById('paste-input').value = '';
+  if(added > 0){
+    toast(`Added ${added} question${added===1?'':'s'}${skipped?`, skipped ${skipped}`:''}`, 'green');
+    showBTab('list');
+  } else {
+    toast('Could not parse any questions — check the format', 'red');
+  }
+}
+
+// ═══════════════════════════════════════
+//  FORM ENTRY + IMAGE UPLOAD
+// ═══════════════════════════════════════
+let pendingImageData = null;
+function handleImageUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    pendingImageData = ev.target.result;
+    document.getElementById('f-image-preview-img').src = pendingImageData;
+    document.getElementById('f-image-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function addFormQuestion(){
+  const text = document.getElementById('f-question').value.trim();
+  if(!text){ toast('Enter a question', 'red'); return; }
+  const urlInput = document.getElementById('f-image-url').value.trim();
+  const image = pendingImageData || urlInput || null;
+  const answers = [];
+  for(let i=0;i<4;i++){
+    const val = document.getElementById('f-ans-'+i).value.trim();
+    if(val) answers.push({ text: val, correct: false });
+  }
+  if(answers.length < 2){ toast('Add at least 2 answers', 'red'); return; }
+  const correctIdx = parseInt(document.querySelector('input[name="f-correct"]:checked').value);
+  if(correctIdx < answers.length) answers[correctIdx].correct = true;
+  else answers[0].correct = true;
+  const time = parseInt(document.getElementById('f-time').value) || 20;
+  questions.push({ text, image, answers, time });
+  document.getElementById('f-question').value = '';
+  document.getElementById('f-image-url').value = '';
+  document.getElementById('f-image-preview').style.display = 'none';
+  pendingImageData = null;
+  for(let i=0;i<4;i++) document.getElementById('f-ans-'+i).value = '';
+  document.getElementById('f-time').value = 20;
+  toast('Question added!', 'green');
+  showBTab('list');
+}
+
+// ═══════════════════════════════════════
+//  QUESTION LIST MANAGEMENT
+// ═══════════════════════════════════════
+function renderQuestionList(){
+  const el = document.getElementById('question-list');
+  document.getElementById('q-count-lbl').textContent = `(${questions.length})`;
+  if(questions.length === 0){
+    el.innerHTML = '<p style="font-size:.78rem;color:var(--muted);padding:10px">No questions yet.</p>';
+    return;
+  }
+  el.innerHTML = '';
+  questions.forEach((q, i) => {
+    const item = document.createElement('div');
+    item.className = 'q-item';
+    item.innerHTML = `<span class="q-item-num">${i+1}</span><span class="q-item-text">${esc(q.text)}</span><button class="q-item-del" onclick="removeQuestion(${i})">✕</button>`;
+    el.appendChild(item);
+  });
+}
+function removeQuestion(i){ questions.splice(i,1); renderQuestionList(); }
+
+// ═══════════════════════════════════════
+//  TWITCH CONNECTION
+// ═══════════════════════════════════════
+function connectTwitch(){
+  const ch = document.getElementById('cfg-channel').value.trim().toLowerCase();
+  if(!ch){ toast('Enter a channel name', 'red'); return; }
+  if(tmiClient){ try{tmiClient.close()}catch(e){} }
+  setDot('', 'Connecting...');
+  try{
+    tmiClient = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    tmiClient.onopen = () => {
+      tmiClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      tmiClient.send('PASS SCHMOOPIIE');
+      tmiClient.send('NICK justinfan' + Math.floor(Math.random()*99999));
+      tmiClient.send('JOIN #' + ch);
+    };
+    tmiClient.onmessage = (e) => {
+      const raw = e.data;
+      if(raw.startsWith('PING')){ tmiClient.send('PONG :tmi.twitch.tv'); return; }
+      if(raw.includes('366')) setDot('connected', '#'+ch);
+      if(raw.includes('PRIVMSG')){
+        try{
+          let color = '#9147ff', user = 'user', msg = '';
+          const tagMatch = raw.match(/^@([^ ]+)/);
+          if(tagMatch){
+            const tags = {};
+            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
+            color = tags['color'] || '#9147ff';
+            user = tags['display-name'] || tags['login'] || 'user';
+          }
+          const msgMatch = raw.match(/PRIVMSG #\S+ :(.+)/);
+          if(msgMatch) msg = msgMatch[1].replace(/\r?\n/, '');
+          if(user && msg){
+            addChatMsg(user, color, msg);
+            handleChatMessage(user, color, msg);
+          }
+        }catch(err){}
+      }
+    };
+    tmiClient.onerror = () => setDot('', 'Connection failed');
+    tmiClient.onclose = () => setDot('', 'Disconnected');
+  }catch(e){ setDot('', 'Error'); }
+}
+function setDot(cls, text){
+  document.getElementById('conn-dot').className = cls;
+  document.getElementById('conn-txt').textContent = text;
+}
+function addChatMsg(user, color, msg){
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  const isAns = questionLive && /^[a-dA-D]$/.test(msg.trim());
+  div.className = 'cmsg' + (isAns ? ' isans' : '');
+  div.innerHTML = `<span class="un" style="color:${esc(color)}">${esc(user)}</span>: ${esc(msg)}`;
+  log.appendChild(div);
+  while(log.children.length > 80) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ═══════════════════════════════════════
+//  CHAT MESSAGE ROUTING (!join + answers)
+// ═══════════════════════════════════════
+function handleChatMessage(user, color, msg){
+  const clean = msg.trim();
+  if(/^!join$/i.test(clean)){
+    handleJoin(user, color);
+    return;
+  }
+  handleChatAnswer(user, clean);
+}
+
+function handleJoin(user, color){
+  if(joinedPlayers[user]) return;
+  joinedPlayers[user] = color;
+  if(!(user in scores)) scores[user] = 0;
+  playJoinSound();
+  if(lobbyOpen) renderLobbyPlayers();
+  if(document.getElementById('play-view').classList.contains('active')) renderLeaderboard();
+}
+
+// ═══════════════════════════════════════
+//  LOBBY
+// ═══════════════════════════════════════
+function openLobby(){
+  document.getElementById('builder-view').classList.add('hidden');
+  document.getElementById('lobby-view').classList.add('active');
+  lobbyOpen = true;
+  renderLobbyPlayers();
+}
+
+function renderLobbyPlayers(){
+  const names = Object.keys(joinedPlayers);
+  document.getElementById('lobby-num').textContent = names.length;
+  const wrap = document.getElementById('lobby-players');
+  if(names.length === 0){
+    wrap.innerHTML = '<span id="lobby-empty">Waiting for players to join...</span>';
+    return;
+  }
+  wrap.innerHTML = '';
+  names.forEach(name => {
+    const chip = document.createElement('span');
+    chip.className = 'lobby-chip';
+    chip.style.borderColor = joinedPlayers[name];
+    chip.textContent = name;
+    wrap.appendChild(chip);
+  });
+}
+
+// ═══════════════════════════════════════
+//  GO LIVE / QUIZ FLOW
+// ═══════════════════════════════════════
+function goLive(){
+  if(questions.length === 0){ toast('Add at least one question first', 'red'); return; }
+  lobbyOpen = false;
+  document.getElementById('lobby-view').classList.remove('active');
+  document.getElementById('play-view').classList.add('active');
+  currentQIndex = -1;
+  nextQuestion();
+}
+
+function backToBuilder(){
+  document.getElementById('builder-view').classList.remove('hidden');
+  document.getElementById('play-view').classList.remove('active');
+  document.getElementById('lobby-view').classList.remove('active');
+  document.getElementById('final-screen').classList.remove('show');
+  document.getElementById('interim-leaderboard').classList.remove('show');
+  document.getElementById('play-stage').classList.remove('hidden');
+  document.getElementById('host-controls-bar').style.display = 'flex';
+  clearInterval(timerInterval);
+  renderQuestionList();
+}
+
+function nextQuestion(){
+  clearInterval(timerInterval);
+  document.getElementById('interim-leaderboard').classList.remove('show');
+  document.getElementById('play-stage').classList.remove('hidden');
+  document.getElementById('host-controls-bar').style.display = 'flex';
+
+  currentQIndex++;
+  if(currentQIndex >= questions.length){
+    showFinalResults();
+    return;
+  }
+  const q = questions[currentQIndex];
+  timePerQuestion = q.time || 20;
+  answeredThisRound = {};
+  questionLive = true;
+  questionStartTime = Date.now();
+
+  document.getElementById('q-counter').textContent = `Question ${currentQIndex+1} of ${questions.length}`;
+  document.getElementById('q-text').textContent = q.text;
+  document.getElementById('reveal-banner').classList.remove('show');
+
+  const imgWrap = document.getElementById('q-image-wrap');
+  const img = document.getElementById('q-image');
+  if(q.image){
+    imgWrap.classList.add('show');
+    img.src = q.image;
+    img.style.filter = 'blur(24px)';
+  } else {
+    imgWrap.classList.remove('show');
+  }
+
+  renderAnswerTiles(q, false);
+  renderLeaderboard();
+  playQuestionStartSound();
+  startTimer();
+}
+
+function startTimer(){
+  let remaining = timePerQuestion;
+  const timerEl = document.getElementById('q-timer');
+  timerEl.textContent = remaining;
+  timerEl.classList.remove('urgent');
+  const img = document.getElementById('q-image');
+  const blurStart = 24;
+
+  timerInterval = setInterval(() => {
+    remaining--;
+    timerEl.textContent = Math.max(0, remaining);
+    if(remaining <= 5){ timerEl.classList.add('urgent'); playTickSound(); }
+
+    if(img && questions[currentQIndex].image){
+      const progress = 1 - (remaining / timePerQuestion);
+      img.style.filter = `blur(${Math.max(0, blurStart * (1-progress))}px)`;
+    }
+    if(remaining <= 0){
+      clearInterval(timerInterval);
+      revealAnswerNow();
+    }
+  }, 1000);
+}
+
+function renderAnswerTiles(q, revealed){
+  const el = document.getElementById('answer-tiles');
+  el.innerHTML = '';
+  const letters = ['a','b','c','d'];
+  q.answers.forEach((ans, i) => {
+    const tile = document.createElement('div');
+    tile.className = 'answer-tile ' + letters[i];
+    if(revealed) tile.classList.add(ans.correct ? 'revealed-correct' : 'revealed-wrong');
+    const count = Object.values(answeredThisRound).filter(a=>a.letter===letters[i].toUpperCase()).length;
+    tile.innerHTML = `<span class="letter">${letters[i].toUpperCase()}</span><span>${esc(ans.text)}</span>${revealed ? `<span class="live-count">${count} answered</span>` : ''}`;
+    el.appendChild(tile);
+  });
+}
+
+// ═══════════════════════════════════════
+//  ANSWER HANDLING
+// ═══════════════════════════════════════
+function handleChatAnswer(user, msg){
+  if(!questionLive) return;
+  if(!joinedPlayers[user]) return;
+  const clean = msg.toUpperCase();
+  if(!['A','B','C','D'].includes(clean)) return;
+  if(answeredThisRound[user]) return;
+  const elapsed = Date.now() - questionStartTime;
+  answeredThisRound[user] = { letter: clean, timeMs: elapsed };
+}
+
+// ═══════════════════════════════════════
+//  REVEAL + SCORING
+// ═══════════════════════════════════════
+function revealAnswerNow(){
+  if(!questionLive) return;
+  clearInterval(timerInterval);
+  questionLive = false;
+
+  const q = questions[currentQIndex];
+  const letters = ['A','B','C','D'];
+  const correctIdx = q.answers.findIndex(a=>a.correct);
+  const correctLetter = letters[correctIdx];
+  const maxPoints = 1000;
+  const maxTimeMs = timePerQuestion * 1000;
+
+  let correctCount = 0;
+  Object.entries(answeredThisRound).forEach(([user, ans]) => {
+    if(ans.letter === correctLetter){
+      correctCount++;
+      const speedFraction = Math.max(0, 1 - (ans.timeMs / maxTimeMs));
+      const points = Math.round(maxPoints * (0.5 + 0.5 * speedFraction));
+      scores[user] = (scores[user] || 0) + points;
+    }
+  });
+
+  renderAnswerTiles(q, true);
+  renderLeaderboard();
+  correctCount > 0 ? playRevealCorrect() : playRevealWrong();
+
+  document.getElementById('reveal-title').textContent = `Correct answer: ${correctLetter}`;
+  document.getElementById('reveal-sub').textContent = `${correctCount} player${correctCount===1?'':'s'} got it right`;
+  document.getElementById('reveal-banner').classList.add('show');
+}
+
+// ═══════════════════════════════════════
+//  LEADERBOARDS (sidebar live + interim full-screen)
+// ═══════════════════════════════════════
+function getSortedScores(){
+  return Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+}
+
+function renderLeaderboard(){
+  const sorted = getSortedScores();
+  const el = document.getElementById('leaderboard-list');
+  if(sorted.length === 0){
+    el.innerHTML = '<div class="lb-empty">No players yet — tell chat to type !join</div>';
+    return;
+  }
+  el.innerHTML = '';
+  sorted.forEach(([name,score],i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (i<5 ? ' top5' : '');
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${score}</span>`;
+    el.appendChild(row);
+  });
+}
+
+function showInterimLeaderboard(){
+  clearInterval(timerInterval);
+  questionLive = false;
+  document.getElementById('play-stage').classList.add('hidden');
+  document.getElementById('host-controls-bar').style.display = 'none';
+  document.getElementById('interim-leaderboard').classList.add('show');
+  playLeaderboardSound();
+
+  const sorted = getSortedScores();
+  const el = document.getElementById('interim-list');
+  if(sorted.length === 0){
+    el.innerHTML = '<div class="lb-empty">No players yet</div>';
+  } else {
+    el.innerHTML = '';
+    sorted.forEach(([name,score],i) => {
+      const row = document.createElement('div');
+      row.className = 'lb-row' + (i<5 ? ' top5' : '');
+      row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${score}</span>`;
+      el.appendChild(row);
+    });
+  }
+}
+
+// ═══════════════════════════════════════
+//  FINAL RESULTS (podium)
+// ═══════════════════════════════════════
+function showFinalResults(){
+  document.getElementById('play-stage').classList.add('hidden');
+  document.getElementById('host-controls-bar').style.display = 'none';
+  document.getElementById('interim-leaderboard').classList.remove('show');
+  document.getElementById('final-screen').classList.add('show');
+  playWinSound();
+
+  const sorted = getSortedScores();
+  const podium = document.getElementById('podium');
+  podium.innerHTML = '';
+  const order = [1,0,2];
+  order.forEach(rank => {
+    if(!sorted[rank]) return;
+    const [name, score] = sorted[rank];
+    const spot = document.createElement('div');
+    spot.className = 'podium-spot';
+    spot.innerHTML = `<div class="podium-name">${esc(name)}</div><div class="podium-score">${score} pts</div><div class="podium-bar s${rank+1}">${rank+1}</div>`;
+    podium.appendChild(spot);
+  });
+
+  const full = document.getElementById('full-results');
+  full.innerHTML = '';
+  sorted.forEach(([name,score],i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row' + (i<5 ? ' top5' : '');
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${score}</span>`;
+    full.appendChild(row);
+  });
+}
+
+function endQuizEarly(){
+  clearInterval(timerInterval);
+  questionLive = false;
+  showFinalResults();
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+let toastT = null;
+function toast(msg, type=''){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show' + (type?' '+type:'');
+  clearTimeout(toastT); toastT = setTimeout(()=>{el.className='';}, 3200);
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+document.getElementById('sound-btn').textContent = soundEnabled ? '🔊' : '🔇';
+</script>
+</body>
+</html>
