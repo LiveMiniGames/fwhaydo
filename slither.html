@@ -230,7 +230,7 @@ let predictedSegments = null;
 let predictedAngle = 0;
 let correctionX = 0, correctionY = 0; // small drift error, bled off smoothly each frame
 let locallyEatenFood = new Set(); // food IDs my prediction already "ate" — hide instantly, server confirms later
-const PRED_TURN_RATE = 0.35;   // must match server TURN_RATE
+const PRED_TURN_RATE = 0.15;   // must match server TURN_RATE
 const PRED_BASE_SPEED = 3.6;   // must match server BASE_SPEED
 const PRED_BOOST_SPEED = 6.5;  // must match server BOOST_SPEED
 const PRED_SEGMENT_SPACING = 4; // must match server SEGMENT_SPACING
@@ -656,9 +656,10 @@ function render(){
     ctx.shadowBlur = (p.id === myId ? 14 : 6) * zoom;
     ctx.strokeStyle = p.color;
     // Snake gets noticeably fatter as it grows — uses a square-root curve so growth
-    // is very visible early on (first 50-100 food) and gradually tapers at a high cap,
-    // matching how dramatically real slither.io snakes fatten up over a session.
-    const thickness = Math.min(42, 9 + Math.sqrt(Math.max(0, p.length - 12)) * 5.5);
+    // is very visible early on (first 50-100 food) and gradually tapers at a cap.
+    // Capped at 20px, comfortably under the ~24px turning radius so curves stay
+    // visually clear at any length instead of getting swallowed by a thick stroke.
+    const thickness = Math.min(20, 8 + Math.sqrt(Math.max(0, p.length - 12)) * 2.3);
     ctx.lineWidth = thickness * zoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
