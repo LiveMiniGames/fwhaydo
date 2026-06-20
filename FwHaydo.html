@@ -272,7 +272,7 @@ footer a{color:var(--purple);text-decoration:none}
             <span class="tag tag-discord">Discord</span>
             <span class="tag tag-new">New</span>
           </div>
-          <div class="card-title">ROOM TIER LIST</div>
+          <div class="card-title">INTERACTIVE TIER LIST</div>
           <div class="card-desc">Viewers submit room photos in Discord. Chat votes to rank them live on a fully customizable tier list. You control when voting opens and closes — nothing ever auto-places.</div>
           <div class="card-action">
             <button class="play-btn" onclick="event.stopPropagation();showTierList()">Open Tool →</button>
@@ -306,7 +306,7 @@ footer a{color:var(--purple);text-decoration:none}
 
   <div id="tl-topbar">
     <button class="back-home" onclick="goHome()">← FwHaydo</button>
-    <span id="tl-name">🏆 ROOM TIER LIST</span>
+    <span id="tl-name">🏆 INTERACTIVE TIER LIST</span>
     <div id="tl-conn"><div id="tl-dot"></div><span id="tl-dot-txt">Not connected</span></div>
     <button class="btn sec" onclick="showSbTab('settings')">⚙️</button>
     <button class="btn sec" onclick="tlSave()">💾</button>
@@ -327,7 +327,7 @@ footer a{color:var(--purple);text-decoration:none}
 
   <div id="tl-main">
     <div id="tl-area">
-      <div id="tl-heading">ROOM TIER LIST</div>
+      <div id="tl-heading">INTERACTIVE TIER LIST</div>
       <div id="tier-rows"></div>
       <div id="q-wrap">
         <div id="q-lbl">📥 Queue <span id="q-cnt">0</span>
@@ -357,6 +357,13 @@ footer a{color:var(--purple);text-decoration:none}
           <button class="btn" style="width:100%" onclick="addManual()">Add to Queue</button>
         </div>
         <div class="sb-sec">
+          <div class="sb-lbl">Bulk Add (paste a list)</div>
+          <textarea class="sb-in" id="bulk-box" rows="6" style="resize:vertical;font-family:monospace;font-size:.72rem"
+            placeholder="One per line:&#10;https://example.com/img1.jpg, Lakers&#10;https://example.com/img2.jpg, Celtics&#10;https://example.com/img3.jpg&#10;&#10;(label after comma is optional)"></textarea>
+          <button class="btn" style="width:100%;margin-top:4px" onclick="addBulk()">📋 Add All to Queue</button>
+          <p style="font-size:.65rem;color:var(--muted);line-height:1.5;margin-top:6px">Paste one image URL per line. Add <code>, Label</code> after the URL to name it — otherwise it auto-numbers. Great for pasting in a whole TierMaker template's image list at once.</p>
+        </div>
+        <div class="sb-sec">
           <div class="sb-lbl">Upload File</div>
           <input class="sb-in" id="f-lbl" type="text" placeholder="Label for this image"/>
           <button class="btn sec" style="width:100%;margin-bottom:5px" onclick="document.getElementById('file-in').click()">📁 Pick Image</button>
@@ -377,7 +384,7 @@ footer a{color:var(--purple);text-decoration:none}
         </div>
         <div class="sb-sec">
           <div class="sb-lbl">Title</div>
-          <input class="sb-in" id="cfg-title" type="text" value="ROOM TIER LIST"
+          <input class="sb-in" id="cfg-title" type="text" value="INTERACTIVE TIER LIST"
             oninput="document.getElementById('tl-heading').textContent=this.value;document.getElementById('tl-name').textContent='🏆 '+this.value"/>
         </div>
         <div class="sb-sec">
@@ -609,6 +616,47 @@ function addManual(){
   addToQ(url,name);
   document.getElementById('m-url').value='';
   document.getElementById('m-name').value='';
+}
+
+function addBulk(){
+  const raw=document.getElementById('bulk-box').value.trim();
+  if(!raw){toast('Paste some image URLs first','red');return;}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
+  let added=0, skipped=0;
+  lines.forEach((line,i)=>{
+    // Split on first comma to separate URL from optional label
+    const commaIdx=line.indexOf(',');
+    let url, name;
+    if(commaIdx>-1){
+      url=line.slice(0,commaIdx).trim();
+      name=line.slice(commaIdx+1).trim();
+    } else {
+      url=line;
+      name='';
+    }
+    if(!url.startsWith('http')){skipped++;return;}
+    if(!name) name='Item '+(i+1);
+    const result=addToQSilent(url,name);
+    if(result) added++; else skipped++;
+  });
+  document.getElementById('bulk-box').value='';
+  renderQ();
+  if(skipped>0){
+    toast(`Added ${added} images, skipped ${skipped} (videos or invalid)`,'red');
+  } else {
+    toast(`Added ${added} images to queue!`,'green');
+  }
+}
+
+// Same as addToQ but doesn't re-render the queue each time (for bulk speed) and doesn't toast per-item
+function addToQSilent(url, name, msgId) {
+  const lower=url.toLowerCase().split('?')[0];
+  if (VEXTS.some(e=>lower.endsWith(e))) return null;
+  const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
+  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
+  queue.push(id);
+  if(msgId) discordMap[msgId]=id;
+  return id;
 }
 
 function addFile(e){
