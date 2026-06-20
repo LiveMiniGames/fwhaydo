@@ -229,6 +229,7 @@ let targetZoom = 1;
 let predictedSegments = null;
 let predictedAngle = 0;
 let correctionX = 0, correctionY = 0; // small drift error, bled off smoothly each frame
+let locallyEatenFood = new Set(); // food IDs my prediction already "ate" — hide instantly, server confirms later
 const PRED_TURN_RATE = 0.18;   // must match server TURN_RATE
 const PRED_BASE_SPEED = 3.6;   // must match server BASE_SPEED
 const PRED_BOOST_SPEED = 6.5;  // must match server BOOST_SPEED
@@ -316,6 +317,10 @@ function handleMessage(data){
     prevPlayers = players; // remember the last snapshot before overwriting
     players = data.players;
     food = data.food;
+    // Clean up locally-eaten tracking — once the server's food list no longer contains
+    // an ID, we don't need to keep predicting it's eaten anymore
+    const currentFoodIds = new Set(food.map(f => f.id));
+    locallyEatenFood.forEach(id => { if(!currentFoodIds.has(id)) locallyEatenFood.delete(id); });
     leaderboard = data.leaderboard;
     roundActive = data.roundActive;
     roundEndTime = data.roundEndTime;
@@ -356,7 +361,7 @@ function handleMessage(data){
   }
   if(data.type === 'died'){
     alive = false;
-    predictedSegments = null; correctionX = 0; correctionY = 0;
+    predictedSegments = null; correctionX = 0; correctionY = 0; locallyEatenFood.clear();
     document.getElementById('ds-score').textContent = data.score;
     document.getElementById('death-screen').classList.add('show');
   }
@@ -390,7 +395,7 @@ function joinGame(){
   }
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
-  predictedSegments = null; correctionX = 0; correctionY = 0; // reset prediction, will rebuild from next server state
+  predictedSegments = null; correctionX = 0; correctionY = 0; locallyEatenFood.clear(); // reset prediction, will rebuild from next server state
   virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('join-screen').classList.add('hidden');
   document.getElementById('death-screen').classList.remove('show');
@@ -402,7 +407,7 @@ function respawn(){
   const name = document.getElementById('join-name').value.trim() || 'Player';
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
-  predictedSegments = null; correctionX = 0; correctionY = 0; // reset prediction, will rebuild from next server state
+  predictedSegments = null; correctionX = 0; correctionY = 0; locallyEatenFood.clear(); // reset prediction, will rebuild from next server state
   virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('death-screen').classList.remove('show');
   if(!('ontouchstart' in window)) canvas.requestPointerLock();
@@ -528,6 +533,16 @@ function simulatePrediction(){
 
   targetCamX = newHead.x;
   targetCamY = newHead.y;
+
+  // Predicted food eating — hide it instantly on my screen the moment my (predicted) head
+  // touches it, rather than waiting up to ~1-2 server ticks for the real removal to arrive
+  food.forEach(f => {
+    if(locallyEatenFood.has(f.id)) return;
+    const dx = newHead.x - f.x, dy = newHead.y - f.y;
+    if(dx*dx + dy*dy < 20*20){
+      locallyEatenFood.add(f.id);
+    }
+  });
 }
 
 // Send input to server ~15x/sec
@@ -608,6 +623,7 @@ function render(){
   // Food
   const pulseScale = 1 + Math.sin(Date.now() / 300) * 0.15;
   food.forEach(f => {
+    if(locallyEatenFood.has(f.id)) return; // already predicted as eaten, hide instantly
     const s = worldToScreen(f.x, f.y);
     if(s.x < -20 || s.x > canvas.width+20 || s.y < -20 || s.y > canvas.height+20) return;
     const color = f.color || '#f1c40f';
@@ -635,31 +651,22 @@ function render(){
     ctx.shadowColor = p.color;
     ctx.shadowBlur = (p.id === myId ? 14 : 6) * zoom;
     ctx.strokeStyle = p.color;
-    ctx.lineWidth = 10 * zoom;
+    // Snake gets visibly thicker as it grows, not just longer — matches real slither.io.
+    // Starts around 10px thick, grows toward ~26px as length increases, caps out so it
+    // doesn't get absurd.
+    const thickness = Math.min(26, 10 + (p.length - 12) * 0.045);
+    ctx.lineWidth = thickness * zoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
 
-    // Smooth curve through segments instead of straight lines between them —
-    // this is what removes the jagged/steppy look on fast-moving snakes
+    // Connect segments with straight lines + round joins. (We tried curve-smoothing here
+    // earlier, but quadratic curves cut corners and flattened real turns — this looks
+    // smooth enough on its own since segments are spaced closely together.)
     ctx.beginPath();
-    if(segs.length > 2){
-      const first = worldToScreen(segs[0].x, segs[0].y);
-      ctx.moveTo(first.x, first.y);
-      for(let i = 1; i < segs.length - 1; i++){
-        const curr = worldToScreen(segs[i].x, segs[i].y);
-        const next = worldToScreen(segs[i+1].x, segs[i+1].y);
-        const midX = (curr.x + next.x) / 2;
-        const midY = (curr.y + next.y) / 2;
-        ctx.quadraticCurveTo(curr.x, curr.y, midX, midY);
-      }
-      const last = worldToScreen(segs[segs.length-1].x, segs[segs.length-1].y);
-      ctx.lineTo(last.x, last.y);
-    } else {
-      segs.forEach((seg, i) => {
-        const s = worldToScreen(seg.x, seg.y);
-        if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
-      });
-    }
+    segs.forEach((seg, i) => {
+      const s = worldToScreen(seg.x, seg.y);
+      if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+    });
     ctx.stroke();
     ctx.shadowBlur = 0;
 
@@ -667,14 +674,14 @@ function render(){
     const head = worldToScreen(segs[0].x, segs[0].y);
     ctx.fillStyle = '#fff';
     ctx.beginPath();
-    ctx.arc(head.x, head.y, 3 * zoom, 0, Math.PI*2);
+    ctx.arc(head.x, head.y, (thickness * 0.3) * zoom, 0, Math.PI*2);
     ctx.fill();
 
     // Name label
     ctx.fillStyle = p.id === myId ? '#fff' : 'rgba(255,255,255,0.7)';
     ctx.font = (p.id === myId ? 'bold ' : '') + Math.max(9, 13*zoom) + 'px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(p.name, head.x, head.y - 18*zoom);
+    ctx.fillText(p.name, head.x, head.y - (18 + thickness)*zoom);
   });
 
   requestAnimationFrame(render);
