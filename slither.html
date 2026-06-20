@@ -206,6 +206,9 @@ let worldRadius = 2200;
 
 // Game state from server
 let players = [];
+let prevPlayers = []; // previous server snapshot, used to interpolate other players' movement smoothly
+let lastStateTime = Date.now();
+let stateInterval = 33; // ms between server updates (~30/sec), used to time interpolation
 let food = [];
 let leaderboard = [];
 let roundActive = false;
@@ -307,6 +310,10 @@ function handleMessage(data){
     roundEndTime = data.roundEndTime;
   }
   if(data.type === 'state'){
+    const now = Date.now();
+    stateInterval = Math.min(100, Math.max(20, now - lastStateTime)); // measure actual server tick gap
+    lastStateTime = now;
+    prevPlayers = players; // remember the last snapshot before overwriting
     players = data.players;
     food = data.food;
     leaderboard = data.leaderboard;
@@ -533,6 +540,27 @@ setInterval(() => {
 // ═══════════════════════════════════════
 //  RENDER LOOP
 // ═══════════════════════════════════════
+function getInterpolatedSegments(p){
+  // Find this player's previous-snapshot segments to blend from
+  const prev = prevPlayers.find(pp => pp.id === p.id);
+  if(!prev || !prev.segments || prev.segments.length === 0) return p.segments;
+
+  const elapsed = Date.now() - lastStateTime;
+  const t = Math.min(1, elapsed / stateInterval); // 0 = at prev snapshot, 1 = at current snapshot
+
+  const len = Math.min(prev.segments.length, p.segments.length);
+  const blended = [];
+  for(let i = 0; i < len; i++){
+    blended.push({
+      x: prev.segments[i].x + (p.segments[i].x - prev.segments[i].x) * t,
+      y: prev.segments[i].y + (p.segments[i].y - prev.segments[i].y) * t
+    });
+  }
+  // If current snake grew longer than prev, just append the extra new segments as-is
+  for(let i = len; i < p.segments.length; i++) blended.push(p.segments[i]);
+  return blended;
+}
+
 function worldToScreen(x, y){
   return {
     x: (x - camX) * zoom + canvas.width/2,
@@ -600,8 +628,8 @@ function render(){
     if(!p.segments || p.segments.length === 0) return;
 
     // Use locally-predicted segments for my own snake (instant response to input),
-    // server segments for everyone else
-    const segs = (p.id === myId && predictedSegments) ? predictedSegments : p.segments;
+    // interpolated segments for everyone else (smooths out the 30/sec network update steps)
+    const segs = (p.id === myId && predictedSegments) ? predictedSegments : getInterpolatedSegments(p);
 
     // Glow under the snake body
     ctx.shadowColor = p.color;
@@ -610,11 +638,28 @@ function render(){
     ctx.lineWidth = 10 * zoom;
     ctx.lineCap = 'round';
     ctx.lineJoin = 'round';
+
+    // Smooth curve through segments instead of straight lines between them —
+    // this is what removes the jagged/steppy look on fast-moving snakes
     ctx.beginPath();
-    segs.forEach((seg, i) => {
-      const s = worldToScreen(seg.x, seg.y);
-      if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
-    });
+    if(segs.length > 2){
+      const first = worldToScreen(segs[0].x, segs[0].y);
+      ctx.moveTo(first.x, first.y);
+      for(let i = 1; i < segs.length - 1; i++){
+        const curr = worldToScreen(segs[i].x, segs[i].y);
+        const next = worldToScreen(segs[i+1].x, segs[i+1].y);
+        const midX = (curr.x + next.x) / 2;
+        const midY = (curr.y + next.y) / 2;
+        ctx.quadraticCurveTo(curr.x, curr.y, midX, midY);
+      }
+      const last = worldToScreen(segs[segs.length-1].x, segs[segs.length-1].y);
+      ctx.lineTo(last.x, last.y);
+    } else {
+      segs.forEach((seg, i) => {
+        const s = worldToScreen(seg.x, seg.y);
+        if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
+      });
+    }
     ctx.stroke();
     ctx.shadowBlur = 0;
 
