@@ -197,6 +197,7 @@ let myLength = 0;
 const canvas = document.getElementById('game-canvas');
 const ctx = canvas.getContext('2d');
 let camX = 0, camY = 0;
+let targetCamX = 0, targetCamY = 0;
 let mouseAngle = 0;
 let boosting = false;
 
@@ -287,8 +288,8 @@ function handleMessage(data){
       myLength = me.length;
       document.getElementById('my-length').textContent = myLength;
       if(me.segments && me.segments[0]){
-        camX = me.segments[0].x;
-        camY = me.segments[0].y;
+        targetCamX = me.segments[0].x;
+        targetCamY = me.segments[0].y;
       }
     }
     updateTimer();
@@ -408,6 +409,10 @@ function worldToScreen(x, y){
 }
 
 function render(){
+  // Smoothly move camera toward target position (eliminates choppy snapping)
+  camX += (targetCamX - camX) * 0.25;
+  camY += (targetCamY - camY) * 0.25;
+
   ctx.fillStyle = '#0a0a12';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -425,18 +430,30 @@ function render(){
   }
 
   // Food
+  const pulseScale = 1 + Math.sin(Date.now() / 300) * 0.15;
   food.forEach(f => {
     const s = worldToScreen(f.x, f.y);
     if(s.x < -20 || s.x > canvas.width+20 || s.y < -20 || s.y > canvas.height+20) return;
-    ctx.fillStyle = '#f1c40f';
+    const color = f.color || '#f1c40f';
+    const radius = (f.value > 1 ? 6 : 4) * pulseScale;
+
+    // Glow
+    ctx.shadowColor = color;
+    ctx.shadowBlur = 8;
+    ctx.fillStyle = color;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 4, 0, Math.PI*2);
+    ctx.arc(s.x, s.y, radius, 0, Math.PI*2);
     ctx.fill();
+    ctx.shadowBlur = 0;
   });
 
   // Players
   players.forEach(p => {
     if(!p.segments || p.segments.length === 0) return;
+
+    // Glow under the snake body
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = p.id === myId ? 14 : 6;
     ctx.strokeStyle = p.color;
     ctx.lineWidth = 10;
     ctx.lineCap = 'round';
@@ -447,6 +464,7 @@ function render(){
       if(i === 0) ctx.moveTo(s.x, s.y); else ctx.lineTo(s.x, s.y);
     });
     ctx.stroke();
+    ctx.shadowBlur = 0;
 
     // Head highlight
     const head = worldToScreen(p.segments[0].x, p.segments[0].y);
