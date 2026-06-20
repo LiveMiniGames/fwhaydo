@@ -225,6 +225,7 @@ let targetZoom = 1;
 // Local client-side prediction for my own snake (removes input delay feel)
 let predictedSegments = null;
 let predictedAngle = 0;
+let correctionX = 0, correctionY = 0; // small drift error, bled off smoothly each frame
 const PRED_TURN_RATE = 0.18;   // must match server TURN_RATE
 const PRED_BASE_SPEED = 3.6;   // must match server BASE_SPEED
 const PRED_BOOST_SPEED = 6.5;  // must match server BOOST_SPEED
@@ -320,8 +321,6 @@ function handleMessage(data){
       if(me.segments && me.segments[0]){
         targetCamX = me.segments[0].x;
         targetCamY = me.segments[0].y;
-        // Gently correct prediction toward server truth rather than snapping —
-        // keeps the instant-feel while staying in sync over time
         if(!predictedSegments){
           predictedSegments = me.segments.map(s => ({x:s.x, y:s.y}));
           predictedAngle = me.angle || mouseAngle;
@@ -329,12 +328,16 @@ function handleMessage(data){
           const dx = me.segments[0].x - predictedSegments[0].x;
           const dy = me.segments[0].y - predictedSegments[0].y;
           const dist = Math.sqrt(dx*dx + dy*dy);
-          // If we've drifted too far (e.g. just ate food / round restart), snap; otherwise nudge gently
-          if(dist > 80){
+          // If we've drifted too far (e.g. just ate food / round restart), snap fully;
+          // otherwise just remember the small error and bleed it off gradually in render()
+          // instead of nudging the head directly (which was causing the body to kink).
+          if(dist > 120){
             predictedSegments = me.segments.map(s => ({x:s.x, y:s.y}));
+            predictedAngle = me.angle || predictedAngle;
+            correctionX = 0; correctionY = 0;
           } else {
-            predictedSegments[0].x += dx * 0.15;
-            predictedSegments[0].y += dy * 0.15;
+            correctionX = dx;
+            correctionY = dy;
           }
         }
       }
@@ -346,7 +349,7 @@ function handleMessage(data){
   }
   if(data.type === 'died'){
     alive = false;
-    predictedSegments = null;
+    predictedSegments = null; correctionX = 0; correctionY = 0;
     document.getElementById('ds-score').textContent = data.score;
     document.getElementById('death-screen').classList.add('show');
   }
@@ -380,7 +383,7 @@ function joinGame(){
   }
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
-  predictedSegments = null; // reset prediction, will rebuild from next server state
+  predictedSegments = null; correctionX = 0; correctionY = 0; // reset prediction, will rebuild from next server state
   virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('join-screen').classList.add('hidden');
   document.getElementById('death-screen').classList.remove('show');
@@ -392,7 +395,7 @@ function respawn(){
   const name = document.getElementById('join-name').value.trim() || 'Player';
   ws.send(JSON.stringify({ type: 'join', name }));
   alive = true;
-  predictedSegments = null; // reset prediction, will rebuild from next server state
+  predictedSegments = null; correctionX = 0; correctionY = 0; // reset prediction, will rebuild from next server state
   virtualCursorX = 0; virtualCursorY = 0;
   document.getElementById('death-screen').classList.remove('show');
   if(!('ontouchstart' in window)) canvas.requestPointerLock();
@@ -481,6 +484,17 @@ document.getElementById('boost-btn').addEventListener('touchend', e => {
 // ═══════════════════════════════════════
 function simulatePrediction(){
   if(!predictedSegments || !alive) return;
+
+  // Bleed off any accumulated drift correction smoothly across the WHOLE body at once,
+  // so the snake stays a coherent connected shape instead of the head pulling away from the tail
+  if(Math.abs(correctionX) > 0.01 || Math.abs(correctionY) > 0.01){
+    const bleed = 0.08; // fraction of remaining error corrected per frame
+    const shiftX = correctionX * bleed;
+    const shiftY = correctionY * bleed;
+    predictedSegments.forEach(seg => { seg.x += shiftX; seg.y += shiftY; });
+    correctionX -= shiftX;
+    correctionY -= shiftY;
+  }
 
   // Turn toward mouse angle smoothly, same math as server
   let diff = mouseAngle - predictedAngle;
