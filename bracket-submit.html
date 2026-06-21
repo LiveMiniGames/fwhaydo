@@ -56,6 +56,20 @@ textarea.form-input{resize:vertical;min-height:80px}
 
 #submitted-list{margin-top:24px}
 #submitted-list h3{font-size:.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px}
+
+#mod-panel{display:none;background:var(--card);border:1px solid var(--red);border-radius:14px;
+  padding:24px;width:100%;margin-top:20px}
+#mod-panel.show{display:block}
+#mod-panel h3{font-size:1.05rem;font-weight:800;color:var(--red);margin-bottom:6px}
+.mod-sub{font-size:.78rem;color:var(--muted);margin-bottom:16px;line-height:1.5}
+.mod-item{background:#111;border:1px solid var(--border);border-radius:8px;padding:12px;
+  margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.mod-item-user{font-size:.78rem;font-weight:700;color:var(--purple);flex-shrink:0;min-width:90px}
+.mod-item-content{flex:1;font-size:.8rem;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mod-item-content img{max-height:50px;border-radius:4px;display:block}
+.mod-remove-btn{background:var(--red);color:#fff;border:none;border-radius:6px;padding:7px 12px;
+  font-size:.72rem;font-weight:700;cursor:pointer;flex-shrink:0}
+.mod-remove-btn:hover{background:#c0392b}
 .sub-chip{background:#111;border:1px solid var(--border);border-radius:6px;padding:9px 12px;
   font-size:.8rem;margin-bottom:6px;display:flex;justify-content:space-between;align-items:center}
 
@@ -110,9 +124,16 @@ textarea.form-input{resize:vertical;min-height:80px}
     <div id="submitted-list"></div>
   </div>
 
+  <div id="mod-panel">
+    <h3>🛡️ Moderation — Review Submissions</h3>
+    <p class="mod-sub">Only visible to you because you're a mod or the broadcaster. Remove anything that violates Twitch TOS.</p>
+    <div id="mod-submission-list"></div>
+  </div>
+
 </div>
 
 <div id="toast"></div>
+
 
 <script>
 // ═══════════════════════════════════════
@@ -129,6 +150,8 @@ let maxSubmissionsPerUser = 1;
 let submissionType = 'text';
 let currentPhase = 'lobby';
 let pendingImageData = null;
+let isModerator = false;
+let lobbySubmissions = [];
 
 // ═══════════════════════════════════════
 //  TWITCH OAUTH (implicit grant — no backend needed for login itself)
@@ -183,11 +206,18 @@ function onLoggedIn(){
 function connectWS(){
   try{
     ws = new WebSocket(WS_URL);
+    ws.onopen = () => {
+      // Ask the backend if this logged-in Twitch user is a known mod/broadcaster —
+      // it knows because the host's chat connection reports mod badges as they're seen
+      ws.send(JSON.stringify({ type: 'check-mod-status', username: twitchUsername }));
+    };
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if(data.type === 'state') handleState(data);
       if(data.type === 'submit-ok'){ toast('Submission added!', 'green'); mySubmissionCount++; renderStatus(); }
       if(data.type === 'submit-fail'){ toast(data.reason, 'red'); }
+      if(data.type === 'mod-status'){ isModerator = data.isMod; if(isModerator) document.getElementById('mod-panel').classList.add('show'); renderModPanel(); }
+      if(data.type === 'error'){ toast(data.message, 'red'); }
     };
     ws.onerror = () => toast('Connection error — refresh and try again', 'red');
   }catch(e){ toast('Could not connect to lobby', 'red'); }
@@ -197,14 +227,60 @@ function handleState(data){
   currentPhase = data.phase;
   submissionType = data.submissionType;
   maxSubmissionsPerUser = data.maxSubmissionsPerUser;
+  lobbySubmissions = data.submissions || [];
   renderSubmissionFields();
   renderStatus();
+  if(isModerator) renderModPanel();
 }
 
 function renderSubmissionFields(){
   document.getElementById('text-submit-fields').style.display = submissionType === 'text' ? 'block' : 'none';
   document.getElementById('image-submit-fields').style.display = submissionType === 'image' ? 'block' : 'none';
   document.getElementById('video-submit-fields').style.display = submissionType === 'video' ? 'block' : 'none';
+}
+
+// ═══════════════════════════════════════
+//  MODERATION PANEL (mods + broadcaster only, auto-unlocked, same page as submission)
+// ═══════════════════════════════════════
+function renderModPanel(){
+  const list = document.getElementById('mod-submission-list');
+  if(!lobbySubmissions || lobbySubmissions.length === 0){
+    list.innerHTML = '<p style="color:var(--muted);font-size:.8rem">No submissions yet.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  lobbySubmissions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'mod-item';
+    const userEl = document.createElement('span');
+    userEl.className = 'mod-item-user';
+    userEl.textContent = s.username;
+    item.appendChild(userEl);
+
+    const contentEl = document.createElement('div');
+    contentEl.className = 'mod-item-content';
+    if(submissionType === 'image' && s.content){
+      const img = document.createElement('img');
+      img.src = s.content;
+      contentEl.appendChild(img);
+    } else {
+      contentEl.textContent = s.content;
+    }
+    item.appendChild(contentEl);
+
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'mod-remove-btn';
+    removeBtn.textContent = 'Remove';
+    removeBtn.onclick = () => removeSubmission(s.id);
+    item.appendChild(removeBtn);
+
+    list.appendChild(item);
+  });
+}
+
+function removeSubmission(id){
+  if(!ws || ws.readyState !== WebSocket.OPEN) return;
+  ws.send(JSON.stringify({ type: 'remove-submission', submissionId: id, requesterUsername: twitchUsername }));
 }
 
 function renderStatus(){

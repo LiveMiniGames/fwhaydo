@@ -94,6 +94,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   color:var(--muted);flex-shrink:0;width:30px}
 
 #vote-status{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:16px}
+#vote-timer{text-align:center;font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:16px;font-family:'Lilita One',cursive,sans-serif}
+#vote-timer.urgent{color:var(--red)}
+
+#live-vote-display{display:flex;gap:16px;max-width:700px;margin:0 auto 14px}
+.vote-bar-side{flex:1}
+.vote-bar-track{background:#111;border:1px solid var(--border);border-radius:8px;height:34px;overflow:hidden;position:relative}
+.vote-bar-fill{height:100%;display:flex;align-items:center;padding:0 10px;font-weight:800;font-size:.85rem;
+  color:#fff;transition:width .3s ease;white-space:nowrap;min-width:fit-content}
+.vote-bar-fill.opt1{background:var(--purple)}
+.vote-bar-fill.opt2{background:#e67e22}
 #vote-status.live{color:var(--green);font-weight:700}
 
 #host-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
@@ -191,7 +201,17 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
     <div id="matchup-display"></div>
 
+    <div id="live-vote-display"></div>
+
     <div id="vote-status">Click "Open Voting" to let chat vote 1 or 2</div>
+    <div id="vote-timer" style="display:none"></div>
+
+    <div id="timer-pills" class="pill-row" style="max-width:420px;margin:0 auto 14px">
+      <button class="pill-btn active" data-dur="0">No Timer</button>
+      <button class="pill-btn" data-dur="30">30s</button>
+      <button class="pill-btn" data-dur="60">60s</button>
+      <button class="pill-btn" data-dur="120">120s</button>
+    </div>
 
     <div id="host-controls">
       <button class="btn sec" id="open-voting-btn" onclick="openVoting()">Open Voting</button>
@@ -331,6 +351,7 @@ function renderBracket(data){
 
   if(!match){
     display.innerHTML = '<p style="color:var(--muted);text-align:center;width:100%">Waiting for next matchup...</p>';
+    document.getElementById('live-vote-display').innerHTML = '';
     return;
   }
 
@@ -356,6 +377,50 @@ function renderBracket(data){
     document.getElementById('vote-status').textContent = 'Click "Open Voting" to let chat vote 1 or 2';
     document.getElementById('vote-status').classList.remove('live');
   }
+
+  // Live vote bars — visible to everyone watching the host screen the entire time voting is open or revealed
+  renderVoteBars(data.voteCounts);
+
+  // Countdown timer, driven by the server's votingEndsAt timestamp so everyone stays in sync
+  // even if their own clock or connection lags slightly
+  startOrUpdateCountdown(data.phase === 'voting' ? data.votingEndsAt : null);
+}
+
+function renderVoteBars(counts){
+  const wrap = document.getElementById('live-vote-display');
+  if(!counts || counts.total === 0){
+    wrap.innerHTML = '';
+    return;
+  }
+  const pct1 = counts.total > 0 ? Math.round((counts.a / counts.total) * 100) : 0;
+  const pct2 = 100 - pct1;
+  wrap.innerHTML = `
+    <div class="vote-bar-side">
+      <div class="vote-bar-track"><div class="vote-bar-fill opt1" style="width:${Math.max(pct1,8)}%">1 — ${counts.a}</div></div>
+    </div>
+    <div class="vote-bar-side">
+      <div class="vote-bar-track"><div class="vote-bar-fill opt2" style="width:${Math.max(pct2,8)}%">2 — ${counts.b}</div></div>
+    </div>
+  `;
+}
+
+let countdownInterval = null;
+function startOrUpdateCountdown(endsAt){
+  clearInterval(countdownInterval);
+  const el = document.getElementById('vote-timer');
+  if(!endsAt){
+    el.style.display = 'none';
+    return;
+  }
+  el.style.display = 'block';
+  const tick = () => {
+    const remaining = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    el.textContent = remaining + 's';
+    el.classList.toggle('urgent', remaining <= 10);
+    if(remaining <= 0) clearInterval(countdownInterval);
+  };
+  tick();
+  countdownInterval = setInterval(tick, 250);
 }
 
 function buildSide(entry, num, match, revealed, type){
@@ -438,6 +503,13 @@ function buildVideoEmbed(url){
   return fallback;
 }
 
+let selectedDuration = 0;
+document.querySelectorAll('#timer-pills .pill-btn').forEach(b=>b.addEventListener('click',()=>{
+  document.querySelectorAll('#timer-pills .pill-btn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  selectedDuration = parseInt(b.dataset.dur);
+}));
+
 // ═══════════════════════════════════════
 //  HOST ACTIONS
 // ═══════════════════════════════════════
@@ -446,7 +518,7 @@ function startBracket(){
 }
 function openVoting(){
   votedUsers.clear();
-  ws.send(JSON.stringify({ type: 'open-voting' }));
+  ws.send(JSON.stringify({ type: 'open-voting', durationSeconds: selectedDuration }));
 }
 function closeVoting(){
   ws.send(JSON.stringify({ type: 'close-voting' }));
@@ -460,12 +532,11 @@ function resetLobby(){
 }
 
 function renderVoteTally(counts){
-  // Live tally only matters visually once revealed; while voting is open we just
-  // show a running total so the host can sense momentum without spoiling who's ahead
   const status = document.getElementById('vote-status');
   if(latestState && latestState.phase === 'voting'){
-    status.textContent = `Voting is LIVE — ${counts.total} vote${counts.total===1?'':'s'} so far`;
+    status.textContent = `Voting is LIVE — chat types 1 or 2`;
   }
+  renderVoteBars(counts);
 }
 
 // ═══════════════════════════════════════
@@ -489,16 +560,23 @@ function connectTwitchChat(){
       if(raw.startsWith('PING')){ twitchClient.send('PONG :tmi.twitch.tv'); return; }
       if(raw.includes('PRIVMSG')){
         try{
-          let user = 'user', msg = '';
+          let user = 'user', msg = '', badges = '';
           const tagMatch = raw.match(/^@([^ ]+)/);
           if(tagMatch){
             const tags = {};
             tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
             user = tags['display-name'] || tags['login'] || 'user';
+            badges = tags['badges'] || '';
           }
           const msgMatch = raw.match(/PRIVMSG #\S+ :(.+)/);
           if(msgMatch) msg = msgMatch[1].replace(/\r?\n/, '');
           if(user && msg) handleChatVote(user, msg);
+
+          // Report mod/broadcaster status to the backend so the submission page can
+          // unlock moderation tools for this person once they log in with Twitch there
+          if(user && (badges.includes('moderator') || badges.includes('broadcaster'))){
+            ws.send(JSON.stringify({ type: 'report-mod', username: user }));
+          }
         }catch(err){}
       }
     };
