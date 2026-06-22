@@ -64,7 +64,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #lobby-panel{display:none;max-width:600px;width:100%;text-align:center}
 #lobby-panel.show{display:block}
 #lobby-panel h2{font-size:1.4rem;font-weight:900;color:#fff;margin-bottom:6px}
-#lobby-count{font-size:1rem;color:var(--green);font-weight:800;margin-bottom:18px}
+#lobby-count{font-size:1rem;color:var(--green);font-weight:800;margin-bottom:4px}
 #lobby-submissions{display:flex;flex-direction:column;gap:8px;width:100%;max-width:600px;
   max-height:380px;overflow-y:auto;margin-bottom:20px}
 .sub-review-card{background:var(--card);border:1px solid var(--border);border-radius:8px;
@@ -127,6 +127,42 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #final-panel.show{display:block}
 #final-panel h1{font-size:1.8rem;font-weight:900;color:var(--yellow);margin-bottom:20px}
 #final-content{background:var(--card);border:2px solid var(--yellow);border-radius:14px;padding:28px}
+
+/* ═══ DRAGGABLE PRIVATE MOD PANEL ═══ */
+#mod-panel-float{display:none;position:fixed;top:80px;right:20px;width:420px;
+  background:var(--card);border:2px solid var(--purple);border-radius:12px;
+  box-shadow:0 8px 40px rgba(0,0,0,.7);z-index:999;flex-direction:column;
+  resize:both;overflow:hidden;min-width:300px;min-height:200px;max-height:80vh}
+#mod-panel-float.show{display:flex}
+#mod-panel-handle{cursor:move;background:#1a1a26;padding:11px 14px;display:flex;
+  align-items:center;justify-content:space-between;flex-shrink:0;
+  border-bottom:1px solid var(--border);user-select:none}
+#mod-panel-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;
+  letter-spacing:.8px;font-weight:700}
+#mod-panel-label::before{content:'⠿ ';font-size:1rem;color:var(--purple)}
+#mod-panel-close{background:none;border:none;color:var(--muted);cursor:pointer;
+  font-size:1rem;padding:0 4px;line-height:1}
+#mod-panel-close:hover{color:var(--red)}
+#mod-panel-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
+#mod-panel-resize{position:absolute;bottom:0;right:0;width:20px;height:20px;
+  cursor:nwse-resize;opacity:.4}
+#mod-panel-resize::before{content:'';display:block;width:8px;height:8px;
+  border-right:2px solid var(--purple);border-bottom:2px solid var(--purple);
+  position:absolute;bottom:5px;right:5px}
+
+.mod-card{background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
+.mod-card-user{font-size:.75rem;font-weight:800;color:var(--purple);margin-bottom:6px}
+.mod-card-content{font-size:.82rem;color:#fff;word-break:break-word;overflow-wrap:anywhere;
+  margin-bottom:8px;position:relative}
+.mod-card-blurred{display:inline-block;filter:blur(8px);transition:filter .2s;
+  max-width:100%;pointer-events:none}
+.mod-card-blurred img{max-width:100%;max-height:100px;border-radius:5px;display:block;margin-top:4px}
+.mod-card-blur-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:700;color:var(--purple);background:rgba(0,0,0,.3);border-radius:5px;
+  cursor:pointer;letter-spacing:.5px}
+.mod-card-del{background:var(--red);color:#fff;border:none;border-radius:5px;padding:5px 12px;
+  font-size:.7rem;font-weight:700;cursor:pointer}
+.mod-card-del:hover{background:#c0392b}
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
@@ -196,9 +232,25 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   <!-- LOBBY PANEL -->
   <div id="lobby-panel">
     <h2>Lobby Open</h2>
-    <div id="lobby-count">0 submissions in</div>
-    <div id="lobby-submissions"></div>
-    <button class="btn lg" onclick="startBracket()">▶ Start Bracket</button>
+    <div id="lobby-count">0/16 submissions</div>
+    <div id="lobby-remaining" style="font-size:.82rem;color:var(--muted);margin-bottom:16px">16 spots remaining</div>
+    <p style="font-size:.78rem;color:var(--muted);margin-bottom:16px">Share the submission link with chat. Use the review panel to check and remove submissions privately before starting.</p>
+    <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <button class="btn sec" onclick="toggleModPanel()">🔍 Review Submissions (Private)</button>
+      <button class="btn lg" onclick="startBracket()">▶ Start Bracket</button>
+    </div>
+  </div>
+
+  <!-- DRAGGABLE PRIVATE MOD PANEL -->
+  <div id="mod-panel-float">
+    <div id="mod-panel-handle">
+      <span id="mod-panel-label">⠿ Submission Review — Drag to second monitor</span>
+      <button id="mod-panel-close" onclick="toggleModPanel()">✕</button>
+    </div>
+    <div id="mod-panel-body">
+      <div id="mod-panel-list"></div>
+    </div>
+    <div id="mod-panel-resize"></div>
   </div>
 
   <!-- BRACKET PANEL -->
@@ -344,6 +396,7 @@ function renderFromState(data){
     document.getElementById('bracket-panel').classList.remove('show');
     document.getElementById('final-panel').classList.remove('show');
     renderLobby(data);
+    renderModPanel(data); // refresh mod panel live as submissions come in
   } else if(data.phase === 'finished'){
     document.getElementById('lobby-panel').classList.remove('show');
     document.getElementById('bracket-panel').classList.remove('show');
@@ -358,53 +411,12 @@ function renderFromState(data){
 }
 
 function renderLobby(data){
-  document.getElementById('lobby-count').textContent = `${data.submissionCount} submission${data.submissionCount===1?'':'s'} in`;
+  const count = data.submissionCount || 0;
+  const size = data.bracketSize || 16;
+  const remaining = Math.max(0, size - count);
+  document.getElementById('lobby-count').textContent = `${count}/${size} submissions`;
+  document.getElementById('lobby-remaining').textContent = `${remaining} spot${remaining!==1?'s':''} remaining`;
   document.getElementById('submit-link-text').textContent = SUBMIT_PAGE_URL;
-  const wrap = document.getElementById('lobby-submissions');
-  wrap.innerHTML = '';
-
-  if(!data.submissions || data.submissions.length === 0){
-    wrap.innerHTML = '<p style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px">No submissions yet — share the link with chat.</p>';
-    return;
-  }
-
-  (data.submissions || []).forEach(s => {
-    const card = document.createElement('div');
-    card.className = 'sub-review-card';
-
-    // Username
-    const uname = document.createElement('div');
-    uname.className = 'sub-review-user';
-    uname.textContent = s.username;
-    card.appendChild(uname);
-
-    // Content preview
-    const content = document.createElement('div');
-    content.className = 'sub-review-content';
-    if(data.submissionType === 'image' && s.content){
-      const img = document.createElement('img');
-      img.src = s.content;
-      img.style.cssText = 'max-width:100%;max-height:120px;border-radius:6px;display:block;margin-top:6px';
-      content.appendChild(img);
-    } else if(data.submissionType === 'video' && s.content){
-      content.textContent = s.content;
-      content.style.wordBreak = 'break-all';
-    } else {
-      content.textContent = s.content || '—';
-    }
-    card.appendChild(content);
-
-    // Delete button (host only)
-    const del = document.createElement('button');
-    del.className = 'sub-review-del';
-    del.textContent = '✕ Remove';
-    del.onclick = () => {
-      ws.send(JSON.stringify({ type: 'remove-submission', submissionId: s.id, requesterUsername: 'HOST' }));
-    };
-    card.appendChild(del);
-
-    wrap.appendChild(card);
-  });
 }
 
 function renderBracket(data){
@@ -703,6 +715,121 @@ function renderFinal(data){
 // ═══════════════════════════════════════
 //  UTILS
 // ═══════════════════════════════════════
+// ═══════════════════════════════════════
+//  PRIVATE MOD PANEL (draggable, off-stream)
+// ═══════════════════════════════════════
+let modPanelOpen = false;
+
+function toggleModPanel(){
+  modPanelOpen = !modPanelOpen;
+  const panel = document.getElementById('mod-panel-float');
+  panel.classList.toggle('show', modPanelOpen);
+  if(modPanelOpen && latestState) renderModPanel(latestState);
+}
+
+function renderModPanel(data){
+  if(!modPanelOpen) return;
+  const list = document.getElementById('mod-panel-list');
+  const subs = data.submissions || [];
+  if(subs.length === 0){
+    list.innerHTML = '<p style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px">No submissions yet.</p>';
+    return;
+  }
+  list.innerHTML = '';
+  subs.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'mod-card';
+
+    const user = document.createElement('div');
+    user.className = 'mod-card-user';
+    user.textContent = s.username;
+    card.appendChild(user);
+
+    const content = document.createElement('div');
+    content.className = 'mod-card-content';
+    let revealed = false;
+
+    const revealBtn = document.createElement('div');
+    revealBtn.className = 'mod-card-blur-overlay';
+    revealBtn.textContent = '👁 Click to reveal';
+
+    if(data.submissionType === 'image' && s.content){
+      const img = document.createElement('img');
+      img.src = s.content;
+      img.className = 'mod-card-blurred';
+      content.appendChild(img);
+    } else {
+      const txt = document.createElement('span');
+      txt.textContent = s.content || '—';
+      txt.className = 'mod-card-blurred';
+      content.appendChild(txt);
+    }
+    content.appendChild(revealBtn);
+
+    // Click anywhere on content to toggle reveal
+    content.style.cursor = 'pointer';
+    content.onclick = () => {
+      revealed = !revealed;
+      content.querySelectorAll('.mod-card-blurred').forEach(el => {
+        el.style.filter = revealed ? 'none' : 'blur(8px)';
+      });
+      revealBtn.style.display = revealed ? 'none' : 'flex';
+    };
+    card.appendChild(content);
+
+    const del = document.createElement('button');
+    del.className = 'mod-card-del';
+    del.textContent = '✕ Remove';
+    del.onclick = () => {
+      ws.send(JSON.stringify({ type: 'remove-submission', submissionId: s.id, requesterUsername: 'HOST' }));
+      toast('Submission removed', 'green');
+    };
+    card.appendChild(del);
+    list.appendChild(card);
+  });
+}
+
+// Make the mod panel draggable (same pattern as tier list spotlight)
+(function(){
+  const panel = document.getElementById('mod-panel-float');
+  const handle = document.getElementById('mod-panel-handle');
+  let dragging = false, startX, startY, origLeft, origTop;
+
+  handle.addEventListener('mousedown', e => {
+    dragging = true;
+    startX = e.clientX; startY = e.clientY;
+    const rect = panel.getBoundingClientRect();
+    origLeft = rect.left; origTop = rect.top;
+    panel.style.right = 'auto';
+    panel.style.left = origLeft + 'px';
+    panel.style.top = origTop + 'px';
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', e => {
+    if(!dragging) return;
+    panel.style.left = (origLeft + e.clientX - startX) + 'px';
+    panel.style.top = (origTop + e.clientY - startY) + 'px';
+  });
+  document.addEventListener('mouseup', () => { dragging = false; });
+
+  // Touch support for tablet/mobile
+  handle.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    dragging = true; startX = t.clientX; startY = t.clientY;
+    const rect = panel.getBoundingClientRect();
+    origLeft = rect.left; origTop = rect.top;
+    panel.style.right = 'auto';
+    panel.style.left = origLeft + 'px'; panel.style.top = origTop + 'px';
+  }, {passive:true});
+  document.addEventListener('touchmove', e => {
+    if(!dragging) return;
+    const t = e.touches[0];
+    panel.style.left = (origLeft + t.clientX - startX) + 'px';
+    panel.style.top = (origTop + t.clientY - startY) + 'px';
+  }, {passive:true});
+  document.addEventListener('touchend', () => { dragging = false; });
+})();
+
 let toastT = null;
 function toast(msg, type=''){
   const el = document.getElementById('toast');
