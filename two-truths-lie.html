@@ -61,11 +61,17 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 .lie-radio{flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:var(--red)}
 
 #round-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
-.r-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
-  display:flex;align-items:center;gap:10px}
-.r-item-num{background:var(--purple);color:#fff;width:22px;height:22px;border-radius:50%;
-  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0}
-.r-item-text{flex:1;font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-item{background:var(--card);border:2px solid var(--border);border-radius:8px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px;transition:border-color .15s}
+.r-item.active-round{border-color:var(--purple);background:rgba(145,71,255,.1)}
+.r-item-num{background:var(--purple);color:#fff;width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0;
+  border:2px solid transparent}
+.r-item.active-round .r-item-num{border-color:#fff;box-shadow:0 0 0 2px var(--purple)}
+.r-item-label{flex:1;font-size:.82rem;font-weight:700;color:#fff}
+.r-item.active-round .r-item-label{color:var(--purple)}
+.r-item-status{font-size:.68rem;color:var(--muted);flex-shrink:0}
+.r-item.active-round .r-item-status{color:var(--purple);font-weight:700}
 .r-item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;flex-shrink:0}
 .r-item-del:hover{color:var(--red)}
 
@@ -102,7 +108,7 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 .statement-card.revealed-truth{border-color:var(--green);background:rgba(46,204,113,.08)}
 .statement-num{background:var(--purple);color:#fff;width:30px;height:30px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
-.statement-text{font-size:1.05rem;font-weight:600;color:#fff;flex:1}
+.statement-text{font-size:1.05rem;font-weight:600;color:#fff;flex:1;word-break:break-word;overflow-wrap:anywhere}
 .statement-tag{font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:10px;flex-shrink:0}
 .statement-tag.lie{background:var(--red);color:#fff}
 .statement-tag.truth{background:var(--green);color:#fff}
@@ -167,11 +173,12 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 
       <div id="l-live" class="l-panel active">
         <span class="field-lbl">Statement 1</span>
-        <input class="form-input" id="live-s1" placeholder="Type a statement..."/>
+        <input class="form-input" id="live-s1" placeholder="Type a statement..." maxlength="150"/>
         <span class="field-lbl">Statement 2</span>
-        <input class="form-input" id="live-s2" placeholder="Type a statement..."/>
+        <input class="form-input" id="live-s2" placeholder="Type a statement..." maxlength="150"/>
         <span class="field-lbl">Statement 3</span>
-        <input class="form-input" id="live-s3" placeholder="Type a statement..."/>
+        <input class="form-input" id="live-s3" placeholder="Type a statement..." maxlength="150"/>
+        <p style="font-size:.68rem;color:var(--muted);margin-top:4px">Max 150 characters per statement</p>
 
         <span class="field-lbl">Which one is the lie?</span>
         <div class="statement-row"><input type="radio" name="live-lie" value="0" class="lie-radio" checked/><span style="font-size:.8rem">Statement 1</span></div>
@@ -232,6 +239,14 @@ I have a twin sibling"></textarea>
         <h3>🏆 Leaderboard</h3>
         <div id="leaderboard-list"><div class="lb-empty">No points yet</div></div>
       </div>
+
+      <div id="final-screen" style="display:none;width:100%;max-width:560px;text-align:center;margin-top:20px;
+        background:var(--card);border:2px solid var(--yellow);border-radius:14px;padding:28px">
+        <div style="font-size:1.6rem;font-weight:900;color:var(--yellow);margin-bottom:6px">🏆 Game Over!</div>
+        <div id="final-winner" style="font-size:1rem;color:var(--muted);margin-bottom:20px"></div>
+        <div id="final-leaderboard-list" style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px"></div>
+        <button class="btn full" onclick="resetGame()">Start New Game</button>
+      </div>
     </div>
 
     <div id="chat-sidebar">
@@ -285,6 +300,7 @@ function addLiveRound(){
 
   toast('Round added to queue!', 'green');
   showLTab('list');
+  renderRoundList();
 }
 
 // ═══════════════════════════════════════
@@ -303,7 +319,7 @@ function parseBulkRounds(){
     const statements = lines.map((line, i) => {
       const isLie = /\*\s*$/.test(line);
       if(isLie) lieIndex = i;
-      return line.replace(/\*\s*$/, '').trim();
+      return line.replace(/\*\s*$/, '').trim().slice(0, 150); // enforce 150 char limit
     });
     if(lieIndex === -1){ skipped++; return; }
     roundQueue.push({ statements, lieIndex });
@@ -331,9 +347,32 @@ function renderRoundList(){
   }
   el.innerHTML = '';
   roundQueue.forEach((r, i) => {
+    const isActive = i === currentRoundIndex;
+    const isCompleted = i < currentRoundIndex;
     const item = document.createElement('div');
-    item.className = 'r-item';
-    item.innerHTML = `<span class="r-item-num">${i+1}</span><span class="r-item-text">${esc(r.statements[0])}</span><button class="r-item-del" onclick="removeRound(${i})">✕</button>`;
+    item.className = 'r-item' + (isActive ? ' active-round' : '');
+
+    const numEl = document.createElement('span');
+    numEl.className = 'r-item-num';
+    numEl.textContent = i + 1;
+
+    const labelEl = document.createElement('span');
+    labelEl.className = 'r-item-label';
+    labelEl.textContent = `Round ${i + 1}`;
+
+    const statusEl = document.createElement('span');
+    statusEl.className = 'r-item-status';
+    statusEl.textContent = isActive ? '← Current' : isCompleted ? '✓ Done' : '';
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'r-item-del';
+    delBtn.textContent = '✕';
+    delBtn.onclick = () => removeRound(i);
+
+    item.appendChild(numEl);
+    item.appendChild(labelEl);
+    item.appendChild(statusEl);
+    item.appendChild(delBtn);
     el.appendChild(item);
   });
 }
@@ -344,13 +383,21 @@ function removeRound(i){ roundQueue.splice(i,1); renderRoundList(); }
 // ═══════════════════════════════════════
 function loadNextRound(){
   if(roundQueue.length === 0){ toast('No rounds in the queue — add some first', 'red'); return; }
-  currentRoundIndex = (currentRoundIndex + 1) % roundQueue.length;
+
+  // If we've already played through every round, show the final screen instead of looping
+  if(currentRoundIndex >= roundQueue.length - 1){
+    showFinalLeaderboard();
+    return;
+  }
+
+  currentRoundIndex++;
   currentRound = roundQueue[currentRoundIndex];
   votingOpen = false;
   votesThisRound = {};
 
   document.getElementById('round-counter').textContent = `Round ${currentRoundIndex + 1} of ${roundQueue.length}`;
   renderStatements(false);
+  renderRoundList(); // refresh so the active-round highlight moves to the correct item
   document.getElementById('open-voting-btn').disabled = false;
   document.getElementById('reveal-btn').disabled = true;
   document.getElementById('vote-status').textContent = 'Click "Open Voting" when chat should start guessing';
@@ -426,10 +473,17 @@ function revealLie(){
   });
 
   renderLeaderboard();
-  document.getElementById('vote-status').textContent = `${correctCount} player${correctCount===1?'':'s'} guessed the lie correctly`;
+  const isLastRound = currentRoundIndex >= roundQueue.length - 1;
+  document.getElementById('vote-status').textContent = isLastRound
+    ? `${correctCount} player${correctCount===1?'':'s'} guessed correctly — that's the last round!`
+    : `${correctCount} player${correctCount===1?'':'s'} guessed the lie correctly`;
   document.getElementById('vote-status').classList.remove('live');
   document.getElementById('open-voting-btn').disabled = false;
   document.getElementById('reveal-btn').disabled = true;
+
+  // Change the Load Next Round button label on the final round so host knows what happens next
+  const loadBtn = document.getElementById('load-round-btn');
+  loadBtn.textContent = isLastRound ? '🏆 Show Final Results' : '▶ Load Next Round';
 }
 
 // ═══════════════════════════════════════
@@ -469,6 +523,54 @@ function renderVoteBars(){
 // ═══════════════════════════════════════
 //  LEADERBOARD
 // ═══════════════════════════════════════
+function showFinalLeaderboard(){
+  votingOpen = false;
+  document.getElementById('statements-display').innerHTML = '';
+  document.getElementById('live-vote-display').innerHTML = '';
+  document.getElementById('leaderboard-box').style.display = 'none';
+  document.getElementById('host-controls').style.display = 'none';
+  document.getElementById('vote-status').textContent = '';
+  document.getElementById('round-counter').textContent = 'Game Complete';
+
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const finalScreen = document.getElementById('final-screen');
+  finalScreen.style.display = 'block';
+
+  const winner = sorted[0];
+  document.getElementById('final-winner').textContent = winner
+    ? `Winner: ${winner[0]} with ${winner[1]} points`
+    : 'No points scored this game';
+
+  const finalList = document.getElementById('final-leaderboard-list');
+  finalList.innerHTML = '';
+  sorted.forEach(([name,score],i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${score} pts</span>`;
+    finalList.appendChild(row);
+  });
+}
+
+function resetGame(){
+  scores = {};
+  currentRoundIndex = -1;
+  currentRound = null;
+  votingOpen = false;
+  votesThisRound = {};
+
+  document.getElementById('final-screen').style.display = 'none';
+  document.getElementById('leaderboard-box').style.display = 'block';
+  document.getElementById('host-controls').style.display = 'flex';
+  document.getElementById('round-counter').textContent = 'No round loaded';
+  document.getElementById('statements-display').innerHTML = '';
+  document.getElementById('live-vote-display').innerHTML = '';
+  document.getElementById('vote-status').textContent = 'Load a round, then click "Open Voting"';
+  document.getElementById('load-round-btn').textContent = '▶ Load Next Round';
+  document.getElementById('open-voting-btn').disabled = true;
+  document.getElementById('reveal-btn').disabled = true;
+  renderLeaderboard();
+}
+
 function renderLeaderboard(){
   const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
   const el = document.getElementById('leaderboard-list');
