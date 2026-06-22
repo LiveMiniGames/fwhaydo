@@ -697,8 +697,15 @@ function toggleModPanel(){
   modWindow.document.write(html);
   modWindow.document.close();
 
-  // Send current state to the new window immediately
-  if(latestState) pushStateToModWindow(latestState);
+  // Wait for the new window to finish loading before pushing state —
+  // the BroadcastChannel in the new window isn't listening yet if we send immediately
+  modWindow.onload = () => {
+    if(latestState) pushStateToModWindow(latestState);
+  };
+  // Fallback in case onload already fired by the time we attach it
+  setTimeout(() => {
+    if(latestState) pushStateToModWindow(latestState);
+  }, 300);
 }
 
 function buildModWindowHTML(){
