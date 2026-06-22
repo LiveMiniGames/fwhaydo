@@ -97,13 +97,18 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #vote-timer{text-align:center;font-size:1.8rem;font-weight:900;color:#fff;margin-bottom:16px;font-family:'Lilita One',cursive,sans-serif}
 #vote-timer.urgent{color:var(--red)}
 
-#live-vote-display{display:flex;gap:16px;max-width:700px;margin:0 auto 14px}
+#live-vote-display{max-width:700px;margin:0 auto 14px;width:100%}
 .vote-bar-side{flex:1}
-.vote-bar-track{background:#111;border:1px solid var(--border);border-radius:8px;height:34px;overflow:hidden;position:relative}
-.vote-bar-fill{height:100%;display:flex;align-items:center;padding:0 10px;font-weight:800;font-size:.85rem;
-  color:#fff;transition:width .3s ease;white-space:nowrap;min-width:fit-content}
-.vote-bar-fill.opt1{background:var(--purple)}
-.vote-bar-fill.opt2{background:#e67e22}
+.vote-card-wrap{display:flex;gap:14px;max-width:700px;width:100%;margin-bottom:14px}
+.vote-card{flex:1;background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:16px 12px;text-align:center;transition:border-color .2s}
+.vote-card.opt1{border-color:var(--purple)}
+.vote-card.opt2{border-color:#e67e22}
+.vote-card-num{font-size:2.4rem;font-weight:900;line-height:1;margin-bottom:6px}
+.vote-card.opt1 .vote-card-num{color:var(--purple)}
+.vote-card.opt2 .vote-card-num{color:#e67e22}
+.vote-card-count{font-size:1.1rem;font-weight:800;color:#fff}
+.vote-card-pct{font-size:.72rem;color:var(--muted);margin-top:2px}
 #vote-status.live{color:var(--green);font-weight:700}
 
 #host-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:20px}
@@ -388,18 +393,21 @@ function renderBracket(data){
 
 function renderVoteBars(counts){
   const wrap = document.getElementById('live-vote-display');
-  if(!counts || counts.total === 0){
-    wrap.innerHTML = '';
-    return;
-  }
-  const pct1 = counts.total > 0 ? Math.round((counts.a / counts.total) * 100) : 0;
-  const pct2 = 100 - pct1;
+  if(!counts){ wrap.innerHTML = ''; return; }
+  const total = counts.total || 0;
+  const pct = (n) => total > 0 ? Math.round((n/total)*100) : 0;
   wrap.innerHTML = `
-    <div class="vote-bar-side">
-      <div class="vote-bar-track"><div class="vote-bar-fill opt1" style="width:${Math.max(pct1,8)}%">1 — ${counts.a}</div></div>
-    </div>
-    <div class="vote-bar-side">
-      <div class="vote-bar-track"><div class="vote-bar-fill opt2" style="width:${Math.max(pct2,8)}%">2 — ${counts.b}</div></div>
+    <div class="vote-card-wrap">
+      <div class="vote-card opt1">
+        <div class="vote-card-num">1</div>
+        <div class="vote-card-count">${counts.a} vote${counts.a!==1?'s':''}</div>
+        <div class="vote-card-pct">${pct(counts.a)}%</div>
+      </div>
+      <div class="vote-card opt2">
+        <div class="vote-card-num">2</div>
+        <div class="vote-card-count">${counts.b} vote${counts.b!==1?'s':''}</div>
+        <div class="vote-card-pct">${pct(counts.b)}%</div>
+      </div>
     </div>
   `;
 }

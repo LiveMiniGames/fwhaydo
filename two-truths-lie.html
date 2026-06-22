@@ -110,16 +110,18 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 #vote-status{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:16px}
 #vote-status.live{color:var(--green);font-weight:700}
 
-#live-vote-display{display:flex;flex-direction:column;gap:8px;max-width:560px;width:100%;margin-bottom:16px}
-.vote-bar-side{width:100%}
-.vote-bar-label{font-size:.72rem;color:var(--muted);font-weight:700;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
-.vote-bar-track{background:#111;border:1px solid var(--border);border-radius:8px;height:38px;overflow:hidden}
-.vote-bar-fill{height:100%;display:flex;align-items:center;padding:0 12px;font-weight:700;font-size:.82rem;
-  color:#fff;transition:width .3s ease;white-space:nowrap;min-width:fit-content}
-.vote-bar-fill.opt1{background:var(--purple)}
-.vote-bar-fill.opt2{background:#e67e22}
-.vote-bar-fill.opt3{background:#16a085}
-.vote-total{font-size:.72rem;color:var(--muted);text-align:right}
+#live-vote-display{display:flex;gap:14px;max-width:560px;width:100%;margin-bottom:16px}
+.vote-card{flex:1;background:var(--card);border:2px solid var(--border);border-radius:12px;
+  padding:16px 12px;text-align:center;transition:border-color .2s}
+.vote-card.opt1{border-color:var(--purple)}
+.vote-card.opt2{border-color:#e67e22}
+.vote-card.opt3{border-color:#16a085}
+.vote-card-num{font-size:2.4rem;font-weight:900;line-height:1;margin-bottom:6px}
+.vote-card.opt1 .vote-card-num{color:var(--purple)}
+.vote-card.opt2 .vote-card-num{color:#e67e22}
+.vote-card.opt3 .vote-card-num{color:#16a085}
+.vote-card-count{font-size:1.1rem;font-weight:800;color:#fff}
+.vote-card-pct{font-size:.72rem;color:var(--muted);margin-top:2px}
 
 #host-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
 
@@ -425,37 +427,24 @@ function renderVoteBars(){
   });
   const total = counts.a + counts.b + counts.c;
   const wrap = document.getElementById('live-vote-display');
-  if(total === 0){ wrap.innerHTML = ''; return; }
-
   const pct = (n) => total > 0 ? Math.round((n/total)*100) : 0;
-  const barW = (n) => Math.max(10, pct(n));
 
   wrap.innerHTML = `
-    <div class="vote-bar-side">
-      <div class="vote-bar-label">Statement 1</div>
-      <div class="vote-bar-track">
-        <div class="vote-bar-fill opt1" style="width:${barW(counts.a)}%">
-          ${counts.a} vote${counts.a!==1?'s':''} · ${pct(counts.a)}%
-        </div>
-      </div>
+    <div class="vote-card opt1">
+      <div class="vote-card-num">1</div>
+      <div class="vote-card-count">${counts.a} vote${counts.a!==1?'s':''}</div>
+      <div class="vote-card-pct">${pct(counts.a)}%</div>
     </div>
-    <div class="vote-bar-side">
-      <div class="vote-bar-label">Statement 2</div>
-      <div class="vote-bar-track">
-        <div class="vote-bar-fill opt2" style="width:${barW(counts.b)}%">
-          ${counts.b} vote${counts.b!==1?'s':''} · ${pct(counts.b)}%
-        </div>
-      </div>
+    <div class="vote-card opt2">
+      <div class="vote-card-num">2</div>
+      <div class="vote-card-count">${counts.b} vote${counts.b!==1?'s':''}</div>
+      <div class="vote-card-pct">${pct(counts.b)}%</div>
     </div>
-    <div class="vote-bar-side">
-      <div class="vote-bar-label">Statement 3</div>
-      <div class="vote-bar-track">
-        <div class="vote-bar-fill opt3" style="width:${barW(counts.c)}%">
-          ${counts.c} vote${counts.c!==1?'s':''} · ${pct(counts.c)}%
-        </div>
-      </div>
+    <div class="vote-card opt3">
+      <div class="vote-card-num">3</div>
+      <div class="vote-card-count">${counts.c} vote${counts.c!==1?'s':''}</div>
+      <div class="vote-card-pct">${pct(counts.c)}%</div>
     </div>
-    <div class="vote-total">${total} vote${total!==1?'s':''} total</div>
   `;
 }
 
