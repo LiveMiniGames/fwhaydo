@@ -8,211 +8,274 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Bebas+Neue&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#08080f;--card:#14141e;--border:#222230;--purple:#9147ff;--purple2:#772ce8;
-  --gold:#f0b429;--gold2:#c87f0a;--gold3:#ffd700;--green:#2ecc71;--red:#e74c3c;
-  --text:#e8e8f0;--muted:#7a7a96;
+  --bg:#0e0e1a;--card:#16161f;--card2:#1e1e2c;--border:#2a2a3c;
+  --purple:#9147ff;--purple2:#772ce8;--purple3:#bf94ff;
+  --gold:#f0b429;--gold2:#c87f0a;--gold3:#ffd700;
+  --green:#00b56a;--red:#eb0400;--blue:#1f69ff;
+  --text:#efeff1;--muted:#adadb8;
 }
 body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
   min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
 
-/* ── TOPBAR ── */
-#topbar{width:100%;background:#0a0a12;border-bottom:2px solid var(--purple);padding:0 20px;
-  height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+/* ── TWITCH TOPBAR ── */
+#topbar{width:100%;background:#18181b;border-bottom:1px solid #2a2a3c;padding:0 20px;
+  height:50px;display:flex;align-items:center;gap:12px;flex-shrink:0}
 .back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
-  border:1px solid var(--border);border-radius:6px;padding:5px 11px;transition:color .15s,border-color .15s}
+  border:1px solid var(--border);border-radius:4px;padding:4px 10px;transition:all .15s}
 .back-home:hover{color:#fff;border-color:var(--purple)}
-#tb-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--gold);
-  text-shadow:0 0 20px rgba(240,180,41,.4);flex:1}
+#tb-logo{font-size:1.3rem}
+#tb-title{font-weight:900;font-size:.95rem;color:#fff;flex:1}
+#tb-live-badge{background:var(--red);color:#fff;font-size:.62rem;font-weight:800;
+  padding:3px 7px;border-radius:3px;letter-spacing:.5px}
+#twitch-login-status{font-size:.72rem;color:var(--muted);display:flex;align-items:center;gap:6px}
+#twitch-dot{width:8px;height:8px;border-radius:50%;background:#444;flex-shrink:0}
+#twitch-dot.authed{background:var(--green)}
 
-.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:12px 22px;
-  font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
-.btn:hover{background:var(--purple2);transform:translateY(-1px)}
-.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00}
-.btn.gold:hover{background:linear-gradient(135deg,var(--gold3),var(--gold))}
+.btn{background:var(--purple);color:#fff;border:none;border-radius:4px;padding:10px 18px;
+  font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--purple2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.outline{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn.outline:hover{background:var(--card2);border-color:var(--purple)}
 
 /* ── SETUP SCREEN ── */
-#setup-screen{display:flex;flex-direction:column;align-items:center;padding:40px 20px;width:100%;max-width:520px}
-#setup-screen h1{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:4px;
-  color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.5);margin-bottom:8px}
-#setup-screen p{font-size:.85rem;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.6}
+#setup-screen{display:flex;flex-direction:column;align-items:center;padding:36px 20px;width:100%;max-width:560px}
 
-.upload-pair{display:flex;gap:16px;width:100%;margin-bottom:28px}
-.upload-slot{flex:1;background:var(--card);border:2px dashed var(--border);border-radius:14px;
-  padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
-.upload-slot:hover{border-color:var(--gold)}
-.upload-slot.has-image{border-style:solid;border-color:var(--gold)}
-.upload-slot h3{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;
-  color:var(--gold);margin-bottom:10px}
-.upload-slot .preview{width:90px;height:90px;border-radius:50%;object-fit:cover;
-  border:3px solid var(--gold);margin:0 auto 10px;display:none}
+.setup-section{background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:20px;width:100%;margin-bottom:16px}
+.setup-section h3{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+  color:var(--purple3);margin-bottom:14px}
+
+.upload-pair{display:flex;gap:14px}
+.upload-slot{flex:1;background:var(--card2);border:1px dashed var(--border);border-radius:8px;
+  padding:16px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative;
+  display:flex;flex-direction:column;align-items:center;gap:8px}
+.upload-slot:hover{border-color:var(--purple)}
+.upload-slot.has-image{border-style:solid;border-color:var(--purple)}
+.upload-slot h4{font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+.upload-slot .preview{width:72px;height:72px;border-radius:50%;object-fit:cover;
+  border:2px solid var(--purple);display:none}
 .upload-slot .preview.show{display:block}
-.upload-slot .placeholder{width:80px;height:80px;border-radius:50%;background:#1e1e2e;
-  border:2px dashed var(--border);margin:0 auto 10px;display:flex;align-items:center;
-  justify-content:center;font-size:1.8rem}
-.upload-slot p{font-size:.72rem;color:var(--muted)}
+.upload-slot .placeholder{width:72px;height:72px;border-radius:50%;background:var(--bg);
+  border:2px dashed var(--border);display:flex;align-items:center;justify-content:center;font-size:1.8rem}
+.upload-slot p{font-size:.68rem;color:var(--muted)}
 .upload-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+.upload-slot .saved-badge{font-size:.6rem;color:var(--green);font-weight:700;background:rgba(0,181,106,.1);
+  border:1px solid var(--green);border-radius:3px;padding:2px 6px;display:none}
+.upload-slot .saved-badge.show{display:inline-block}
 
-#start-btn{width:100%;padding:16px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;
-  letter-spacing:2px;border:none;border-radius:10px;cursor:pointer;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00;
-  font-weight:700;transition:all .2s;box-shadow:0 4px 20px rgba(240,180,41,.3)}
-#start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(240,180,41,.5)}
+.twitch-auth-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.twitch-auth-row p{font-size:.78rem;color:var(--muted);flex:1;line-height:1.5}
+#predictions-note{font-size:.7rem;color:var(--muted);margin-top:10px;line-height:1.5;
+  padding:8px 10px;background:var(--bg);border-radius:4px;border-left:3px solid var(--purple)}
+
+#start-btn{width:100%;padding:14px;font-size:1rem;font-weight:800;border:none;border-radius:4px;
+  cursor:pointer;background:var(--purple);color:#fff;transition:all .2s;letter-spacing:.5px}
+#start-btn:hover:not(:disabled){background:var(--purple2);transform:translateY(-1px)}
 #start-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
 
 /* ── GAME SCREEN ── */
 #game-screen{display:none;flex-direction:column;align-items:center;padding:20px;width:100%;flex:1}
 #game-screen.show{display:flex}
 
-/* Streak and stats bar */
-#stats-bar{display:flex;gap:24px;margin-bottom:28px;background:var(--card);
-  border:1px solid var(--border);border-radius:10px;padding:12px 24px}
-.stat{text-align:center}
-.stat-val{font-size:1.4rem;font-weight:900;color:var(--gold);line-height:1}
-.stat-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
-#streak-val{color:var(--green)}
+/* Twitch-style prediction widget */
+#prediction-widget{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  width:100%;max-width:420px;margin-bottom:20px;overflow:hidden}
+#prediction-widget.hidden{display:none}
+#pw-header{background:#1f1f23;padding:10px 14px;display:flex;align-items:center;justify-content:space-between}
+#pw-title{font-size:.82rem;font-weight:800;color:#fff}
+#pw-timer{font-size:.72rem;color:var(--muted);background:var(--bg);padding:3px 8px;border-radius:10px}
+#pw-timer.urgent{color:var(--gold);border:1px solid var(--gold)}
+#pw-question{padding:10px 14px 6px;font-size:.85rem;font-weight:700;color:#fff}
+#pw-outcomes{padding:0 14px 14px;display:flex;flex-direction:column;gap:6px}
+.pw-outcome{border-radius:4px;overflow:hidden;position:relative}
+.pw-outcome-label{display:flex;justify-content:space-between;align-items:center;
+  padding:6px 10px;font-size:.78rem;font-weight:700}
+.pw-outcome-bar{height:4px;background:var(--border)}
+.pw-outcome-fill{height:100%;transition:width .5s ease;border-radius:2px}
+.pw-outcome.heads .pw-outcome-label{background:rgba(241,196,15,.12);color:var(--gold)}
+.pw-outcome.heads .pw-outcome-fill{background:var(--gold)}
+.pw-outcome.tails .pw-outcome-label{background:rgba(145,71,255,.12);color:var(--purple3)}
+.pw-outcome.tails .pw-outcome-fill{background:var(--purple)}
+.pw-outcome-pts{font-size:.68rem;color:var(--muted);font-weight:400}
+#pw-status{padding:6px 14px 10px;font-size:.7rem;color:var(--muted);text-align:center}
 
-/* Result display */
-#result-display{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;
-  height:48px;margin-bottom:20px;transition:all .3s}
-#result-display.heads{color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.6)}
-#result-display.tails{color:var(--purple);text-shadow:0 0 30px rgba(145,71,255,.6)}
+/* Stats bar (Twitch-styled) */
+#stats-bar{display:flex;gap:0;width:100%;max-width:420px;margin-bottom:20px;
+  background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.stat{flex:1;padding:12px 10px;text-align:center;border-right:1px solid var(--border)}
+.stat:last-child{border-right:none}
+.stat-val{font-size:1.3rem;font-weight:900;color:#fff;line-height:1}
+.stat-val.gold{color:var(--gold)}
+.stat-val.purple{color:var(--purple3)}
+.stat-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
+
+/* Result */
+#result-display{font-weight:900;font-size:1.8rem;height:44px;margin-bottom:18px;
+  transition:all .3s;text-align:center;letter-spacing:2px}
+#result-display.heads{color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.5)}
+#result-display.tails{color:var(--purple3);text-shadow:0 0 30px rgba(145,71,255,.5)}
 
 /* ── 3D COIN ── */
-#coin-scene{width:220px;height:220px;perspective:800px;margin-bottom:32px;cursor:pointer}
+#coin-scene{width:200px;height:200px;perspective:900px;margin-bottom:28px;cursor:pointer}
 #coin{width:100%;height:100%;position:relative;transform-style:preserve-3d;
-  transition:transform 1.2s cubic-bezier(.45,.05,.55,.95)}
-#coin.flipping{animation:coinSpin 1.2s cubic-bezier(.45,.05,.55,.95) forwards}
+  transform:rotateY(0deg)}
 
 .coin-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
-  display:flex;align-items:center;justify-content:center;overflow:hidden}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;gap:4px}
 
-/* Heads face */
 #heads-face{
-  background:radial-gradient(circle at 35% 35%, #ffe566, var(--gold) 40%, var(--gold2) 70%, #8b5e00);
-  box-shadow:inset 0 0 0 6px rgba(255,255,255,.15),inset 0 0 0 10px rgba(0,0,0,.12),
-             0 0 0 4px var(--gold2),0 0 40px rgba(240,180,41,.5),0 8px 30px rgba(0,0,0,.6)}
+  background:radial-gradient(circle at 35% 30%, #ffe97a, var(--gold) 45%, var(--gold2) 75%, #6b4200);
+  box-shadow:inset 0 0 0 7px rgba(255,255,255,.18),inset 0 0 0 12px rgba(0,0,0,.1),
+             0 0 0 5px #a06000,0 0 50px rgba(240,180,41,.4),0 10px 35px rgba(0,0,0,.7)}
 #tails-face{
-  background:radial-gradient(circle at 35% 35%, #c084fc, var(--purple) 40%, var(--purple2) 70%, #3b0764);
-  box-shadow:inset 0 0 0 6px rgba(255,255,255,.15),inset 0 0 0 10px rgba(0,0,0,.12),
-             0 0 0 4px var(--purple2),0 0 40px rgba(145,71,255,.5),0 8px 30px rgba(0,0,0,.6);
+  background:radial-gradient(circle at 35% 30%, #d4adff, var(--purple) 45%, var(--purple2) 75%, #2a0060);
+  box-shadow:inset 0 0 0 7px rgba(255,255,255,.18),inset 0 0 0 12px rgba(0,0,0,.1),
+             0 0 0 5px #4a0090,0 0 50px rgba(145,71,255,.4),0 10px 35px rgba(0,0,0,.7);
   transform:rotateY(180deg)}
 
-/* Coin rim edge (simulated with layered box-shadow) */
-#coin-edge{position:absolute;inset:-4px;border-radius:50%;
-  background:conic-gradient(from 0deg,var(--gold2),var(--gold),var(--gold2),var(--gold),var(--gold2));
-  z-index:-1}
-
-.coin-img{width:75%;height:75%;border-radius:50%;object-fit:cover;
-  border:3px solid rgba(255,255,255,.25);box-shadow:0 0 20px rgba(0,0,0,.5)}
-.coin-label{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;
-  position:absolute;bottom:18px;color:rgba(255,255,255,.7)}
-
-/* Coin rim markings (decorative notches) */
-.coin-rim{position:absolute;inset:0;border-radius:50%;
-  background:transparent;border:8px solid transparent}
-
-@keyframes coinSpin{
-  0%{transform:rotateY(0deg)}
-  100%{transform:rotateY(var(--spin-to))}
-}
-
-/* Shine overlay */
+.coin-img{width:70%;height:70%;border-radius:50%;object-fit:cover;
+  border:2px solid rgba(255,255,255,.3);box-shadow:0 0 16px rgba(0,0,0,.5)}
+.coin-face-label{font-size:.6rem;font-weight:800;letter-spacing:2px;
+  color:rgba(255,255,255,.6);text-transform:uppercase}
 .coin-shine{position:absolute;inset:0;border-radius:50%;
-  background:radial-gradient(ellipse at 30% 30%,rgba(255,255,255,.35) 0%,transparent 60%);
+  background:radial-gradient(ellipse at 28% 28%,rgba(255,255,255,.4) 0%,transparent 55%);
   pointer-events:none}
 
-/* ── FLIP BUTTON ── */
-#flip-btn{padding:16px 48px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;
-  letter-spacing:3px;border:none;border-radius:50px;cursor:pointer;
-  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00;
-  box-shadow:0 4px 24px rgba(240,180,41,.4);transition:all .2s;margin-bottom:24px}
-#flip-btn:hover:not(:disabled){transform:translateY(-3px) scale(1.04);
-  box-shadow:0 8px 36px rgba(240,180,41,.6)}
+/* ── FLIP BUTTON (Twitch-themed) ── */
+#flip-btn{padding:13px 44px;font-size:1rem;font-weight:800;border:none;
+  border-radius:4px;cursor:pointer;background:var(--purple);color:#fff;
+  box-shadow:0 2px 10px rgba(145,71,255,.35);transition:all .2s;
+  margin-bottom:22px;letter-spacing:.5px}
+#flip-btn:hover:not(:disabled){background:var(--purple2);transform:translateY(-2px);
+  box-shadow:0 4px 20px rgba(145,71,255,.5)}
 #flip-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
-#flip-btn.flipping{background:linear-gradient(135deg,#555,#333);color:#888}
 
-/* ── HISTORY ── */
-#history-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:420px;margin-bottom:24px}
-.hist-chip{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
-  justify-content:center;font-size:.65rem;font-weight:800;letter-spacing:.5px}
-.hist-chip.H{background:var(--gold);color:#1a0a00}
-.hist-chip.T{background:var(--purple);color:#fff}
+/* History */
+#history-bar{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;
+  max-width:420px;margin-bottom:20px;min-height:26px}
+.hist-chip{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;
+  justify-content:center;font-size:.6rem;font-weight:800}
+.hist-chip.H{background:rgba(240,180,41,.2);border:1px solid var(--gold);color:var(--gold)}
+.hist-chip.T{background:rgba(145,71,255,.2);border:1px solid var(--purple);color:var(--purple3)}
 
-#setup-again-btn{font-size:.75rem;color:var(--muted);background:none;border:1px solid var(--border);
-  border-radius:6px;padding:7px 14px;cursor:pointer;font-family:inherit}
-#setup-again-btn:hover{color:#fff;border-color:var(--purple)}
+#change-images-btn{font-size:.72rem;color:var(--muted);background:none;border:1px solid var(--border);
+  border-radius:4px;padding:6px 12px;cursor:pointer;font-family:inherit}
+#change-images-btn:hover{color:#fff;border-color:var(--purple)}
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);
-  background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 18px;
+  background:#18181b;border:1px solid var(--border);border-radius:4px;padding:9px 18px;
   font-size:.8rem;color:#fff;z-index:998;transition:transform .28s;pointer-events:none;white-space:nowrap}
 #toast.show{transform:translateX(-50%) translateY(0)}
+#toast.good{border-color:var(--green);color:var(--green)}
+#toast.bad{border-color:var(--red);color:var(--red)}
 </style>
 </head>
 <body>
 
 <div id="topbar">
-  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
-  <span id="tb-title">⚡ HAYDO COIN FLIP</span>
+  <a class="back-home" href="FwHaydo.html">← Back</a>
+  <span id="tb-logo">🪙</span>
+  <span id="tb-title">FwHaydo Coin Flip</span>
+  <span id="tb-live-badge">LIVE</span>
+  <div id="twitch-login-status">
+    <div id="twitch-dot"></div>
+    <span id="twitch-login-txt">Not signed in</span>
+  </div>
 </div>
 
-<!-- SETUP SCREEN -->
+<!-- ═══ SETUP SCREEN ═══ -->
 <div id="setup-screen">
-  <h1>Coin Flip</h1>
-  <p>Upload your two coin face images — your face for Heads and the FW logo for Tails. They'll be engraved onto the coin permanently for this session.</p>
 
-  <div class="upload-pair">
-    <div class="upload-slot" id="heads-slot">
-      <h3>⭕ Heads</h3>
-      <div class="placeholder">🪙</div>
-      <img class="preview" id="heads-preview" src="" alt=""/>
-      <p>Your face / pfp</p>
-      <input type="file" accept="image/*" onchange="handleUpload(event,'heads')"/>
-    </div>
-    <div class="upload-slot" id="tails-slot">
-      <h3>⭕ Tails</h3>
-      <div class="placeholder">🎮</div>
-      <img class="preview" id="tails-preview" src="" alt=""/>
-      <p>FW logo</p>
-      <input type="file" accept="image/*" onchange="handleUpload(event,'tails')"/>
+  <div class="setup-section">
+    <h3>🪙 Coin Images</h3>
+    <div class="upload-pair">
+      <div class="upload-slot" id="heads-slot">
+        <h4>Heads</h4>
+        <div class="placeholder" id="heads-placeholder">👤</div>
+        <img class="preview" id="heads-preview" src="" alt=""/>
+        <span class="saved-badge" id="heads-saved">✓ Saved</span>
+        <p>Your face / pfp</p>
+        <input type="file" accept="image/*" onchange="handleUpload(event,'heads')"/>
+      </div>
+      <div class="upload-slot" id="tails-slot">
+        <h4>Tails</h4>
+        <div class="placeholder" id="tails-placeholder">🎮</div>
+        <img class="preview" id="tails-preview" src="" alt=""/>
+        <span class="saved-badge" id="tails-saved">✓ Saved</span>
+        <p>FW logo</p>
+        <input type="file" accept="image/*" onchange="handleUpload(event,'tails')"/>
+      </div>
     </div>
   </div>
 
-  <button id="start-btn" onclick="startGame()" disabled>Upload both images to start →</button>
+  <div class="setup-section">
+    <h3>🔮 Twitch Predictions (Optional)</h3>
+    <div class="twitch-auth-row">
+      <p>Sign in with Twitch to automatically create and resolve real channel point predictions on your channel every flip.</p>
+      <button class="btn" id="twitch-login-btn" onclick="loginWithTwitch()">Sign in with Twitch</button>
+    </div>
+    <div id="predictions-note">
+      ℹ️ Skipping this is fine — the coin flip works without it. If signed in, a real "Heads or Tails?" prediction goes live on your channel the moment you flip, and gets resolved automatically when the coin lands.
+    </div>
+  </div>
+
+  <button id="start-btn" onclick="startGame()" disabled>Upload both coin images to start →</button>
+
 </div>
 
-<!-- GAME SCREEN -->
+<!-- ═══ GAME SCREEN ═══ -->
 <div id="game-screen">
 
-  <div id="stats-bar">
-    <div class="stat"><div class="stat-val" id="heads-count">0</div><div class="stat-lbl">Heads</div></div>
-    <div class="stat"><div class="stat-val" id="flips-count">0</div><div class="stat-lbl">Flips</div></div>
-    <div class="stat"><div class="stat-val" id="tails-count">0</div><div class="stat-lbl">Tails</div></div>
-    <div class="stat"><div class="stat-val" id="streak-val">—</div><div class="stat-lbl">Streak</div></div>
+  <!-- Twitch prediction widget (only shows when authed) -->
+  <div id="prediction-widget" class="hidden">
+    <div id="pw-header">
+      <span id="pw-title">📊 Prediction</span>
+      <span id="pw-timer"></span>
+    </div>
+    <div id="pw-question">Heads or Tails?</div>
+    <div id="pw-outcomes">
+      <div class="pw-outcome heads">
+        <div class="pw-outcome-label">🪙 Heads <span class="pw-outcome-pts" id="pw-heads-pts">0 points</span></div>
+        <div class="pw-outcome-bar"><div class="pw-outcome-fill" id="pw-heads-fill" style="width:50%"></div></div>
+      </div>
+      <div class="pw-outcome tails">
+        <div class="pw-outcome-label">🎮 Tails <span class="pw-outcome-pts" id="pw-tails-pts">0 points</span></div>
+        <div class="pw-outcome-bar"><div class="pw-outcome-fill" id="pw-tails-fill" style="width:50%"></div></div>
+      </div>
+    </div>
+    <div id="pw-status">Waiting to flip...</div>
   </div>
 
-  <div id="result-display">Click to flip!</div>
+  <div id="stats-bar">
+    <div class="stat"><div class="stat-val gold" id="heads-count">0</div><div class="stat-lbl">Heads</div></div>
+    <div class="stat"><div class="stat-val" id="flips-count">0</div><div class="stat-lbl">Flips</div></div>
+    <div class="stat"><div class="stat-val purple" id="tails-count">0</div><div class="stat-lbl">Tails</div></div>
+    <div class="stat"><div class="stat-val" id="streak-val" style="font-size:1rem">—</div><div class="stat-lbl">Streak</div></div>
+  </div>
 
-  <div id="coin-scene">
-    <div id="coin-edge"></div>
+  <div id="result-display">Ready to flip</div>
+
+  <div id="coin-scene" onclick="if(!isFlipping) flipCoin()">
     <div id="coin">
       <div class="coin-face" id="heads-face">
         <img class="coin-img" id="coin-heads-img" src="" alt="Heads"/>
+        <span class="coin-face-label">Heads</span>
         <div class="coin-shine"></div>
-        <span class="coin-label">HEADS</span>
       </div>
       <div class="coin-face" id="tails-face">
         <img class="coin-img" id="coin-tails-img" src="" alt="Tails"/>
+        <span class="coin-face-label">Tails</span>
         <div class="coin-shine"></div>
-        <span class="coin-label">TAILS</span>
       </div>
     </div>
   </div>
 
-  <button id="flip-btn" onclick="flipCoin()">FLIP THE COIN</button>
+  <button id="flip-btn" onclick="flipCoin()">🪙 FLIP THE COIN</button>
 
   <div id="history-bar"></div>
 
-  <button id="setup-again-btn" onclick="goBackToSetup()">⚙ Change Images</button>
+  <button id="change-images-btn" onclick="goBackToSetup()">⚙ Change Images</button>
 
 </div>
 
@@ -220,21 +283,64 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
 <script>
 // ═══════════════════════════════════════
-//  STATE
+//  CONFIG + TWITCH OAUTH
 // ═══════════════════════════════════════
-let headsImg = null;
-let tailsImg = null;
-let headsCount = 0;
-let tailsCount = 0;
-let history = [];
-let streak = 0;
-let lastResult = null;
-let isFlipping = false;
-let currentFace = 'heads'; // which face is currently showing
+const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
+const REDIRECT_URI = window.location.origin + window.location.pathname;
+
+let twitchToken = null;
+let twitchUserId = null;
+let twitchUsername = null;
+let activePredictionId = null;
+let headsOutcomeId = null;
+let tailsOutcomeId = null;
+
+function loginWithTwitch(){
+  const url = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=channel:manage:predictions`;
+  window.location.href = url;
+}
+
+function checkOAuthReturn(){
+  const hash = window.location.hash;
+  if(hash && hash.includes('access_token')){
+    const params = new URLSearchParams(hash.slice(1));
+    const token = params.get('access_token');
+    if(token){
+      twitchToken = token;
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchTwitchUser();
+    }
+  }
+}
+
+function fetchTwitchUser(){
+  fetch('https://api.twitch.tv/helix/users', {
+    headers: { 'Authorization': 'Bearer ' + twitchToken, 'Client-Id': TWITCH_CLIENT_ID }
+  }).then(r => r.json()).then(data => {
+    if(data.data && data.data[0]){
+      twitchUserId = data.data[0].id;
+      twitchUsername = data.data[0].display_name;
+      setTwitchStatus(true);
+      document.getElementById('prediction-widget').classList.remove('hidden');
+    }
+  }).catch(() => setTwitchStatus(false));
+}
+
+function setTwitchStatus(authed){
+  document.getElementById('twitch-dot').className = authed ? 'authed' : '';
+  document.getElementById('twitch-login-txt').textContent = authed ? `✓ ${twitchUsername}` : 'Not signed in';
+  if(authed){
+    document.getElementById('twitch-login-btn').textContent = '✓ Connected';
+    document.getElementById('twitch-login-btn').disabled = true;
+  }
+}
 
 // ═══════════════════════════════════════
-//  SETUP
+//  IMAGE PERSISTENCE (localStorage)
 // ═══════════════════════════════════════
+let headsImg = localStorage.getItem('coinflip-heads') || null;
+let tailsImg = localStorage.getItem('coinflip-tails') || null;
+
 function handleUpload(e, side){
   const file = e.target.files[0];
   if(!file) return;
@@ -243,39 +349,60 @@ function handleUpload(e, side){
     const data = ev.target.result;
     if(side === 'heads'){
       headsImg = data;
-      document.getElementById('heads-preview').src = data;
-      document.getElementById('heads-preview').classList.add('show');
-      document.querySelector('#heads-slot .placeholder').style.display = 'none';
-      document.getElementById('heads-slot').classList.add('has-image');
+      localStorage.setItem('coinflip-heads', data);
     } else {
       tailsImg = data;
-      document.getElementById('tails-preview').src = data;
-      document.getElementById('tails-preview').classList.add('show');
-      document.querySelector('#tails-slot .placeholder').style.display = 'none';
-      document.getElementById('tails-slot').classList.add('has-image');
+      localStorage.setItem('coinflip-tails', data);
     }
-    document.getElementById('start-btn').disabled = !(headsImg && tailsImg);
-    if(headsImg && tailsImg) document.getElementById('start-btn').textContent = '🪙 Start Coin Flip →';
+    refreshSetupPreviews();
+    updateStartBtn();
   };
   reader.readAsDataURL(file);
 }
 
+function refreshSetupPreviews(){
+  if(headsImg){
+    document.getElementById('heads-preview').src = headsImg;
+    document.getElementById('heads-preview').classList.add('show');
+    document.getElementById('heads-placeholder').style.display = 'none';
+    document.getElementById('heads-slot').classList.add('has-image');
+    document.getElementById('heads-saved').classList.add('show');
+  }
+  if(tailsImg){
+    document.getElementById('tails-preview').src = tailsImg;
+    document.getElementById('tails-preview').classList.add('show');
+    document.getElementById('tails-placeholder').style.display = 'none';
+    document.getElementById('tails-slot').classList.add('has-image');
+    document.getElementById('tails-saved').classList.add('show');
+  }
+}
+
+function updateStartBtn(){
+  const btn = document.getElementById('start-btn');
+  btn.disabled = !(headsImg && tailsImg);
+  btn.textContent = (headsImg && tailsImg) ? '🪙 Start Flipping →' : 'Upload both coin images to start →';
+}
+
+// ═══════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════
+let headsCount = 0, tailsCount = 0;
+let history = [];
+let streak = 0, lastResult = null;
+let isFlipping = false;
+let totalRotation = 0;
+
 function startGame(){
   if(!headsImg || !tailsImg){ toast('Upload both images first'); return; }
-
-  // Apply images to coin faces
   document.getElementById('coin-heads-img').src = headsImg;
   document.getElementById('coin-tails-img').src = tailsImg;
-
-  // Reset stats
-  headsCount = 0; tailsCount = 0; history = []; streak = 0; lastResult = null;
-  currentFace = 'heads';
+  headsCount = 0; tailsCount = 0; history = []; streak = 0;
+  lastResult = null; totalRotation = 0; isFlipping = false;
+  document.getElementById('coin').style.transition = 'none';
   document.getElementById('coin').style.transform = 'rotateY(0deg)';
-  document.getElementById('result-display').textContent = 'Click to flip!';
+  document.getElementById('result-display').textContent = 'Ready to flip';
   document.getElementById('result-display').className = '';
-  updateStats();
-  renderHistory();
-
+  updateStats(); renderHistory();
   document.getElementById('setup-screen').style.display = 'none';
   document.getElementById('game-screen').classList.add('show');
 }
@@ -286,74 +413,202 @@ function goBackToSetup(){
 }
 
 // ═══════════════════════════════════════
+//  SOUND ENGINE — coin flip sounds
+// ═══════════════════════════════════════
+let audioCtx = null;
+function getCtx(){ if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)(); return audioCtx; }
+
+function playCoinFlipSound(){
+  try{
+    const ctx = getCtx();
+    // Coin spinning — rapid metallic ticks that speed up then slow down, matching the flip arc
+    const tickCount = 18;
+    for(let i=0;i<tickCount;i++){
+      // Timing: fast in middle, slow at start/end — parabolic ease
+      const progress = i / (tickCount - 1);
+      const eased = 0.5 - 0.5 * Math.cos(progress * Math.PI);
+      const delay = 0.05 + eased * 1.1 + (1-eased) * 0.05;
+      const cumDelay = Array.from({length:i}, (_,k) => {
+        const p2 = k/(tickCount-1);
+        const e2 = 0.5 - 0.5*Math.cos(p2*Math.PI);
+        return 0.05 + e2*1.1 + (1-e2)*0.05;
+      }).reduce((a,b)=>a+b, 0);
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      // Pitch varies — higher when spinning fast (middle), lower at start/end
+      const pitch = 800 + eased * 1200;
+      osc.frequency.value = pitch;
+      osc.type = 'triangle';
+      gain.gain.value = 0;
+      osc.connect(gain); gain.connect(ctx.destination);
+      const t = ctx.currentTime + cumDelay;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.12, t + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.04);
+      osc.start(t); osc.stop(t + 0.06);
+    }
+
+    // Landing thud
+    const thudTime = ctx.currentTime + 1.5;
+    const thud = ctx.createOscillator();
+    const thudGain = ctx.createGain();
+    thud.type = 'sine';
+    thud.frequency.value = 120;
+    thudGain.gain.value = 0;
+    thud.connect(thudGain); thudGain.connect(ctx.destination);
+    thudGain.gain.setValueAtTime(0, thudTime);
+    thudGain.gain.linearRampToValueAtTime(0.25, thudTime + 0.01);
+    thudGain.gain.exponentialRampToValueAtTime(0.001, thudTime + 0.22);
+    thud.start(thudTime); thud.stop(thudTime + 0.3);
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════
+//  TWITCH PREDICTIONS API
+// ═══════════════════════════════════════
+async function createPrediction(){
+  if(!twitchToken || !twitchUserId) return;
+  try{
+    const res = await fetch('https://api.twitch.tv/helix/predictions', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + twitchToken,
+        'Client-Id': TWITCH_CLIENT_ID,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        broadcaster_id: twitchUserId,
+        title: 'Heads or Tails? 🪙',
+        outcomes: [{ title: '🪙 Heads' }, { title: '🎮 Tails' }],
+        prediction_window: 30
+      })
+    });
+    const data = await res.json();
+    if(data.data && data.data[0]){
+      activePredictionId = data.data[0].id;
+      headsOutcomeId = data.data[0].outcomes[0].id;
+      tailsOutcomeId = data.data[0].outcomes[1].id;
+      document.getElementById('pw-status').textContent = 'Prediction is LIVE — viewers are betting!';
+      startPredictionPoll();
+    }
+  }catch(e){ console.log('Prediction create error:', e); }
+}
+
+async function resolvePrediction(result){
+  if(!twitchToken || !activePredictionId) return;
+  const winningId = result === 'heads' ? headsOutcomeId : tailsOutcomeId;
+  try{
+    await fetch('https://api.twitch.tv/helix/predictions', {
+      method: 'PATCH',
+      headers: {
+        'Authorization': 'Bearer ' + twitchToken,
+        'Client-Id': TWITCH_CLIENT_ID,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        broadcaster_id: twitchUserId,
+        id: activePredictionId,
+        status: 'RESOLVED',
+        winning_outcome_id: winningId
+      })
+    });
+    document.getElementById('pw-status').textContent = `Resolved! ${result === 'heads' ? '🪙 Heads' : '🎮 Tails'} wins!`;
+    activePredictionId = null;
+    stopPredictionPoll();
+  }catch(e){ console.log('Prediction resolve error:', e); }
+}
+
+let predPollInterval = null;
+function startPredictionPoll(){
+  stopPredictionPoll();
+  predPollInterval = setInterval(pollPrediction, 4000);
+}
+function stopPredictionPoll(){ clearInterval(predPollInterval); }
+
+async function pollPrediction(){
+  if(!twitchToken || !twitchUserId || !activePredictionId) return;
+  try{
+    const res = await fetch(`https://api.twitch.tv/helix/predictions?broadcaster_id=${twitchUserId}&id=${activePredictionId}`, {
+      headers: { 'Authorization': 'Bearer ' + twitchToken, 'Client-Id': TWITCH_CLIENT_ID }
+    });
+    const data = await res.json();
+    if(data.data && data.data[0]){
+      const pred = data.data[0];
+      const h = pred.outcomes[0];
+      const t = pred.outcomes[1];
+      const total = h.channel_points + t.channel_points;
+      const hPct = total > 0 ? Math.round((h.channel_points/total)*100) : 50;
+      const tPct = 100 - hPct;
+      document.getElementById('pw-heads-pts').textContent = h.channel_points.toLocaleString() + ' pts';
+      document.getElementById('pw-tails-pts').textContent = t.channel_points.toLocaleString() + ' pts';
+      document.getElementById('pw-heads-fill').style.width = hPct + '%';
+      document.getElementById('pw-tails-fill').style.width = tPct + '%';
+    }
+  }catch(e){}
+}
+
+// ═══════════════════════════════════════
 //  COIN FLIP
 // ═══════════════════════════════════════
-let totalRotation = 0; // track cumulative rotation so we can keep adding to it
-
 function flipCoin(){
   if(isFlipping) return;
   isFlipping = true;
 
   const btn = document.getElementById('flip-btn');
   btn.disabled = true;
-  btn.classList.add('flipping');
-  btn.textContent = 'FLIPPING...';
-  document.getElementById('result-display').textContent = '...';
-  document.getElementById('result-display').className = '';
+  btn.textContent = '⏳ Flipping...';
+  const resultEl = document.getElementById('result-display');
+  resultEl.style.fontSize = '1.8rem';
+  resultEl.textContent = '...';
+  resultEl.className = '';
+
+  // Start prediction if authed
+  if(twitchToken) createPrediction();
+
+  // Play sound
+  playCoinFlipSound();
 
   // Decide outcome
   const isHeads = Math.random() < 0.5;
   const result = isHeads ? 'heads' : 'tails';
 
-  // We need the final rotation to land on the correct face.
-  // Heads = even multiple of 360 (0°, 360°, 720°...)
-  // Tails = odd multiple of 360 + 180° (180°, 540°, 900°...)
-  // Add enough full spins (5-8) to make it look like a real flip
-  const extraSpins = (5 + Math.floor(Math.random() * 4)) * 360;
-  let targetFaceAngle;
+  // 8-12 full spins for a satisfying long flip, then land on correct face
+  const spins = (8 + Math.floor(Math.random() * 5)) * 360;
+  let target;
   if(isHeads){
-    // Land on heads — needs to show front face (0, 360, 720...)
-    // Current total rotation mod 360 — find nearest heads position above current + spins
-    targetFaceAngle = Math.ceil((totalRotation + extraSpins) / 360) * 360;
+    target = Math.ceil((totalRotation + spins) / 360) * 360;
   } else {
-    // Land on tails — needs to show back face (180, 540, 900...)
-    targetFaceAngle = Math.ceil((totalRotation + extraSpins - 180) / 360) * 360 + 180;
+    target = Math.ceil((totalRotation + spins - 180) / 360) * 360 + 180;
   }
-
-  // Make sure we always go forward (never backwards)
-  if(targetFaceAngle <= totalRotation) targetFaceAngle += 360;
-  totalRotation = targetFaceAngle;
+  if(target <= totalRotation) target += 360;
+  totalRotation = target;
 
   const coin = document.getElementById('coin');
-  coin.style.transition = 'transform 1.4s cubic-bezier(.42,0,.58,1)';
+  coin.style.transition = 'transform 2.2s cubic-bezier(.35,0,.45,1)';
   coin.style.transform = `rotateY(${totalRotation}deg)`;
 
   setTimeout(() => {
     isFlipping = false;
     btn.disabled = false;
-    btn.classList.remove('flipping');
-    btn.textContent = 'FLIP AGAIN';
+    btn.textContent = '🪙 FLIP AGAIN';
 
-    // Record result
     if(isHeads) headsCount++; else tailsCount++;
     history.unshift(isHeads ? 'H' : 'T');
     if(history.length > 20) history.pop();
-
-    // Streak calculation
-    if(result === lastResult){
-      streak++;
-    } else {
-      streak = 1;
-    }
+    streak = result === lastResult ? streak + 1 : 1;
     lastResult = result;
 
-    // Update UI
-    const resultEl = document.getElementById('result-display');
+    // Big result text
     resultEl.textContent = isHeads ? '🪙 HEADS!' : '🎮 TAILS!';
     resultEl.className = result;
-    updateStats();
-    renderHistory();
-  }, 1450);
+    resultEl.style.fontSize = '2.4rem';
+
+    // Resolve prediction
+    if(twitchToken) resolvePrediction(result);
+
+    updateStats(); renderHistory();
+  }, 2250);
 }
 
 function updateStats(){
@@ -361,14 +616,13 @@ function updateStats(){
   document.getElementById('heads-count').textContent = headsCount;
   document.getElementById('tails-count').textContent = tailsCount;
   document.getElementById('flips-count').textContent = total;
-  const streakEl = document.getElementById('streak-val');
-  if(lastResult){
-    const label = lastResult === 'heads' ? 'H' : 'T';
-    streakEl.textContent = `${streak}× ${label}`;
-    streakEl.style.color = lastResult === 'heads' ? 'var(--gold)' : 'var(--purple)';
+  const el = document.getElementById('streak-val');
+  if(lastResult && streak > 1){
+    el.textContent = `${streak}× ${lastResult === 'heads' ? '🪙' : '🎮'}`;
+    el.style.color = lastResult === 'heads' ? 'var(--gold)' : 'var(--purple3)';
   } else {
-    streakEl.textContent = '—';
-    streakEl.style.color = 'var(--green)';
+    el.textContent = '—';
+    el.style.color = '#fff';
   }
 }
 
@@ -383,19 +637,18 @@ function renderHistory(){
   });
 }
 
-// Also allow clicking the coin to flip it
-document.getElementById('coin-scene').addEventListener('click', () => {
-  if(!isFlipping && document.getElementById('game-screen').classList.contains('show')) flipCoin();
-});
+// ═══════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════
+refreshSetupPreviews();
+updateStartBtn();
+checkOAuthReturn();
 
-// ═══════════════════════════════════════
-//  UTILS
-// ═══════════════════════════════════════
 let toastT = null;
-function toast(msg){
+function toast(msg, type=''){
   const el = document.getElementById('toast');
-  el.textContent = msg; el.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 2500);
+  el.textContent = msg; el.className = 'show' + (type?' '+type:'');
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 2800);
 }
 </script>
 </body>
