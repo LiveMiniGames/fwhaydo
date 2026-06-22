@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Word Hunt — Stream Tool</title>
+<title>Interactive Contexto — Stream Tool</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -51,12 +51,12 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   color:var(--muted);margin-bottom:8px}
 #round-status.live{color:var(--green)}
 #round-status.idle{color:var(--muted)}
-#round-headline{font-size:1.6rem;font-weight:900;color:#fff;margin-bottom:14px;letter-spacing:.5px}
-#round-sub{font-size:.85rem;color:var(--muted);margin-bottom:16px}
+#game-title{font-size:3.4rem;font-weight:900;color:#fff;letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;text-align:center;line-height:1}
+#round-headline{font-size:1.1rem;font-weight:900;color:#fff;margin-bottom:14px;letter-spacing:.5px;text-transform:uppercase}
+#round-sub{font-size:.85rem;color:var(--muted);margin-bottom:16px;text-transform:uppercase}
 #round-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 #wordlen-display{display:flex;gap:6px;justify-content:center;margin:14px 0;flex-wrap:wrap}
-.wl-box{width:36px;height:42px;border:2px solid var(--purple);border-radius:6px;
-  display:flex;align-items:center;justify-content:center;font-size:1.3rem;font-weight:900;color:var(--purple)}
+.wl-box{display:none}
 
 /* Custom word input */
 #custom-word-row{display:flex;gap:8px;justify-content:center;margin-top:12px;flex-wrap:wrap}
@@ -138,7 +138,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
 <div id="topbar">
   <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
-  <span id="tb-title">🔎 WORD HUNT</span>
+  <span id="tb-title">🔎 INTERACTIVE CONTEXTO</span>
   <div id="conn"><div id="conn-dot"></div><span id="conn-txt">Not connected</span></div>
   <button class="btn sec" onclick="showSbTab('config')">⚙️</button>
 </div>
@@ -154,14 +154,15 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 
     <div id="round-panel">
       <div id="round-status" class="idle">● NO ROUND ACTIVE</div>
-      <div id="round-headline">Start a round to begin</div>
-      <div id="round-sub">Chat guesses words in chat — closer guesses score lower (1 = the answer)</div>
+      <div id="game-title">INTERACTIVE CONTEXTO</div>
+      <div id="round-headline">START A ROUND TO BEGIN</div>
+      <div id="round-sub">CHAT GUESSES WORDS IN CHAT — CLOSER GUESSES SCORE LOWER (1 = THE ANSWER)</div>
 
       <div id="wordlen-display"></div>
 
       <div id="round-controls">
         <button class="btn suc" id="btn-random" onclick="startRandomRound()">🎲 Random Word</button>
-        <button class="btn sec" id="btn-reveal" onclick="revealWord()" style="display:none">👁 Peek Word</button>
+        <button class="btn sec" id="btn-reveal" onclick="toggleReveal()" style="display:none">👁 PEEK WORD</button>
         <button class="btn dng" id="btn-end" onclick="endRound()" style="display:none">⏹ End Round</button>
       </div>
 
@@ -286,11 +287,15 @@ function beginRound(data){
   scores={}; // reset session? No — keep persistent scores across rounds
   document.getElementById('round-status').textContent='● ROUND LIVE';
   document.getElementById('round-status').className='live';
-  document.getElementById('round-headline').textContent='Guess the secret word!';
-  document.getElementById('round-sub').textContent='Type any word in Twitch chat — lower rank = closer to the secret word. Rank 1 = exact!';
+  document.getElementById('round-headline').textContent='GUESS THE SECRET WORD!';
+  document.getElementById('round-sub').textContent='TYPE ANY WORD IN TWITCH CHAT — LOWER RANK = CLOSER TO THE SECRET WORD. RANK 1 = EXACT!';
   renderWordLen();
   document.getElementById('btn-random').style.display='none';
   document.getElementById('btn-reveal').style.display='';
+  wordRevealed=false;
+  document.getElementById('btn-reveal').textContent='👁 PEEK WORD';
+  document.getElementById('reveal-box').textContent='';
+  document.getElementById('reveal-box').classList.remove('show');
   document.getElementById('btn-end').style.display='';
   document.getElementById('custom-word-row').style.display='none';
   document.getElementById('reveal-box').classList.remove('show');
@@ -310,12 +315,24 @@ function renderWordLen(){
   }
 }
 
-async function revealWord(){
+let wordRevealed=false;
+async function toggleReveal(){
+  const btn=document.getElementById('btn-reveal');
+  const box=document.getElementById('reveal-box');
+  if(wordRevealed){
+    // hide it again
+    box.textContent='';
+    box.classList.remove('show');
+    btn.textContent='👁 PEEK WORD';
+    wordRevealed=false;
+    return;
+  }
   const data=await apiCall('/reveal/'+currentRoundId);
   if(!data||data.error){toast('Could not reveal word','red');return;}
-  const box=document.getElementById('reveal-box');
-  box.textContent='👁 Secret word: '+data.secret_word.toUpperCase()+' (only you can see this)';
+  box.textContent='👁 SECRET WORD: '+data.secret_word.toUpperCase()+' (ONLY YOU CAN SEE THIS)';
   box.classList.add('show');
+  btn.textContent='🙈 HIDE WORD';
+  wordRevealed=true;
 }
 
 function endRound(){
@@ -323,8 +340,8 @@ function endRound(){
   currentRoundId=null;
   document.getElementById('round-status').textContent='● NO ROUND ACTIVE';
   document.getElementById('round-status').className='idle';
-  document.getElementById('round-headline').textContent='Start a round to begin';
-  document.getElementById('round-sub').textContent='Chat guesses words in chat — closer guesses score lower (1 = the answer)';
+  document.getElementById('round-headline').textContent='START A ROUND TO BEGIN';
+  document.getElementById('round-sub').textContent='CHAT GUESSES WORDS IN CHAT — CLOSER GUESSES SCORE LOWER (1 = THE ANSWER)';
   document.getElementById('wordlen-display').innerHTML='';
   document.getElementById('btn-random').style.display='';
   document.getElementById('btn-reveal').style.display='none';
