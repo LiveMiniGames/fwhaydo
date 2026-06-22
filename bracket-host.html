@@ -128,41 +128,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #final-panel h1{font-size:1.8rem;font-weight:900;color:var(--yellow);margin-bottom:20px}
 #final-content{background:var(--card);border:2px solid var(--yellow);border-radius:14px;padding:28px}
 
-/* ═══ DRAGGABLE PRIVATE MOD PANEL ═══ */
-#mod-panel-float{display:none;position:fixed;top:80px;right:20px;width:420px;
-  background:var(--card);border:2px solid var(--purple);border-radius:12px;
-  box-shadow:0 8px 40px rgba(0,0,0,.7);z-index:999;flex-direction:column;
-  resize:both;overflow:hidden;min-width:300px;min-height:200px;max-height:80vh}
-#mod-panel-float.show{display:flex}
-#mod-panel-handle{cursor:move;background:#1a1a26;padding:11px 14px;display:flex;
-  align-items:center;justify-content:space-between;flex-shrink:0;
-  border-bottom:1px solid var(--border);user-select:none}
-#mod-panel-label{font-size:.68rem;color:var(--muted);text-transform:uppercase;
-  letter-spacing:.8px;font-weight:700}
-#mod-panel-label::before{content:'⠿ ';font-size:1rem;color:var(--purple)}
-#mod-panel-close{background:none;border:none;color:var(--muted);cursor:pointer;
-  font-size:1rem;padding:0 4px;line-height:1}
-#mod-panel-close:hover{color:var(--red)}
-#mod-panel-body{flex:1;overflow-y:auto;padding:12px;display:flex;flex-direction:column;gap:8px}
-#mod-panel-resize{position:absolute;bottom:0;right:0;width:20px;height:20px;
-  cursor:nwse-resize;opacity:.4}
-#mod-panel-resize::before{content:'';display:block;width:8px;height:8px;
-  border-right:2px solid var(--purple);border-bottom:2px solid var(--purple);
-  position:absolute;bottom:5px;right:5px}
-
-.mod-card{background:#111;border:1px solid var(--border);border-radius:8px;padding:10px 12px}
-.mod-card-user{font-size:.75rem;font-weight:800;color:var(--purple);margin-bottom:6px}
-.mod-card-content{font-size:.82rem;color:#fff;word-break:break-word;overflow-wrap:anywhere;
-  margin-bottom:8px;position:relative}
-.mod-card-blurred{display:inline-block;filter:blur(8px);transition:filter .2s;
-  max-width:100%;pointer-events:none}
-.mod-card-blurred img{max-width:100%;max-height:100px;border-radius:5px;display:block;margin-top:4px}
-.mod-card-blur-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
-  font-size:.72rem;font-weight:700;color:var(--purple);background:rgba(0,0,0,.3);border-radius:5px;
-  cursor:pointer;letter-spacing:.5px}
-.mod-card-del{background:var(--red);color:#fff;border:none;border-radius:5px;padding:5px 12px;
-  font-size:.7rem;font-weight:700;cursor:pointer}
-.mod-card-del:hover{background:#c0392b}
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
   border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
@@ -239,18 +204,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
       <button class="btn sec" onclick="toggleModPanel()">🔍 Review Submissions (Private)</button>
       <button class="btn lg" onclick="startBracket()">▶ Start Bracket</button>
     </div>
-  </div>
-
-  <!-- DRAGGABLE PRIVATE MOD PANEL -->
-  <div id="mod-panel-float">
-    <div id="mod-panel-handle">
-      <span id="mod-panel-label">⠿ Submission Review — Drag to second monitor</span>
-      <button id="mod-panel-close" onclick="toggleModPanel()">✕</button>
-    </div>
-    <div id="mod-panel-body">
-      <div id="mod-panel-list"></div>
-    </div>
-    <div id="mod-panel-resize"></div>
   </div>
 
   <!-- BRACKET PANEL -->
@@ -716,119 +669,140 @@ function renderFinal(data){
 //  UTILS
 // ═══════════════════════════════════════
 // ═══════════════════════════════════════
-//  PRIVATE MOD PANEL (draggable, off-stream)
+//  PRIVATE MOD PANEL (popout window — can be moved to second monitor)
 // ═══════════════════════════════════════
-let modPanelOpen = false;
+let modWindow = null;
+const modChannel = new BroadcastChannel('bracket-mod-channel');
+
+// Listen for delete requests coming back from the popout window
+modChannel.onmessage = (e) => {
+  if(e.data.type === 'remove-submission'){
+    ws.send(JSON.stringify({ type: 'remove-submission', submissionId: e.data.submissionId, requesterUsername: 'HOST' }));
+    toast('Submission removed', 'green');
+  }
+};
 
 function toggleModPanel(){
-  modPanelOpen = !modPanelOpen;
-  const panel = document.getElementById('mod-panel-float');
-  panel.classList.toggle('show', modPanelOpen);
-  if(modPanelOpen && latestState) renderModPanel(latestState);
-}
-
-function renderModPanel(data){
-  if(!modPanelOpen) return;
-  const list = document.getElementById('mod-panel-list');
-  const subs = data.submissions || [];
-  if(subs.length === 0){
-    list.innerHTML = '<p style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px">No submissions yet.</p>';
+  // If window is already open, just focus it
+  if(modWindow && !modWindow.closed){
+    modWindow.focus();
     return;
   }
+
+  // Build the mod window HTML inline so it's self-contained, no extra file needed
+  const html = buildModWindowHTML();
+  modWindow = window.open('', 'BracketMod',
+    'width=480,height=700,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=no,status=no');
+  modWindow.document.open();
+  modWindow.document.write(html);
+  modWindow.document.close();
+
+  // Send current state to the new window immediately
+  if(latestState) pushStateToModWindow(latestState);
+}
+
+function buildModWindowHTML(){
+  return `<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Bracket Royale — Mod Review</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0e0e16;color:#e8e8f0;font-family:Inter,system-ui,sans-serif;padding:16px}
+h1{font-size:1rem;font-weight:800;color:#9147ff;margin-bottom:4px;letter-spacing:1px}
+#count{font-size:.8rem;color:#7a7a96;margin-bottom:14px}
+#list{display:flex;flex-direction:column;gap:10px}
+.card{background:#1c1c28;border:1px solid #2a2a3a;border-radius:8px;padding:12px}
+.user{font-size:.75rem;font-weight:800;color:#9147ff;margin-bottom:6px}
+.content-wrap{position:relative;margin-bottom:8px;cursor:pointer}
+.blurred{filter:blur(8px);transition:filter .2s;display:block;width:100%;word-break:break-word;font-size:.82rem;color:#fff}
+.blurred img{max-width:100%;max-height:120px;border-radius:5px;display:block}
+.reveal-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:.72rem;font-weight:700;color:#9147ff;background:rgba(0,0,0,.35);border-radius:5px}
+.del{background:#e74c3c;color:#fff;border:none;border-radius:5px;padding:6px 14px;
+  font-size:.72rem;font-weight:700;cursor:pointer;width:100%}
+.del:hover{background:#c0392b}
+.empty{color:#7a7a96;font-size:.82rem;text-align:center;padding:24px}
+</style>
+</head>
+<body>
+<h1>🛡 Mod Review — Private</h1>
+<div id="count">Waiting for submissions...</div>
+<div id="list"></div>
+<script>
+const ch = new BroadcastChannel('bracket-mod-channel');
+let submissionType = 'text';
+
+ch.onmessage = (e) => {
+  if(e.data.type === 'mod-state') renderState(e.data);
+};
+
+function renderState(data){
+  submissionType = data.submissionType || 'text';
+  const subs = data.submissions || [];
+  const size = data.bracketSize || 16;
+  document.getElementById('count').textContent = subs.length + '/' + size + ' submissions — ' + Math.max(0,size-subs.length) + ' spots remaining';
+  const list = document.getElementById('list');
+  if(subs.length === 0){ list.innerHTML = '<div class="empty">No submissions yet.</div>'; return; }
   list.innerHTML = '';
   subs.forEach(s => {
     const card = document.createElement('div');
-    card.className = 'mod-card';
-
+    card.className = 'card';
     const user = document.createElement('div');
-    user.className = 'mod-card-user';
+    user.className = 'user';
     user.textContent = s.username;
     card.appendChild(user);
 
-    const content = document.createElement('div');
-    content.className = 'mod-card-content';
-    let revealed = false;
-
-    const revealBtn = document.createElement('div');
-    revealBtn.className = 'mod-card-blur-overlay';
-    revealBtn.textContent = '👁 Click to reveal';
-
-    if(data.submissionType === 'image' && s.content){
+    const wrap = document.createElement('div');
+    wrap.className = 'content-wrap';
+    const inner = document.createElement('div');
+    inner.className = 'blurred';
+    if(submissionType === 'image' && s.content){
       const img = document.createElement('img');
       img.src = s.content;
-      img.className = 'mod-card-blurred';
-      content.appendChild(img);
+      inner.appendChild(img);
     } else {
-      const txt = document.createElement('span');
-      txt.textContent = s.content || '—';
-      txt.className = 'mod-card-blurred';
-      content.appendChild(txt);
+      inner.textContent = s.content || '—';
     }
-    content.appendChild(revealBtn);
-
-    // Click anywhere on content to toggle reveal
-    content.style.cursor = 'pointer';
-    content.onclick = () => {
-      revealed = !revealed;
-      content.querySelectorAll('.mod-card-blurred').forEach(el => {
-        el.style.filter = revealed ? 'none' : 'blur(8px)';
-      });
-      revealBtn.style.display = revealed ? 'none' : 'flex';
+    const lbl = document.createElement('div');
+    lbl.className = 'reveal-label';
+    lbl.textContent = '👁 Click to reveal';
+    wrap.appendChild(inner);
+    wrap.appendChild(lbl);
+    let shown = false;
+    wrap.onclick = () => {
+      shown = !shown;
+      inner.style.filter = shown ? 'none' : 'blur(8px)';
+      lbl.style.display = shown ? 'none' : 'flex';
     };
-    card.appendChild(content);
+    card.appendChild(wrap);
 
     const del = document.createElement('button');
-    del.className = 'mod-card-del';
-    del.textContent = '✕ Remove';
+    del.className = 'del';
+    del.textContent = '✕ Remove This Submission';
     del.onclick = () => {
-      ws.send(JSON.stringify({ type: 'remove-submission', submissionId: s.id, requesterUsername: 'HOST' }));
-      toast('Submission removed', 'green');
+      ch.postMessage({ type: 'remove-submission', submissionId: s.id });
+      card.style.opacity = '.3';
+      card.style.pointerEvents = 'none';
     };
     card.appendChild(del);
     list.appendChild(card);
   });
 }
+<\/script>
+</body>
+</html>`;
+}
 
-// Make the mod panel draggable (same pattern as tier list spotlight)
-(function(){
-  const panel = document.getElementById('mod-panel-float');
-  const handle = document.getElementById('mod-panel-handle');
-  let dragging = false, startX, startY, origLeft, origTop;
+function pushStateToModWindow(data){
+  modChannel.postMessage({ type: 'mod-state', ...data });
+}
 
-  handle.addEventListener('mousedown', e => {
-    dragging = true;
-    startX = e.clientX; startY = e.clientY;
-    const rect = panel.getBoundingClientRect();
-    origLeft = rect.left; origTop = rect.top;
-    panel.style.right = 'auto';
-    panel.style.left = origLeft + 'px';
-    panel.style.top = origTop + 'px';
-    e.preventDefault();
-  });
-  document.addEventListener('mousemove', e => {
-    if(!dragging) return;
-    panel.style.left = (origLeft + e.clientX - startX) + 'px';
-    panel.style.top = (origTop + e.clientY - startY) + 'px';
-  });
-  document.addEventListener('mouseup', () => { dragging = false; });
-
-  // Touch support for tablet/mobile
-  handle.addEventListener('touchstart', e => {
-    const t = e.touches[0];
-    dragging = true; startX = t.clientX; startY = t.clientY;
-    const rect = panel.getBoundingClientRect();
-    origLeft = rect.left; origTop = rect.top;
-    panel.style.right = 'auto';
-    panel.style.left = origLeft + 'px'; panel.style.top = origTop + 'px';
-  }, {passive:true});
-  document.addEventListener('touchmove', e => {
-    if(!dragging) return;
-    const t = e.touches[0];
-    panel.style.left = (origLeft + t.clientX - startX) + 'px';
-    panel.style.top = (origTop + t.clientY - startY) + 'px';
-  }, {passive:true});
-  document.addEventListener('touchend', () => { dragging = false; });
-})();
+function renderModPanel(data){
+  // Push state to popout window if it's open
+  if(modWindow && !modWindow.closed) pushStateToModWindow(data);
+}
 
 let toastT = null;
 function toast(msg, type=''){
