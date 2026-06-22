@@ -106,6 +106,8 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 .statement-tag{font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:10px;flex-shrink:0}
 .statement-tag.lie{background:var(--red);color:#fff}
 .statement-tag.truth{background:var(--green);color:#fff}
+.statement-label{font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:2px}
 
 #vote-status{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:16px}
 #vote-status.live{color:var(--green);font-weight:700}
@@ -116,6 +118,8 @@ textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--bord
 .vote-card.opt1{border-color:var(--purple)}
 .vote-card.opt2{border-color:#e67e22}
 .vote-card.opt3{border-color:#16a085}
+.vote-card-label{font-size:.65rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:4px}
 .vote-card-num{font-size:2.4rem;font-weight:900;line-height:1;margin-bottom:6px}
 .vote-card.opt1 .vote-card-num{color:var(--purple)}
 .vote-card.opt2 .vote-card-num{color:#e67e22}
@@ -363,10 +367,21 @@ function renderStatements(revealed){
     if(revealed){
       card.classList.add(i === currentRound.lieIndex ? 'revealed-lie' : 'revealed-truth');
     }
+
+    const leftCol = document.createElement('div');
+    leftCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;gap:4px;flex-shrink:0';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'statement-label';
+    lbl.textContent = `Statement ${i + 1}`;
+    leftCol.appendChild(lbl);
+
     const num = document.createElement('div');
     num.className = 'statement-num';
     num.textContent = i + 1;
-    card.appendChild(num);
+    leftCol.appendChild(num);
+
+    card.appendChild(leftCol);
 
     const txt = document.createElement('div');
     txt.className = 'statement-text';
@@ -431,16 +446,19 @@ function renderVoteBars(){
 
   wrap.innerHTML = `
     <div class="vote-card opt1">
+      <div class="vote-card-label">Statement 1</div>
       <div class="vote-card-num">1</div>
       <div class="vote-card-count">${counts.a} vote${counts.a!==1?'s':''}</div>
       <div class="vote-card-pct">${pct(counts.a)}%</div>
     </div>
     <div class="vote-card opt2">
+      <div class="vote-card-label">Statement 2</div>
       <div class="vote-card-num">2</div>
       <div class="vote-card-count">${counts.b} vote${counts.b!==1?'s':''}</div>
       <div class="vote-card-pct">${pct(counts.b)}%</div>
     </div>
     <div class="vote-card opt3">
+      <div class="vote-card-label">Statement 3</div>
       <div class="vote-card-num">3</div>
       <div class="vote-card-count">${counts.c} vote${counts.c!==1?'s':''}</div>
       <div class="vote-card-pct">${pct(counts.c)}%</div>
