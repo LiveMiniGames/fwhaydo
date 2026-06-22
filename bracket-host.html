@@ -285,9 +285,13 @@ function setDot(cls, text){
 
 function onAuthed(){
   document.getElementById('auth-card').style.display = 'none';
-  document.getElementById('setup-panel').classList.add('show');
   document.getElementById('submit-link-text').textContent = SUBMIT_PAGE_URL;
   toast('Authenticated!', 'green');
+  // Render the current state now that we're authenticated — server resets to clean
+  // lobby on auth if the previous game was still in 'finished' state, so latestState
+  // here will already reflect the fresh lobby after the server resets it
+  if(latestState) renderFromState(latestState);
+  else document.getElementById('setup-panel').classList.add('show');
 }
 
 // ═══════════════════════════════════════
@@ -317,6 +321,14 @@ function applyConfig(){
 //  STATE-DRIVEN RENDERING
 // ═══════════════════════════════════════
 function renderFromState(data){
+  // Don't render any game state until the host has authenticated —
+  // this prevents someone refreshing the page mid-game from seeing
+  // the bracket in progress without logging in first
+  if(!isHost){
+    // Just silently store the latest state so it's ready once they authenticate
+    return;
+  }
+
   if(data.phase === 'lobby'){
     document.getElementById('lobby-panel').classList.add('show');
     document.getElementById('bracket-panel').classList.remove('show');
@@ -337,6 +349,7 @@ function renderFromState(data){
 
 function renderLobby(data){
   document.getElementById('lobby-count').textContent = `${data.submissionCount} submission${data.submissionCount===1?'':'s'} in`;
+  document.getElementById('submit-link-text').textContent = SUBMIT_PAGE_URL;
   const wrap = document.getElementById('lobby-submissions');
   wrap.innerHTML = '';
   (data.submissions || []).forEach(s => {
