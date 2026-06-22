@@ -287,7 +287,7 @@ function beginRound(data){
   document.getElementById('round-status').textContent='● ROUND LIVE';
   document.getElementById('round-status').className='live';
   document.getElementById('round-headline').textContent='Guess the secret word!';
-  document.getElementById('round-sub').textContent='Type any word in Twitch chat — lower rank = closer. Rank 1 wins!';
+  document.getElementById('round-sub').textContent='Type any word in Twitch chat — lower rank = closer to the secret word. Rank 1 = exact!';
   renderWordLen();
   document.getElementById('btn-random').style.display='none';
   document.getElementById('btn-reveal').style.display='';
@@ -383,11 +383,13 @@ function addGuessRow(username,color,word,rank,correct,unknown){
       <span class="gr-unknown">not recognized</span>
     `;
   } else {
-    const pct=Math.max(2,100-Math.min(99,(rank/2000)*100));
+    // With full GloVe 300d vocabulary (~180K words), rescale rank thresholds:
+    // top 50 = extremely close (green), top 500 = warm (yellow), top 2000 = lukewarm (orange), else red
+    const pct=Math.max(2,100-Math.min(99,(rank/50000)*100));
     let barColor='var(--red)';
-    if(rank<=20) barColor='var(--green)';
-    else if(rank<=200) barColor='var(--yellow)';
-    else if(rank<=800) barColor='var(--orange)';
+    if(rank<=50)   barColor='var(--green)';
+    else if(rank<=500)  barColor='var(--yellow)';
+    else if(rank<=2000) barColor='var(--orange)';
 
     row.innerHTML=`
       <span class="gr-user" style="color:${esc(color)}">${esc(username)}</span>
