@@ -253,7 +253,12 @@ async function apiCall(path,opts={}){
       headers:{'Content-Type':'application/json'},
       body:opts.body?JSON.stringify(opts.body):undefined
     });
-    return await res.json();
+    const data=await res.json();
+    if(res.status===503){
+      toast('⏳ Server is still loading word vectors — wait ~1 min then try again','red');
+      return null;
+    }
+    return data;
   }catch(e){
     toast('Could not reach game server — check the URL or wait for it to wake up','red');
     return null;
