@@ -289,7 +289,7 @@ D) 22"></textarea>
           </div>
 
           <span class="field-lbl">Time Limit (seconds)</span>
-          <input class="form-input" id="f-time" type="number" value="20" min="5" max="120"/>
+          <input class="form-input" id="f-time" type="number" value="45" min="5" max="120"/>
 
           <button class="btn" style="width:100%;margin-top:8px" onclick="addFormQuestion()">+ Add Question</button>
         </div>
@@ -330,7 +330,7 @@ D) 22"></textarea>
   <div id="play-view">
     <div id="play-stage">
       <div id="q-counter">Question 1 of 1</div>
-      <div id="q-timer">20</div>
+      <div id="q-timer">45</div>
       <div id="q-text-box"><div id="q-text"></div></div>
       <div id="q-image-wrap"><img id="q-image" src="" alt=""/></div>
       <div id="answer-tiles"></div>
@@ -432,7 +432,7 @@ let questionLive = false;
 let questionStartTime = 0;
 let timerInterval = null;
 let answeredThisRound = {};
-let timePerQuestion = 20;
+let timePerQuestion = 45;
 let lobbyOpen = false;
 
 // ═══════════════════════════════════════
@@ -475,7 +475,7 @@ function parsePastedQuiz(){
       return { text: cleaned, correct };
     });
     if(!answers.some(a=>a.correct)){ skipped++; return; }
-    questions.push({ text: questionText, image, answers, time: 20 });
+    questions.push({ text: questionText, image, answers, time: 45 });
     added++;
   });
   document.getElementById('paste-input').value = '';
@@ -516,14 +516,14 @@ function addFormQuestion(){
   const correctIdx = parseInt(document.querySelector('input[name="f-correct"]:checked').value);
   if(correctIdx < answers.length) answers[correctIdx].correct = true;
   else answers[0].correct = true;
-  const time = parseInt(document.getElementById('f-time').value) || 20;
+  const time = parseInt(document.getElementById('f-time').value) || 45;
   questions.push({ text, image, answers, time });
   document.getElementById('f-question').value = '';
   document.getElementById('f-image-url').value = '';
   document.getElementById('f-image-preview').style.display = 'none';
   pendingImageData = null;
   for(let i=0;i<4;i++) document.getElementById('f-ans-'+i).value = '';
-  document.getElementById('f-time').value = 20;
+  document.getElementById('f-time').value = 45;
   toast('Question added!', 'green');
   showBTab('list');
 }
@@ -691,7 +691,7 @@ function nextQuestion(){
     return;
   }
   const q = questions[currentQIndex];
-  timePerQuestion = q.time || 20;
+  timePerQuestion = q.time || 45;
   answeredThisRound = {};
   questionLive = true;
   questionStartTime = Date.now();
