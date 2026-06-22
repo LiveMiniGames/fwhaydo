@@ -65,10 +65,15 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #lobby-panel.show{display:block}
 #lobby-panel h2{font-size:1.4rem;font-weight:900;color:#fff;margin-bottom:6px}
 #lobby-count{font-size:1rem;color:var(--green);font-weight:800;margin-bottom:18px}
-#lobby-submissions{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-height:300px;
-  overflow-y:auto;margin-bottom:20px;padding:4px}
-.sub-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;
-  padding:7px 14px;font-size:.8rem;font-weight:700;color:#fff}
+#lobby-submissions{display:flex;flex-direction:column;gap:8px;width:100%;max-width:600px;
+  max-height:380px;overflow-y:auto;margin-bottom:20px}
+.sub-review-card{background:var(--card);border:1px solid var(--border);border-radius:8px;
+  padding:12px 14px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.sub-review-user{font-size:.78rem;font-weight:800;color:var(--purple);flex-shrink:0;min-width:90px;padding-top:2px}
+.sub-review-content{flex:1;font-size:.82rem;color:#fff;word-break:break-word;overflow-wrap:anywhere}
+.sub-review-del{background:var(--red);color:#fff;border:none;border-radius:6px;padding:5px 10px;
+  font-size:.7rem;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap}
+.sub-review-del:hover{background:#c0392b}
 
 /* ═══════════════════ BRACKET VIEW ═══════════════════ */
 #bracket-panel{display:none;max-width:760px;width:100%}
@@ -287,11 +292,16 @@ function onAuthed(){
   document.getElementById('auth-card').style.display = 'none';
   document.getElementById('submit-link-text').textContent = SUBMIT_PAGE_URL;
   toast('Authenticated!', 'green');
-  // Render the current state now that we're authenticated — server resets to clean
-  // lobby on auth if the previous game was still in 'finished' state, so latestState
-  // here will already reflect the fresh lobby after the server resets it
-  if(latestState) renderFromState(latestState);
-  else document.getElementById('setup-panel').classList.add('show');
+
+  // If the server is mid-game (bracket/voting/reveal) go straight there.
+  // If it's lobby or finished (just reset), always show setup first so the host
+  // can pick their mode/size/limits before opening the lobby — this was the bug:
+  // jumping straight to lobby skipped the setup panel entirely.
+  if(latestState && (latestState.phase === 'bracket' || latestState.phase === 'voting' || latestState.phase === 'reveal')){
+    renderFromState(latestState);
+  } else {
+    document.getElementById('setup-panel').classList.add('show');
+  }
 }
 
 // ═══════════════════════════════════════
@@ -352,11 +362,48 @@ function renderLobby(data){
   document.getElementById('submit-link-text').textContent = SUBMIT_PAGE_URL;
   const wrap = document.getElementById('lobby-submissions');
   wrap.innerHTML = '';
+
+  if(!data.submissions || data.submissions.length === 0){
+    wrap.innerHTML = '<p style="color:var(--muted);font-size:.8rem;text-align:center;padding:16px">No submissions yet — share the link with chat.</p>';
+    return;
+  }
+
   (data.submissions || []).forEach(s => {
-    const chip = document.createElement('span');
-    chip.className = 'sub-chip';
-    chip.textContent = s.username;
-    wrap.appendChild(chip);
+    const card = document.createElement('div');
+    card.className = 'sub-review-card';
+
+    // Username
+    const uname = document.createElement('div');
+    uname.className = 'sub-review-user';
+    uname.textContent = s.username;
+    card.appendChild(uname);
+
+    // Content preview
+    const content = document.createElement('div');
+    content.className = 'sub-review-content';
+    if(data.submissionType === 'image' && s.content){
+      const img = document.createElement('img');
+      img.src = s.content;
+      img.style.cssText = 'max-width:100%;max-height:120px;border-radius:6px;display:block;margin-top:6px';
+      content.appendChild(img);
+    } else if(data.submissionType === 'video' && s.content){
+      content.textContent = s.content;
+      content.style.wordBreak = 'break-all';
+    } else {
+      content.textContent = s.content || '—';
+    }
+    card.appendChild(content);
+
+    // Delete button (host only)
+    const del = document.createElement('button');
+    del.className = 'sub-review-del';
+    del.textContent = '✕ Remove';
+    del.onclick = () => {
+      ws.send(JSON.stringify({ type: 'remove-submission', submissionId: s.id, requesterUsername: 'HOST' }));
+    };
+    card.appendChild(del);
+
+    wrap.appendChild(card);
   });
 }
 
