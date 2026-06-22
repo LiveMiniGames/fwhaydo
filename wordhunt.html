@@ -402,11 +402,11 @@ function addGuessRow(username,color,word,rank,correct,unknown){
   } else {
     // With full GloVe 300d vocabulary (~180K words), rescale rank thresholds:
     // top 50 = extremely close (green), top 500 = warm (yellow), top 2000 = lukewarm (orange), else red
-    const pct=Math.max(2,100-Math.min(99,(rank/50000)*100));
+    const pct=Math.max(2,100-Math.min(99,(rank/10000)*100));
     let barColor='var(--red)';
-    if(rank<=50)   barColor='var(--green)';
-    else if(rank<=500)  barColor='var(--yellow)';
-    else if(rank<=2000) barColor='var(--orange)';
+    if(rank<=100)  barColor='var(--green)';
+    else if(rank<=1000) barColor='var(--yellow)';
+    else if(rank<=4000) barColor='var(--orange)';
 
     row.innerHTML=`
       <span class="gr-user" style="color:${esc(color)}">${esc(username)}</span>
