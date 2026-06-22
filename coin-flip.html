@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Coin Flip — FwHaydo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Bebas+Neue&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#08080f;--card:#14141e;--border:#222230;--purple:#9147ff;--purple2:#772ce8;
+  --gold:#f0b429;--gold2:#c87f0a;--gold3:#ffd700;--green:#2ecc71;--red:#e74c3c;
+  --text:#e8e8f0;--muted:#7a7a96;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* ── TOPBAR ── */
+#topbar{width:100%;background:#0a0a12;border-bottom:2px solid var(--purple);padding:0 20px;
+  height:52px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 11px;transition:color .15s,border-color .15s}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:3px;color:var(--gold);
+  text-shadow:0 0 20px rgba(240,180,41,.4);flex:1}
+
+.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:12px 22px;
+  font-size:.9rem;font-weight:700;cursor:pointer;font-family:inherit;transition:all .15s}
+.btn:hover{background:var(--purple2);transform:translateY(-1px)}
+.btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00}
+.btn.gold:hover{background:linear-gradient(135deg,var(--gold3),var(--gold))}
+
+/* ── SETUP SCREEN ── */
+#setup-screen{display:flex;flex-direction:column;align-items:center;padding:40px 20px;width:100%;max-width:520px}
+#setup-screen h1{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:4px;
+  color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.5);margin-bottom:8px}
+#setup-screen p{font-size:.85rem;color:var(--muted);margin-bottom:32px;text-align:center;line-height:1.6}
+
+.upload-pair{display:flex;gap:16px;width:100%;margin-bottom:28px}
+.upload-slot{flex:1;background:var(--card);border:2px dashed var(--border);border-radius:14px;
+  padding:20px;text-align:center;cursor:pointer;transition:border-color .2s;position:relative}
+.upload-slot:hover{border-color:var(--gold)}
+.upload-slot.has-image{border-style:solid;border-color:var(--gold)}
+.upload-slot h3{font-size:.78rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;
+  color:var(--gold);margin-bottom:10px}
+.upload-slot .preview{width:90px;height:90px;border-radius:50%;object-fit:cover;
+  border:3px solid var(--gold);margin:0 auto 10px;display:none}
+.upload-slot .preview.show{display:block}
+.upload-slot .placeholder{width:80px;height:80px;border-radius:50%;background:#1e1e2e;
+  border:2px dashed var(--border);margin:0 auto 10px;display:flex;align-items:center;
+  justify-content:center;font-size:1.8rem}
+.upload-slot p{font-size:.72rem;color:var(--muted)}
+.upload-slot input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer}
+
+#start-btn{width:100%;padding:16px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;
+  letter-spacing:2px;border:none;border-radius:10px;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00;
+  font-weight:700;transition:all .2s;box-shadow:0 4px 20px rgba(240,180,41,.3)}
+#start-btn:hover{transform:translateY(-2px);box-shadow:0 6px 30px rgba(240,180,41,.5)}
+#start-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+
+/* ── GAME SCREEN ── */
+#game-screen{display:none;flex-direction:column;align-items:center;padding:20px;width:100%;flex:1}
+#game-screen.show{display:flex}
+
+/* Streak and stats bar */
+#stats-bar{display:flex;gap:24px;margin-bottom:28px;background:var(--card);
+  border:1px solid var(--border);border-radius:10px;padding:12px 24px}
+.stat{text-align:center}
+.stat-val{font-size:1.4rem;font-weight:900;color:var(--gold);line-height:1}
+.stat-lbl{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+#streak-val{color:var(--green)}
+
+/* Result display */
+#result-display{font-family:'Bebas Neue',sans-serif;font-size:2.2rem;letter-spacing:4px;
+  height:48px;margin-bottom:20px;transition:all .3s}
+#result-display.heads{color:var(--gold);text-shadow:0 0 30px rgba(240,180,41,.6)}
+#result-display.tails{color:var(--purple);text-shadow:0 0 30px rgba(145,71,255,.6)}
+
+/* ── 3D COIN ── */
+#coin-scene{width:220px;height:220px;perspective:800px;margin-bottom:32px;cursor:pointer}
+#coin{width:100%;height:100%;position:relative;transform-style:preserve-3d;
+  transition:transform 1.2s cubic-bezier(.45,.05,.55,.95)}
+#coin.flipping{animation:coinSpin 1.2s cubic-bezier(.45,.05,.55,.95) forwards}
+
+.coin-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
+  display:flex;align-items:center;justify-content:center;overflow:hidden}
+
+/* Heads face */
+#heads-face{
+  background:radial-gradient(circle at 35% 35%, #ffe566, var(--gold) 40%, var(--gold2) 70%, #8b5e00);
+  box-shadow:inset 0 0 0 6px rgba(255,255,255,.15),inset 0 0 0 10px rgba(0,0,0,.12),
+             0 0 0 4px var(--gold2),0 0 40px rgba(240,180,41,.5),0 8px 30px rgba(0,0,0,.6)}
+#tails-face{
+  background:radial-gradient(circle at 35% 35%, #c084fc, var(--purple) 40%, var(--purple2) 70%, #3b0764);
+  box-shadow:inset 0 0 0 6px rgba(255,255,255,.15),inset 0 0 0 10px rgba(0,0,0,.12),
+             0 0 0 4px var(--purple2),0 0 40px rgba(145,71,255,.5),0 8px 30px rgba(0,0,0,.6);
+  transform:rotateY(180deg)}
+
+/* Coin rim edge (simulated with layered box-shadow) */
+#coin-edge{position:absolute;inset:-4px;border-radius:50%;
+  background:conic-gradient(from 0deg,var(--gold2),var(--gold),var(--gold2),var(--gold),var(--gold2));
+  z-index:-1}
+
+.coin-img{width:75%;height:75%;border-radius:50%;object-fit:cover;
+  border:3px solid rgba(255,255,255,.25);box-shadow:0 0 20px rgba(0,0,0,.5)}
+.coin-label{font-family:'Bebas Neue',sans-serif;font-size:.9rem;letter-spacing:2px;
+  position:absolute;bottom:18px;color:rgba(255,255,255,.7)}
+
+/* Coin rim markings (decorative notches) */
+.coin-rim{position:absolute;inset:0;border-radius:50%;
+  background:transparent;border:8px solid transparent}
+
+@keyframes coinSpin{
+  0%{transform:rotateY(0deg)}
+  100%{transform:rotateY(var(--spin-to))}
+}
+
+/* Shine overlay */
+.coin-shine{position:absolute;inset:0;border-radius:50%;
+  background:radial-gradient(ellipse at 30% 30%,rgba(255,255,255,.35) 0%,transparent 60%);
+  pointer-events:none}
+
+/* ── FLIP BUTTON ── */
+#flip-btn{padding:16px 48px;font-size:1.1rem;font-family:'Bebas Neue',sans-serif;
+  letter-spacing:3px;border:none;border-radius:50px;cursor:pointer;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a0a00;
+  box-shadow:0 4px 24px rgba(240,180,41,.4);transition:all .2s;margin-bottom:24px}
+#flip-btn:hover:not(:disabled){transform:translateY(-3px) scale(1.04);
+  box-shadow:0 8px 36px rgba(240,180,41,.6)}
+#flip-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+#flip-btn.flipping{background:linear-gradient(135deg,#555,#333);color:#888}
+
+/* ── HISTORY ── */
+#history-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:420px;margin-bottom:24px}
+.hist-chip{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-size:.65rem;font-weight:800;letter-spacing:.5px}
+.hist-chip.H{background:var(--gold);color:#1a0a00}
+.hist-chip.T{background:var(--purple);color:#fff}
+
+#setup-again-btn{font-size:.75rem;color:var(--muted);background:none;border:1px solid var(--border);
+  border-radius:6px;padding:7px 14px;cursor:pointer;font-family:inherit}
+#setup-again-btn:hover{color:#fff;border-color:var(--purple)}
+
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);
+  background:var(--card);border:1px solid var(--border);border-radius:8px;padding:9px 18px;
+  font-size:.8rem;color:#fff;z-index:998;transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <span id="tb-title">⚡ HAYDO COIN FLIP</span>
+</div>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen">
+  <h1>Coin Flip</h1>
+  <p>Upload your two coin face images — your face for Heads and the FW logo for Tails. They'll be engraved onto the coin permanently for this session.</p>
+
+  <div class="upload-pair">
+    <div class="upload-slot" id="heads-slot">
+      <h3>⭕ Heads</h3>
+      <div class="placeholder">🪙</div>
+      <img class="preview" id="heads-preview" src="" alt=""/>
+      <p>Your face / pfp</p>
+      <input type="file" accept="image/*" onchange="handleUpload(event,'heads')"/>
+    </div>
+    <div class="upload-slot" id="tails-slot">
+      <h3>⭕ Tails</h3>
+      <div class="placeholder">🎮</div>
+      <img class="preview" id="tails-preview" src="" alt=""/>
+      <p>FW logo</p>
+      <input type="file" accept="image/*" onchange="handleUpload(event,'tails')"/>
+    </div>
+  </div>
+
+  <button id="start-btn" onclick="startGame()" disabled>Upload both images to start →</button>
+</div>
+
+<!-- GAME SCREEN -->
+<div id="game-screen">
+
+  <div id="stats-bar">
+    <div class="stat"><div class="stat-val" id="heads-count">0</div><div class="stat-lbl">Heads</div></div>
+    <div class="stat"><div class="stat-val" id="flips-count">0</div><div class="stat-lbl">Flips</div></div>
+    <div class="stat"><div class="stat-val" id="tails-count">0</div><div class="stat-lbl">Tails</div></div>
+    <div class="stat"><div class="stat-val" id="streak-val">—</div><div class="stat-lbl">Streak</div></div>
+  </div>
+
+  <div id="result-display">Click to flip!</div>
+
+  <div id="coin-scene">
+    <div id="coin-edge"></div>
+    <div id="coin">
+      <div class="coin-face" id="heads-face">
+        <img class="coin-img" id="coin-heads-img" src="" alt="Heads"/>
+        <div class="coin-shine"></div>
+        <span class="coin-label">HEADS</span>
+      </div>
+      <div class="coin-face" id="tails-face">
+        <img class="coin-img" id="coin-tails-img" src="" alt="Tails"/>
+        <div class="coin-shine"></div>
+        <span class="coin-label">TAILS</span>
+      </div>
+    </div>
+  </div>
+
+  <button id="flip-btn" onclick="flipCoin()">FLIP THE COIN</button>
+
+  <div id="history-bar"></div>
+
+  <button id="setup-again-btn" onclick="goBackToSetup()">⚙ Change Images</button>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let headsImg = null;
+let tailsImg = null;
+let headsCount = 0;
+let tailsCount = 0;
+let history = [];
+let streak = 0;
+let lastResult = null;
+let isFlipping = false;
+let currentFace = 'heads'; // which face is currently showing
+
+// ═══════════════════════════════════════
+//  SETUP
+// ═══════════════════════════════════════
+function handleUpload(e, side){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const data = ev.target.result;
+    if(side === 'heads'){
+      headsImg = data;
+      document.getElementById('heads-preview').src = data;
+      document.getElementById('heads-preview').classList.add('show');
+      document.querySelector('#heads-slot .placeholder').style.display = 'none';
+      document.getElementById('heads-slot').classList.add('has-image');
+    } else {
+      tailsImg = data;
+      document.getElementById('tails-preview').src = data;
+      document.getElementById('tails-preview').classList.add('show');
+      document.querySelector('#tails-slot .placeholder').style.display = 'none';
+      document.getElementById('tails-slot').classList.add('has-image');
+    }
+    document.getElementById('start-btn').disabled = !(headsImg && tailsImg);
+    if(headsImg && tailsImg) document.getElementById('start-btn').textContent = '🪙 Start Coin Flip →';
+  };
+  reader.readAsDataURL(file);
+}
+
+function startGame(){
+  if(!headsImg || !tailsImg){ toast('Upload both images first'); return; }
+
+  // Apply images to coin faces
+  document.getElementById('coin-heads-img').src = headsImg;
+  document.getElementById('coin-tails-img').src = tailsImg;
+
+  // Reset stats
+  headsCount = 0; tailsCount = 0; history = []; streak = 0; lastResult = null;
+  currentFace = 'heads';
+  document.getElementById('coin').style.transform = 'rotateY(0deg)';
+  document.getElementById('result-display').textContent = 'Click to flip!';
+  document.getElementById('result-display').className = '';
+  updateStats();
+  renderHistory();
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('game-screen').classList.add('show');
+}
+
+function goBackToSetup(){
+  document.getElementById('game-screen').classList.remove('show');
+  document.getElementById('setup-screen').style.display = 'flex';
+}
+
+// ═══════════════════════════════════════
+//  COIN FLIP
+// ═══════════════════════════════════════
+let totalRotation = 0; // track cumulative rotation so we can keep adding to it
+
+function flipCoin(){
+  if(isFlipping) return;
+  isFlipping = true;
+
+  const btn = document.getElementById('flip-btn');
+  btn.disabled = true;
+  btn.classList.add('flipping');
+  btn.textContent = 'FLIPPING...';
+  document.getElementById('result-display').textContent = '...';
+  document.getElementById('result-display').className = '';
+
+  // Decide outcome
+  const isHeads = Math.random() < 0.5;
+  const result = isHeads ? 'heads' : 'tails';
+
+  // We need the final rotation to land on the correct face.
+  // Heads = even multiple of 360 (0°, 360°, 720°...)
+  // Tails = odd multiple of 360 + 180° (180°, 540°, 900°...)
+  // Add enough full spins (5-8) to make it look like a real flip
+  const extraSpins = (5 + Math.floor(Math.random() * 4)) * 360;
+  let targetFaceAngle;
+  if(isHeads){
+    // Land on heads — needs to show front face (0, 360, 720...)
+    // Current total rotation mod 360 — find nearest heads position above current + spins
+    targetFaceAngle = Math.ceil((totalRotation + extraSpins) / 360) * 360;
+  } else {
+    // Land on tails — needs to show back face (180, 540, 900...)
+    targetFaceAngle = Math.ceil((totalRotation + extraSpins - 180) / 360) * 360 + 180;
+  }
+
+  // Make sure we always go forward (never backwards)
+  if(targetFaceAngle <= totalRotation) targetFaceAngle += 360;
+  totalRotation = targetFaceAngle;
+
+  const coin = document.getElementById('coin');
+  coin.style.transition = 'transform 1.4s cubic-bezier(.42,0,.58,1)';
+  coin.style.transform = `rotateY(${totalRotation}deg)`;
+
+  setTimeout(() => {
+    isFlipping = false;
+    btn.disabled = false;
+    btn.classList.remove('flipping');
+    btn.textContent = 'FLIP AGAIN';
+
+    // Record result
+    if(isHeads) headsCount++; else tailsCount++;
+    history.unshift(isHeads ? 'H' : 'T');
+    if(history.length > 20) history.pop();
+
+    // Streak calculation
+    if(result === lastResult){
+      streak++;
+    } else {
+      streak = 1;
+    }
+    lastResult = result;
+
+    // Update UI
+    const resultEl = document.getElementById('result-display');
+    resultEl.textContent = isHeads ? '🪙 HEADS!' : '🎮 TAILS!';
+    resultEl.className = result;
+    updateStats();
+    renderHistory();
+  }, 1450);
+}
+
+function updateStats(){
+  const total = headsCount + tailsCount;
+  document.getElementById('heads-count').textContent = headsCount;
+  document.getElementById('tails-count').textContent = tailsCount;
+  document.getElementById('flips-count').textContent = total;
+  const streakEl = document.getElementById('streak-val');
+  if(lastResult){
+    const label = lastResult === 'heads' ? 'H' : 'T';
+    streakEl.textContent = `${streak}× ${label}`;
+    streakEl.style.color = lastResult === 'heads' ? 'var(--gold)' : 'var(--purple)';
+  } else {
+    streakEl.textContent = '—';
+    streakEl.style.color = 'var(--green)';
+  }
+}
+
+function renderHistory(){
+  const bar = document.getElementById('history-bar');
+  bar.innerHTML = '';
+  history.forEach(r => {
+    const chip = document.createElement('div');
+    chip.className = 'hist-chip ' + r;
+    chip.textContent = r;
+    bar.appendChild(chip);
+  });
+}
+
+// Also allow clicking the coin to flip it
+document.getElementById('coin-scene').addEventListener('click', () => {
+  if(!isFlipping && document.getElementById('game-screen').classList.contains('show')) flipCoin();
+});
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+let toastT = null;
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(()=>el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
