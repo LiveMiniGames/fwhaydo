@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2 Truths and a Lie — Stream Tool</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0e16;--card:#1c1c28;--border:#2a2a3a;--purple:#9147ff;--purple2:#772ce8;
+  --green:#2ecc71;--red:#e74c3c;--yellow:#f1c40f;--text:#e8e8f0;--muted:#7a7a96;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column}
+
+#topbar{background:#111;border-bottom:2px solid var(--purple);padding:0 16px;
+  height:50px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 11px}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-size:.95rem;font-weight:800;color:#fff;letter-spacing:1px;flex:1}
+#conn{display:flex;align-items:center;gap:5px;font-size:.73rem;color:var(--muted)}
+#conn-dot{width:8px;height:8px;border-radius:50%;background:#444}
+#conn-dot.connected{background:var(--green)}
+
+#main{flex:1;display:flex;overflow:hidden}
+
+.btn{background:var(--purple);color:#fff;border:none;border-radius:8px;padding:11px 18px;
+  font-size:.85rem;font-weight:700;cursor:pointer;font-family:inherit;transition:background .15s}
+.btn:hover{background:var(--purple2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.sec{background:var(--card);border:1px solid var(--border)}
+.btn.sec:hover{background:var(--border)}
+.btn.full{width:100%}
+
+/* LEFT PANEL — round building */
+#left-panel{width:380px;flex-shrink:0;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden;background:#111}
+#left-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.l-tab{flex:1;padding:11px 4px;background:none;border:none;color:var(--muted);font-size:.72rem;font-weight:700;
+  cursor:pointer;text-transform:uppercase;letter-spacing:.5px;border-bottom:2px solid transparent;font-family:inherit}
+.l-tab.active{color:var(--purple);border-bottom-color:var(--purple)}
+#left-panels{flex:1;overflow-y:auto;padding:16px}
+.l-panel{display:none}
+.l-panel.active{display:block}
+
+.field-lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;
+  margin-bottom:7px;display:block;margin-top:16px}
+.field-lbl:first-child{margin-top:0}
+.form-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:6px;
+  color:#fff;padding:9px 11px;font-size:.82rem;margin-bottom:8px;font-family:inherit}
+.form-input:focus{outline:none;border-color:var(--purple)}
+textarea.paste-box{width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;
+  color:#fff;padding:12px;font-size:.78rem;font-family:monospace;resize:vertical;min-height:220px;line-height:1.6}
+.paste-hint{font-size:.68rem;color:var(--muted);line-height:1.6;margin-top:8px;background:var(--card);
+  border:1px solid var(--border);border-radius:6px;padding:10px}
+.paste-hint code{color:var(--yellow)}
+
+.statement-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.lie-radio{flex-shrink:0;width:18px;height:18px;cursor:pointer;accent-color:var(--red)}
+
+#round-list{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.r-item{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;
+  display:flex;align-items:center;gap:10px}
+.r-item-num{background:var(--purple);color:#fff;width:22px;height:22px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;flex-shrink:0}
+.r-item-text{flex:1;font-size:.76rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.r-item-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.85rem;flex-shrink:0}
+.r-item-del:hover{color:var(--red)}
+
+/* RIGHT PANEL — live play */
+#right-panel{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px;overflow-y:auto}
+#twitch-chat-cfg{display:flex;gap:8px;margin-bottom:20px}
+#twitch-chat-cfg input{max-width:220px}
+
+#round-counter{font-size:.8rem;color:var(--muted);margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
+
+#statements-display{display:flex;flex-direction:column;gap:12px;width:100%;max-width:560px;margin-bottom:24px}
+.statement-card{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:18px 22px;
+  display:flex;align-items:center;gap:16px}
+.statement-card.revealed-lie{border-color:var(--red);background:rgba(231,76,60,.08)}
+.statement-card.revealed-truth{border-color:var(--green);background:rgba(46,204,113,.08)}
+.statement-num{background:var(--purple);color:#fff;width:30px;height:30px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0}
+.statement-text{font-size:1.05rem;font-weight:600;color:#fff;flex:1}
+.statement-tag{font-size:.7rem;font-weight:800;padding:3px 10px;border-radius:10px;flex-shrink:0}
+.statement-tag.lie{background:var(--red);color:#fff}
+.statement-tag.truth{background:var(--green);color:#fff}
+
+#vote-status{text-align:center;font-size:.85rem;color:var(--muted);margin-bottom:16px}
+#vote-status.live{color:var(--green);font-weight:700}
+
+#live-vote-display{display:flex;gap:16px;max-width:560px;width:100%;margin-bottom:16px}
+.vote-bar-side{flex:1}
+.vote-bar-track{background:#111;border:1px solid var(--border);border-radius:8px;height:34px;overflow:hidden}
+.vote-bar-fill{height:100%;display:flex;align-items:center;padding:0 10px;font-weight:800;font-size:.85rem;
+  color:#fff;transition:width .3s ease;white-space:nowrap;min-width:fit-content}
+.vote-bar-fill.opt1{background:var(--purple)}
+.vote-bar-fill.opt2{background:#e67e22}
+.vote-bar-fill.opt3{background:#16a085}
+
+#host-controls{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-bottom:24px}
+
+#leaderboard-box{width:100%;max-width:560px;background:var(--card);border:1px solid var(--border);
+  border-radius:12px;padding:18px}
+#leaderboard-box h3{font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px}
+#leaderboard-list{display:flex;flex-direction:column;gap:6px;max-height:220px;overflow-y:auto}
+.lb-row{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#111;border-radius:6px;font-size:.8rem}
+.lb-rank{color:var(--purple);font-weight:800;width:22px;flex-shrink:0}
+.lb-name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-score{color:var(--yellow);font-weight:800}
+.lb-empty{color:var(--muted);font-size:.78rem;text-align:center;padding:10px}
+
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);background:var(--card);
+  border:1px solid var(--border);border-radius:8px;padding:9px 18px;font-size:.8rem;color:#fff;z-index:998;
+  transition:transform .28s;pointer-events:none;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+#toast.green{border-color:var(--green);color:var(--green)}
+#toast.red{border-color:var(--red);color:var(--red)}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+  <span id="tb-title">🎭 2 TRUTHS AND A LIE</span>
+  <div id="conn"><div id="conn-dot"></div><span id="conn-txt">Chat not connected</span></div>
+</div>
+
+<div id="main">
+
+  <div id="left-panel">
+    <div id="left-tabs">
+      <button class="l-tab active" onclick="showLTab('live')">Live Round</button>
+      <button class="l-tab" onclick="showLTab('bulk')">Bulk Paste</button>
+      <button class="l-tab" onclick="showLTab('list')">Round Queue</button>
+    </div>
+    <div id="left-panels">
+
+      <div id="l-live" class="l-panel active">
+        <span class="field-lbl">Statement 1</span>
+        <input class="form-input" id="live-s1" placeholder="Type a statement..."/>
+        <span class="field-lbl">Statement 2</span>
+        <input class="form-input" id="live-s2" placeholder="Type a statement..."/>
+        <span class="field-lbl">Statement 3</span>
+        <input class="form-input" id="live-s3" placeholder="Type a statement..."/>
+
+        <span class="field-lbl">Which one is the lie?</span>
+        <div class="statement-row"><input type="radio" name="live-lie" value="0" class="lie-radio" checked/><span style="font-size:.8rem">Statement 1</span></div>
+        <div class="statement-row"><input type="radio" name="live-lie" value="1" class="lie-radio"/><span style="font-size:.8rem">Statement 2</span></div>
+        <div class="statement-row"><input type="radio" name="live-lie" value="2" class="lie-radio"/><span style="font-size:.8rem">Statement 3</span></div>
+
+        <button class="btn full" style="margin-top:14px" onclick="addLiveRound()">+ Add to Queue</button>
+      </div>
+
+      <div id="l-bulk" class="l-panel">
+        <span class="field-lbl">Paste Multiple Rounds</span>
+        <textarea class="paste-box" id="bulk-input" placeholder="I have visited 12 countries
+I once met a celebrity at the airport
+I can't swim *
+
+I broke my arm in 3rd grade
+I've never seen the ocean *
+I have a twin sibling"></textarea>
+        <div class="paste-hint">
+          One round per block, separated by a blank line. Three statements per round. Mark the lie with <code>*</code> at the end of that line.
+        </div>
+        <button class="btn full" style="margin-top:12px" onclick="parseBulkRounds()">📋 Add These Rounds</button>
+      </div>
+
+      <div id="l-list" class="l-panel">
+        <span class="field-lbl">Round Queue <span id="round-count-lbl"></span></span>
+        <div id="round-list"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <div id="right-panel">
+    <div id="twitch-chat-cfg">
+      <input class="form-input" id="twitch-channel-input" placeholder="Twitch channel (e.g. FwHaydo)" value="FwHaydo"/>
+      <button class="btn sec" onclick="connectTwitchChat()">Connect Chat</button>
+    </div>
+
+    <div id="round-counter">No round loaded</div>
+
+    <div id="statements-display"></div>
+
+    <div id="live-vote-display"></div>
+    <div id="vote-status">Load a round, then click "Open Voting"</div>
+
+    <div id="host-controls">
+      <button class="btn sec" id="load-round-btn" onclick="loadNextRound()">▶ Load Next Round</button>
+      <button class="btn sec" id="open-voting-btn" onclick="openVoting()" disabled>Open Voting</button>
+      <button class="btn" id="reveal-btn" onclick="revealLie()" disabled>Reveal Lie & Score</button>
+    </div>
+
+    <div id="leaderboard-box">
+      <h3>🏆 Leaderboard</h3>
+      <div id="leaderboard-list"><div class="lb-empty">No points yet</div></div>
+    </div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════
+let roundQueue = []; // {statements: [s1,s2,s3], lieIndex}
+let currentRoundIndex = -1;
+let currentRound = null;
+let votingOpen = false;
+let votesThisRound = {}; // twitchUsername -> '1'|'2'|'3'
+let scores = {}; // twitchUsername -> points
+let twitchClient = null;
+
+// ═══════════════════════════════════════
+//  LEFT PANEL TABS
+// ═══════════════════════════════════════
+function showLTab(name){
+  const names = ['live','bulk','list'];
+  document.querySelectorAll('.l-tab').forEach((b,i)=>b.classList.toggle('active', names[i]===name));
+  document.querySelectorAll('.l-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('l-'+name).classList.add('active');
+  if(name === 'list') renderRoundList();
+}
+
+// ═══════════════════════════════════════
+//  LIVE SINGLE-ROUND ENTRY
+// ═══════════════════════════════════════
+function addLiveRound(){
+  const s1 = document.getElementById('live-s1').value.trim();
+  const s2 = document.getElementById('live-s2').value.trim();
+  const s3 = document.getElementById('live-s3').value.trim();
+  if(!s1 || !s2 || !s3){ toast('Fill in all 3 statements', 'red'); return; }
+  const lieIndex = parseInt(document.querySelector('input[name="live-lie"]:checked').value);
+  roundQueue.push({ statements: [s1,s2,s3], lieIndex });
+
+  document.getElementById('live-s1').value = '';
+  document.getElementById('live-s2').value = '';
+  document.getElementById('live-s3').value = '';
+  document.querySelector('input[name="live-lie"][value="0"]').checked = true;
+
+  toast('Round added to queue!', 'green');
+  showLTab('list');
+}
+
+// ═══════════════════════════════════════
+//  BULK PASTE PARSER
+// ═══════════════════════════════════════
+function parseBulkRounds(){
+  const raw = document.getElementById('bulk-input').value.trim();
+  if(!raw){ toast('Paste some rounds first', 'red'); return; }
+  const blocks = raw.split(/\n\s*\n/).map(b=>b.trim()).filter(b=>b);
+  let added = 0, skipped = 0;
+
+  blocks.forEach(block => {
+    const lines = block.split('\n').map(l=>l.trim()).filter(l=>l);
+    if(lines.length !== 3){ skipped++; return; }
+    let lieIndex = -1;
+    const statements = lines.map((line, i) => {
+      const isLie = /\*\s*$/.test(line);
+      if(isLie) lieIndex = i;
+      return line.replace(/\*\s*$/, '').trim();
+    });
+    if(lieIndex === -1){ skipped++; return; }
+    roundQueue.push({ statements, lieIndex });
+    added++;
+  });
+
+  document.getElementById('bulk-input').value = '';
+  if(added > 0){
+    toast(`Added ${added} round${added===1?'':'s'}${skipped?`, skipped ${skipped} (need exactly 3 lines + one *)`:''}`, 'green');
+    showLTab('list');
+  } else {
+    toast('Could not parse any rounds — check the format', 'red');
+  }
+}
+
+// ═══════════════════════════════════════
+//  ROUND QUEUE MANAGEMENT
+// ═══════════════════════════════════════
+function renderRoundList(){
+  const el = document.getElementById('round-list');
+  document.getElementById('round-count-lbl').textContent = `(${roundQueue.length})`;
+  if(roundQueue.length === 0){
+    el.innerHTML = '<p style="font-size:.78rem;color:var(--muted);padding:10px">No rounds queued yet.</p>';
+    return;
+  }
+  el.innerHTML = '';
+  roundQueue.forEach((r, i) => {
+    const item = document.createElement('div');
+    item.className = 'r-item';
+    item.innerHTML = `<span class="r-item-num">${i+1}</span><span class="r-item-text">${esc(r.statements[0])}</span><button class="r-item-del" onclick="removeRound(${i})">✕</button>`;
+    el.appendChild(item);
+  });
+}
+function removeRound(i){ roundQueue.splice(i,1); renderRoundList(); }
+
+// ═══════════════════════════════════════
+//  ROUND PLAYBACK
+// ═══════════════════════════════════════
+function loadNextRound(){
+  if(roundQueue.length === 0){ toast('No rounds in the queue — add some first', 'red'); return; }
+  currentRoundIndex = (currentRoundIndex + 1) % roundQueue.length;
+  currentRound = roundQueue[currentRoundIndex];
+  votingOpen = false;
+  votesThisRound = {};
+
+  document.getElementById('round-counter').textContent = `Round ${currentRoundIndex + 1} of ${roundQueue.length}`;
+  renderStatements(false);
+  document.getElementById('open-voting-btn').disabled = false;
+  document.getElementById('reveal-btn').disabled = true;
+  document.getElementById('vote-status').textContent = 'Click "Open Voting" when chat should start guessing';
+  document.getElementById('vote-status').classList.remove('live');
+  document.getElementById('live-vote-display').innerHTML = '';
+}
+
+function renderStatements(revealed){
+  const display = document.getElementById('statements-display');
+  display.innerHTML = '';
+  currentRound.statements.forEach((text, i) => {
+    const card = document.createElement('div');
+    card.className = 'statement-card';
+    if(revealed){
+      card.classList.add(i === currentRound.lieIndex ? 'revealed-lie' : 'revealed-truth');
+    }
+    const num = document.createElement('div');
+    num.className = 'statement-num';
+    num.textContent = i + 1;
+    card.appendChild(num);
+
+    const txt = document.createElement('div');
+    txt.className = 'statement-text';
+    txt.textContent = text;
+    card.appendChild(txt);
+
+    if(revealed){
+      const tag = document.createElement('span');
+      tag.className = 'statement-tag ' + (i === currentRound.lieIndex ? 'lie' : 'truth');
+      tag.textContent = i === currentRound.lieIndex ? 'THE LIE' : 'TRUE';
+      card.appendChild(tag);
+    }
+
+    display.appendChild(card);
+  });
+}
+
+function openVoting(){
+  if(!currentRound){ toast('Load a round first', 'red'); return; }
+  votesThisRound = {};
+  votingOpen = true;
+  document.getElementById('open-voting-btn').disabled = true;
+  document.getElementById('reveal-btn').disabled = false;
+  document.getElementById('vote-status').textContent = 'Voting is LIVE — chat types 1, 2, or 3 for the lie';
+  document.getElementById('vote-status').classList.add('live');
+  renderVoteBars();
+}
+
+function revealLie(){
+  if(!currentRound) return;
+  votingOpen = false;
+  renderStatements(true);
+
+  // Award points to everyone who guessed the actual lie correctly
+  let correctCount = 0;
+  Object.entries(votesThisRound).forEach(([user, guess]) => {
+    const guessIndex = parseInt(guess) - 1;
+    if(guessIndex === currentRound.lieIndex){
+      scores[user] = (scores[user] || 0) + 100;
+      correctCount++;
+    }
+  });
+
+  renderLeaderboard();
+  document.getElementById('vote-status').textContent = `${correctCount} player${correctCount===1?'':'s'} guessed the lie correctly`;
+  document.getElementById('vote-status').classList.remove('live');
+  document.getElementById('open-voting-btn').disabled = false;
+  document.getElementById('reveal-btn').disabled = true;
+}
+
+// ═══════════════════════════════════════
+//  LIVE VOTE BARS
+// ═══════════════════════════════════════
+function renderVoteBars(){
+  const counts = { a: 0, b: 0, c: 0 };
+  Object.values(votesThisRound).forEach(v => {
+    if(v === '1') counts.a++; else if(v === '2') counts.b++; else if(v === '3') counts.c++;
+  });
+  const total = counts.a + counts.b + counts.c;
+  const wrap = document.getElementById('live-vote-display');
+  if(total === 0){ wrap.innerHTML = ''; return; }
+  const pct = (n) => Math.max(8, Math.round((n/total)*100));
+  wrap.innerHTML = `
+    <div class="vote-bar-side"><div class="vote-bar-track"><div class="vote-bar-fill opt1" style="width:${pct(counts.a)}%">1 — ${counts.a}</div></div></div>
+    <div class="vote-bar-side"><div class="vote-bar-track"><div class="vote-bar-fill opt2" style="width:${pct(counts.b)}%">2 — ${counts.b}</div></div></div>
+    <div class="vote-bar-side"><div class="vote-bar-track"><div class="vote-bar-fill opt3" style="width:${pct(counts.c)}%">3 — ${counts.c}</div></div></div>
+  `;
+}
+
+// ═══════════════════════════════════════
+//  LEADERBOARD
+// ═══════════════════════════════════════
+function renderLeaderboard(){
+  const sorted = Object.entries(scores).sort((a,b)=>b[1]-a[1]);
+  const el = document.getElementById('leaderboard-list');
+  if(sorted.length === 0){ el.innerHTML = '<div class="lb-empty">No points yet</div>'; return; }
+  el.innerHTML = '';
+  sorted.forEach(([name,score],i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${esc(name)}</span><span class="lb-score">${score}</span>`;
+    el.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════
+//  TWITCH CHAT CONNECTION
+// ═══════════════════════════════════════
+function connectTwitchChat(){
+  const ch = document.getElementById('twitch-channel-input').value.trim().toLowerCase();
+  if(!ch){ toast('Enter a channel name', 'red'); return; }
+  if(twitchClient){ try{twitchClient.close()}catch(e){} }
+  setDot('', 'Connecting...');
+
+  try{
+    twitchClient = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    twitchClient.onopen = () => {
+      twitchClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      twitchClient.send('PASS SCHMOOPIIE');
+      twitchClient.send('NICK justinfan' + Math.floor(Math.random()*99999));
+      twitchClient.send('JOIN #' + ch);
+    };
+    twitchClient.onmessage = (e) => {
+      const raw = e.data;
+      if(raw.startsWith('PING')){ twitchClient.send('PONG :tmi.twitch.tv'); return; }
+      if(raw.includes('366')) setDot('connected', '#'+ch);
+      if(raw.includes('PRIVMSG')){
+        try{
+          let user = 'user', msg = '';
+          const tagMatch = raw.match(/^@([^ ]+)/);
+          if(tagMatch){
+            const tags = {};
+            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
+            user = tags['display-name'] || tags['login'] || 'user';
+          }
+          const msgMatch = raw.match(/PRIVMSG #\S+ :(.+)/);
+          if(msgMatch) msg = msgMatch[1].replace(/\r?\n/, '');
+          if(user && msg) handleChatVote(user, msg);
+        }catch(err){}
+      }
+    };
+    twitchClient.onerror = () => setDot('', 'Connection failed');
+    twitchClient.onclose = () => setDot('', 'Disconnected');
+  }catch(e){ setDot('', 'Error'); }
+}
+
+function setDot(cls, text){
+  document.getElementById('conn-dot').className = cls;
+  document.getElementById('conn-txt').textContent = text;
+}
+
+function handleChatVote(user, msg){
+  if(!votingOpen) return;
+  const clean = msg.trim();
+  // "1"/"11"/"111" all collapse to option 1, same pattern as your other tools.
+  // Only first vote per user counts per round.
+  let choice = null;
+  if(/^1+$/.test(clean)) choice = '1';
+  else if(/^2+$/.test(clean)) choice = '2';
+  else if(/^3+$/.test(clean)) choice = '3';
+  if(!choice) return;
+
+  votesThisRound[user] = choice; // overwrite allowed (last vote wins), but still 1 entry per user
+  renderVoteBars();
+}
+
+// ═══════════════════════════════════════
+//  UTILS
+// ═══════════════════════════════════════
+let toastT = null;
+function toast(msg, type=''){
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.className = 'show' + (type?' '+type:'');
+  clearTimeout(toastT); toastT = setTimeout(()=>{el.className='';}, 3200);
+}
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+</script>
+</body>
+</html>
