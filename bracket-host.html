@@ -76,7 +76,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #round-label{text-align:center;font-size:.8rem;color:var(--muted);text-transform:uppercase;
   letter-spacing:1px;margin-bottom:18px}
 
-#matchup-display{display:flex;gap:16px;align-items:stretch;margin-bottom:22px}
+#matchup-display{display:flex;gap:16px;align-items:stretch;margin-bottom:22px;width:100%;overflow:hidden}
 .matchup-side{flex:1;background:var(--card);border:2px solid var(--border);border-radius:14px;
   padding:18px;display:flex;flex-direction:column;align-items:center;text-align:center;min-height:200px;justify-content:center}
 .matchup-side.winner{border-color:var(--green);background:rgba(46,204,113,.08)}
@@ -84,7 +84,8 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 .matchup-side .num-badge{background:var(--purple);color:#fff;width:28px;height:28px;border-radius:50%;
   display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;margin-bottom:10px}
 .matchup-side .username{font-size:.85rem;font-weight:700;color:var(--purple);margin-bottom:10px}
-.matchup-side .content-text{font-size:1.1rem;font-weight:700;color:#fff;line-height:1.4}
+.matchup-side .content-text{font-size:1.1rem;font-weight:700;color:#fff;line-height:1.4;
+  word-break:break-word;overflow-wrap:anywhere;max-height:160px;overflow-y:auto}
 .matchup-side img.content-img{width:100%;border-radius:8px;max-height:220px;object-fit:cover}
 .matchup-side .vote-count{font-size:1.3rem;font-weight:900;color:var(--yellow);margin-top:10px}
 .video-embed-wrap{width:100%;max-width:340px;height:580px;border-radius:8px;overflow:hidden;background:#000;margin:0 auto}
