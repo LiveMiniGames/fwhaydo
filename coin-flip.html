@@ -26,24 +26,19 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
 #tb-live-badge{background:var(--red);color:#fff;font-size:.62rem;font-weight:800;
   padding:3px 7px;border-radius:3px;letter-spacing:.5px}
 
-#main{flex:1;display:flex;flex-direction:column;align-items:center;padding:28px 20px;width:100%}
+#main{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px 20px;width:100%}
 
-#stats-bar{display:flex;width:100%;max-width:380px;margin-bottom:22px;
-  background:var(--card);border:1px solid var(--border);border-radius:6px;overflow:hidden}
-.stat{flex:1;padding:12px 10px;text-align:center;border-right:1px solid var(--border)}
-.stat:last-child{border-right:none}
-.stat-val{font-size:1.3rem;font-weight:900;line-height:1}
-.stat-lbl{font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-top:3px}
 
-#result-display{font-weight:900;font-size:2rem;height:56px;line-height:56px;margin-bottom:16px;
+
+#result-display{font-weight:900;font-size:3.2rem;height:72px;line-height:72px;margin-bottom:20px;
   text-align:center;letter-spacing:2px;display:flex;align-items:center;justify-content:center;gap:10px}
 #result-display.heads{color:var(--blue);text-shadow:0 0 20px rgba(121,217,247,.45)}
 #result-display.tails{color:#e8e8e8;text-shadow:0 0 16px rgba(200,200,200,.2)}
-#result-icon{width:38px;height:38px;border-radius:50%;object-fit:cover;display:none}
+#result-icon{width:58px;height:58px;border-radius:50%;object-fit:cover;display:none}
 #result-icon.show{display:block}
 
 /* 3D COIN */
-#coin-scene{width:220px;height:220px;perspective:900px;margin-bottom:28px;cursor:pointer}
+#coin-scene{width:380px;height:380px;perspective:1200px;margin-bottom:36px;cursor:pointer}
 #coin{width:100%;height:100%;position:relative;transform-style:preserve-3d;transform:rotateY(0deg)}
 
 .coin-face{position:absolute;inset:0;border-radius:50%;backface-visibility:hidden;
@@ -69,18 +64,13 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   background:radial-gradient(ellipse at 28% 26%,rgba(255,255,255,.38) 0%,transparent 52%);
   pointer-events:none}
 
-#flip-btn{padding:13px 44px;font-size:1rem;font-weight:800;border:none;border-radius:4px;
+#flip-btn{padding:20px 72px;font-size:1.4rem;font-weight:800;border:none;border-radius:6px;
   cursor:pointer;background:var(--purple);color:#fff;box-shadow:0 2px 12px rgba(145,71,255,.3);
   transition:all .2s;margin-bottom:22px;letter-spacing:.5px}
 #flip-btn:hover:not(:disabled){background:var(--purple2);transform:translateY(-2px)}
 #flip-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
 
-#history-bar{display:flex;gap:5px;flex-wrap:wrap;justify-content:center;
-  max-width:380px;margin-bottom:10px;min-height:26px}
-.hist-chip{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;
-  justify-content:center;font-size:.6rem;font-weight:800}
-.hist-chip.H{background:rgba(0,180,216,.18);border:1px solid var(--blue2);color:var(--blue)}
-.hist-chip.T{background:rgba(80,80,80,.3);border:1px solid #555;color:#aaa}
+
 
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%) translateY(70px);
   background:#18181b;border:1px solid var(--border);border-radius:4px;padding:9px 18px;
@@ -95,12 +85,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   <span id="tb-live-badge">LIVE</span>
 </div>
 <div id="main">
-  <div id="stats-bar">
-    <div class="stat"><div class="stat-val" style="color:var(--blue)" id="heads-count">0</div><div class="stat-lbl">Heads</div></div>
-    <div class="stat"><div class="stat-val" style="color:#fff" id="flips-count">0</div><div class="stat-lbl">Flips</div></div>
-    <div class="stat"><div class="stat-val" style="color:#aaa" id="tails-count">0</div><div class="stat-lbl">Tails</div></div>
-    <div class="stat"><div class="stat-val" style="font-size:1rem;color:#fff" id="streak-val">—</div><div class="stat-lbl">Streak</div></div>
-  </div>
+
 
   <div id="result-display">
     <img id="result-icon" src="" alt=""/>
@@ -123,7 +108,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-s
   </div>
 
   <button id="flip-btn" onclick="flipCoin()">🪙 FLIP THE COIN</button>
-  <div id="history-bar"></div>
+
 </div>
 <div id="toast"></div>
 <script>
