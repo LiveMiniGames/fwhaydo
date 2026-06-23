@@ -581,40 +581,49 @@ function connectTwitchChat(){
   if(!ch){ toast('Enter a channel name', 'red'); return; }
   if(twitchClient){ try{twitchClient.close()}catch(e){} }
 
+  toast('Connecting to Twitch chat...', 'green');
   try{
     twitchClient = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
     twitchClient.onopen = () => {
       twitchClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-      twitchClient.send('PASS SCHMOOPIIE');
+      twitchClient.send('PASS oauth:' + 'schmoopiie');
       twitchClient.send('NICK justinfan' + Math.floor(Math.random()*99999));
       twitchClient.send('JOIN #' + ch);
     };
     twitchClient.onmessage = (e) => {
-      const raw = e.data;
-      if(raw.startsWith('PING')){ twitchClient.send('PONG :tmi.twitch.tv'); return; }
-      if(raw.includes('PRIVMSG')){
-        try{
-          let user = 'user', msg = '', badges = '';
-          const tagMatch = raw.match(/^@([^ ]+)/);
-          if(tagMatch){
-            const tags = {};
-            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
-            user = tags['display-name'] || tags['login'] || 'user';
-            badges = tags['badges'] || '';
-          }
-          const msgMatch = raw.match(/PRIVMSG #\S+ :(.+)/);
-          if(msgMatch) msg = msgMatch[1].replace(/\r?\n/, '');
-          if(user && msg) handleChatVote(user, msg);
+      const lines = e.data.split('\r\n');
+      for(const raw of lines){
+        if(!raw) continue;
+        if(raw.startsWith('PING')){ twitchClient.send('PONG :tmi.twitch.tv'); continue; }
+        // Confirm we've joined successfully
+        if(raw.includes('366') || (raw.includes('JOIN') && raw.includes('#' + ch))){
+          toast('Connected to #' + ch, 'green');
+          continue;
+        }
+        if(raw.includes('PRIVMSG')){
+          try{
+            let user = 'user', msg = '', badges = '';
+            const tagMatch = raw.match(/^@([^ ]+)/);
+            if(tagMatch){
+              const tags = {};
+              tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
+              user = tags['display-name'] || tags['login'] || 'user';
+              badges = tags['badges'] || '';
+            }
+            const msgMatch = raw.match(/PRIVMSG #\S+ :(.+)/);
+            if(msgMatch) msg = msgMatch[1].replace(/\r?\n/, '');
+            if(user && msg) handleChatVote(user, msg);
 
-          // Report mod/broadcaster status to the backend so the submission page can
-          // unlock moderation tools for this person once they log in with Twitch there
-          if(user && (badges.includes('moderator') || badges.includes('broadcaster'))){
-            ws.send(JSON.stringify({ type: 'report-mod', username: user }));
-          }
-        }catch(err){}
+            if(user && (badges.includes('moderator') || badges.includes('broadcaster'))){
+              if(ws && ws.readyState === WebSocket.OPEN)
+                ws.send(JSON.stringify({ type: 'report-mod', username: user }));
+            }
+          }catch(err){}
+        }
       }
     };
-    toast('Connecting to Twitch chat...', 'green');
+    twitchClient.onclose = () => { toast('Twitch chat disconnected', 'red'); };
+    twitchClient.onerror = () => { toast('Twitch chat connection error', 'red'); };
   }catch(e){ toast('Could not connect to Twitch chat', 'red'); }
 }
 
