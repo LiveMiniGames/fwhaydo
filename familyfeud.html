@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Family Feud — FwHaydo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252538;
+  --blue:#4361ee;--blue2:#3a0ca3;--gold:#f4b942;--gold2:#e09920;
+  --green:#2dc653;--red:#e63946;--purple:#9147ff;
+  --text:#efeff1;--muted:#8888a0;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+#topbar{width:100%;background:#0e0e18;border-bottom:1px solid var(--border);
+  padding:0 20px;height:50px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:4px;padding:4px 10px}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-weight:900;font-size:.95rem;color:#fff;flex:1}
+
+.view{display:none;width:100%;max-width:1000px;padding:24px 20px;flex-direction:column;align-items:center;gap:20px}
+.view.active{display:flex}
+
+/* ── SETUP ── */
+#setup-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:32px;width:100%;max-width:620px;display:flex;flex-direction:column;gap:18px}
+.setup-title{font-size:1.8rem;font-weight:900;text-align:center;letter-spacing:1px}
+.setup-title span{color:var(--gold)}
+.cfg-label{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin-bottom:5px}
+.cfg-input{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;color:#fff;font-size:.9rem;font-family:inherit;width:100%;outline:none}
+.cfg-input:focus{border-color:var(--gold)}
+textarea.cfg-input{min-height:260px;resize:vertical;font-size:.82rem;line-height:1.6}
+.cfg-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cfg-note{font-size:.72rem;color:var(--muted);line-height:1.6;background:var(--card);
+  border-radius:6px;padding:12px;border-left:3px solid var(--gold)}
+.big-btn{padding:14px 36px;font-size:1rem;font-weight:800;border:none;border-radius:6px;
+  cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.5px}
+.big-btn.gold{background:var(--gold);color:#000}
+.big-btn.gold:hover{background:var(--gold2);transform:translateY(-1px)}
+.big-btn.blue{background:var(--blue);color:#fff}
+.big-btn.blue:hover{background:var(--blue2);transform:translateY(-1px)}
+.big-btn.grey{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.big-btn.grey:hover{color:#fff;border-color:var(--purple)}
+.big-btn:disabled{opacity:.4;cursor:not-allowed;transform:none!important}
+.parse-status{font-size:.78rem;color:var(--green);font-weight:600;min-height:20px}
+.parse-status.err{color:var(--red)}
+
+/* ── GAME LAYOUT ── */
+#game-layout{width:100%;display:flex;gap:16px;align-items:flex-start}
+
+/* Leaderboard */
+#lb-panel{width:210px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;overflow:hidden}
+#lb-head{padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);
+  font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted)}
+#lb-list{max-height:540px;overflow-y:auto}
+.lb-row{display:flex;align-items:center;gap:8px;padding:7px 12px;
+  border-bottom:1px solid var(--border)}
+.lb-rank{font-size:.68rem;font-weight:800;color:var(--muted);width:18px}
+.lb-rank.gold{color:var(--gold)}
+.lb-name{font-size:.76rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-pts{font-size:.76rem;font-weight:800;color:var(--gold)}
+
+/* Main board */
+#board-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:14px}
+
+/* Question display */
+#q-display{width:100%;background:linear-gradient(135deg,var(--blue2),var(--blue));
+  border-radius:10px;padding:20px 24px;text-align:center;position:relative}
+#q-num{font-size:.68rem;font-weight:800;color:rgba(255,255,255,.6);letter-spacing:2px;
+  text-transform:uppercase;margin-bottom:6px}
+#q-text{font-size:1.3rem;font-weight:900;line-height:1.3;letter-spacing:.3px}
+
+/* Timer bar */
+#timer-bar-wrap{width:100%;position:relative;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+#timer-bar{height:100%;background:var(--gold);border-radius:4px;transition:width 1s linear,background .3s}
+#timer-label{position:absolute;right:0;top:-20px;font-size:.7rem;font-weight:800;color:var(--muted)}
+
+/* Answer tiles */
+#answer-grid{width:100%;display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.answer-tile{background:var(--card);border:2px solid var(--border);border-radius:8px;
+  padding:14px 16px;display:flex;align-items:center;gap:12px;min-height:60px;
+  transition:all .35s}
+.answer-tile.revealed{background:linear-gradient(135deg,#1a2a10,#1e3a14);
+  border-color:var(--green)}
+.answer-tile.revealed .tile-text{color:#fff}
+.answer-tile.revealed .tile-pts{color:var(--green)}
+.tile-num{width:26px;height:26px;border-radius:50%;background:var(--border);
+  display:flex;align-items:center;justify-content:center;font-size:.65rem;font-weight:800;
+  color:var(--muted);flex-shrink:0}
+.answer-tile.revealed .tile-num{background:var(--green);color:#000}
+.tile-text{flex:1;font-size:.88rem;font-weight:700;color:var(--muted)}
+.tile-pts{font-size:.88rem;font-weight:900;color:var(--border);min-width:36px;text-align:right}
+.tile-finder{font-size:.6rem;color:rgba(255,255,255,.45);margin-top:2px}
+
+/* Flash overlay */
+#flash{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;
+  pointer-events:none;z-index:999;opacity:0;transition:opacity .2s}
+#flash-inner{font-size:2.4rem;font-weight:900;padding:20px 40px;border-radius:12px;
+  letter-spacing:1px;text-align:center}
+#flash.show{opacity:1}
+#flash.correct .flash-inner,.flash-correct{background:rgba(45,198,83,.18);
+  border:2px solid var(--green);color:var(--green)}
+#flash.wrong .flash-inner,.flash-wrong{background:rgba(230,57,70,.15);
+  border:2px solid var(--red);color:var(--red)}
+
+/* Host controls */
+#host-bar{width:100%;display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* Between questions */
+#between-wrap{width:100%;max-width:500px;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:28px;text-align:center;display:flex;flex-direction:column;
+  align-items:center;gap:14px}
+#between-title{font-size:1.3rem;font-weight:900}
+#between-scores{font-size:.85rem;color:var(--muted);line-height:2}
+
+/* Win */
+#win-trophy{font-size:5rem;line-height:1}
+#win-name{font-size:2.2rem;font-weight:900;color:var(--gold)}
+#win-pts{font-size:1rem;color:var(--muted);margin-top:4px}
+#win-board{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;overflow:hidden;margin-top:8px}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← Back</a>
+  <span id="tb-title">🎮 Family Feud</span>
+</div>
+
+<!-- ══ SETUP ══ -->
+<div class="view active" id="setup-view">
+  <div id="setup-box">
+    <div class="setup-title">FAMILY <span>FEUD</span></div>
+
+    <div>
+      <div class="cfg-label">Twitch Channel</div>
+      <input class="cfg-input" id="cfg-channel" type="text" placeholder="fwhaydo"/>
+    </div>
+
+    <div class="cfg-row-2">
+      <div>
+        <div class="cfg-label">Seconds per question</div>
+        <input class="cfg-input" id="cfg-timer" type="number" value="45" min="10" max="120"/>
+      </div>
+      <div>
+        <div class="cfg-label">Channel (confirm)</div>
+        <input class="cfg-input" id="cfg-channel2" type="text" placeholder="same channel"/>
+      </div>
+    </div>
+
+    <div>
+      <div class="cfg-label">Paste your questions below</div>
+      <textarea class="cfg-input" id="cfg-paste" placeholder="Name something people do in the morning
+Shower | 42
+Eat breakfast | 28
+Check phone | 15
+Brush teeth | 10
+Get dressed | 5
+---
+Name a yellow fruit
+Banana | 58
+Lemon | 24
+Pineapple | 12
+Mango | 6"></textarea>
+    </div>
+
+    <div class="cfg-note">
+      Format: question on its own line, then each answer with <strong>| points</strong>, separate questions with <strong>---</strong><br>
+      Chat types answers freely — fuzzy matching handles "brush my teeth" → "Brush teeth"
+    </div>
+
+    <div class="parse-status" id="parse-status"></div>
+
+    <div style="display:flex;gap:10px">
+      <button class="big-btn grey" onclick="previewParse()">Preview Questions</button>
+      <button class="big-btn gold" onclick="startGame()" style="flex:1">START GAME →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ GAME ══ -->
+<div class="view" id="game-view">
+  <div id="game-layout">
+
+    <div id="lb-panel">
+      <div id="lb-head">LEADERBOARD</div>
+      <div id="lb-list"></div>
+    </div>
+
+    <div id="board-wrap">
+      <div id="q-display">
+        <div id="q-num">QUESTION 1 OF 1</div>
+        <div id="q-text">Loading...</div>
+      </div>
+
+      <div id="timer-bar-wrap">
+        <span id="timer-label">45s</span>
+        <div id="timer-bar" style="width:100%"></div>
+      </div>
+
+      <div id="answer-grid"></div>
+
+      <div id="host-bar">
+        <button class="big-btn grey" onclick="revealAll()">👁 Reveal All</button>
+        <button class="big-btn blue" onclick="endQuestion()">Next Question →</button>
+        <button class="big-btn grey" onclick="backToSetup()">✕ End Game</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ BETWEEN ══ -->
+<div class="view" id="between-view">
+  <div id="between-wrap">
+    <div id="between-title"></div>
+    <div id="between-scores"></div>
+    <button class="big-btn gold" id="btn-next-q" onclick="loadQuestion()">NEXT QUESTION →</button>
+    <button class="big-btn grey" onclick="backToSetup()">End Game Early</button>
+  </div>
+</div>
+
+<!-- ══ WIN ══ -->
+<div class="view" id="win-view">
+  <div id="win-trophy">🏆</div>
+  <div id="win-name"></div>
+  <div id="win-pts"></div>
+  <div id="win-board"></div>
+  <div style="height:16px"></div>
+  <button class="big-btn gold" onclick="backToSetup()">PLAY AGAIN</button>
+</div>
+
+<div id="flash"><div id="flash-inner"></div></div>
+
+<script>
+// ══ STATE ══
+let questions=[], qIdx=0, timerSecs=45;
+let scores={};       // username -> total points
+let answered={};     // answerIdx -> { user, pts }  for current question
+let timerInterval=null, timerLeft=0;
+let ws=null, channel='';
+let activeQuestion=null;
+
+// ══ FUZZY MATCH ══
+function normalize(s){
+  return s.toLowerCase()
+    .replace(/[''`]/g,"'")
+    .replace(/[^a-z0-9' ]/g,'')
+    .replace(/\b(a|an|the|my|your|to|on|in|at|of|and)\b/g,'')
+    .replace(/\s+/g,' ').trim();
+}
+
+function levenshtein(a,b){
+  const m=a.length,n=b.length;
+  const dp=Array.from({length:m+1},(_,i)=>Array.from({length:n+1},(_,j)=>i||j));
+  for(let i=1;i<=m;i++) for(let j=1;j<=n;j++)
+    dp[i][j]=a[i-1]===b[j-1]?dp[i-1][j-1]:1+Math.min(dp[i-1][j],dp[i][j-1],dp[i-1][j-1]);
+  return dp[m][n];
+}
+
+function fuzzyMatch(guess, answers){
+  const g=normalize(guess);
+  let best=-1, bestDist=Infinity;
+  answers.forEach((ans,i)=>{
+    if(answered[i]!==undefined) return; // already found
+    const a=normalize(ans.text);
+    // exact
+    if(g===a) return (best=i,bestDist=0);
+    // contains
+    if(a.includes(g)||g.includes(a)){
+      const d=Math.abs(a.length-g.length);
+      if(d<bestDist){best=i;bestDist=d;}
+      return;
+    }
+    // levenshtein — allow 1 error per 4 chars
+    const d=levenshtein(g,a);
+    const threshold=Math.max(1,Math.floor(a.length/4));
+    if(d<=threshold && d<bestDist){best=i;bestDist=d;}
+  });
+  return best; // -1 if no match
+}
+
+// ══ PARSE ══
+function parseQuestions(raw){
+  const blocks=raw.split(/^---$/m).map(b=>b.trim()).filter(Boolean);
+  const out=[];
+  for(const block of blocks){
+    const lines=block.split('\n').map(l=>l.trim()).filter(Boolean);
+    if(lines.length<2) continue;
+    const question=lines[0];
+    const answers=[];
+    for(let i=1;i<lines.length;i++){
+      const parts=lines[i].split('|');
+      if(parts.length<2) continue;
+      const text=parts[0].trim();
+      const pts=parseInt(parts[1].trim())||0;
+      if(text&&pts>0) answers.push({text,pts});
+    }
+    if(answers.length>0) out.push({question,answers});
+  }
+  return out;
+}
+
+function previewParse(){
+  const qs=parseQuestions(document.getElementById('cfg-paste').value);
+  const el=document.getElementById('parse-status');
+  if(qs.length===0){el.className='parse-status err';el.textContent='❌ No valid questions found — check format';return;}
+  el.className='parse-status';
+  el.textContent=`✓ ${qs.length} question${qs.length!==1?'s':''} parsed, ${qs.reduce((a,q)=>a+q.answers.length,0)} total answers`;
+}
+
+// ══ SETUP → GAME ══
+function startGame(){
+  channel=(document.getElementById('cfg-channel').value||document.getElementById('cfg-channel2').value).trim().toLowerCase();
+  timerSecs=parseInt(document.getElementById('cfg-timer').value)||45;
+  if(!channel){alert('Enter your Twitch channel name');return;}
+  questions=parseQuestions(document.getElementById('cfg-paste').value);
+  if(questions.length===0){alert('No valid questions found — check the format and try again');return;}
+  scores={};qIdx=0;
+  connectChat();
+  showView('game-view');
+  loadQuestion();
+}
+
+function backToSetup(){
+  stopTimer();disconnectChat();
+  showView('setup-view');
+}
+
+// ══ CHAT ══
+function connectChat(){
+  if(ws)ws.close();
+  ws=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  ws.onopen=()=>{
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    ws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+    ws.send('JOIN #'+channel);
+  };
+  ws.onmessage=e=>{
+    e.data.split('\r\n').forEach(line=>{
+      if(line.startsWith('PING')){ws.send('PONG :tmi.twitch.tv');return;}
+      if(!line.includes('PRIVMSG'))return;
+      const uMatch=line.match(/display-name=([^;]+)/);
+      const mMatch=line.match(/PRIVMSG #\S+ :(.+)/);
+      if(!uMatch||!mMatch)return;
+      handleGuess(uMatch[1].trim(), mMatch[1].trim());
+    });
+  };
+}
+function disconnectChat(){if(ws){ws.close();ws=null;}}
+
+// ══ QUESTION ══
+function loadQuestion(){
+  if(qIdx>=questions.length){showWinner();return;}
+  activeQuestion=questions[qIdx];
+  answered={};
+  document.getElementById('q-num').textContent=`QUESTION ${qIdx+1} OF ${questions.length}`;
+  document.getElementById('q-text').textContent=activeQuestion.question;
+  renderBoard();
+  showView('game-view');
+  startTimer();
+}
+
+function renderBoard(){
+  const grid=document.getElementById('answer-grid');
+  grid.innerHTML='';
+  activeQuestion.answers.forEach((ans,i)=>{
+    const tile=document.createElement('div');
+    tile.className='answer-tile';
+    tile.id='tile-'+i;
+    const isRevealed=answered[i]!==undefined;
+    if(isRevealed) tile.classList.add('revealed');
+    tile.innerHTML=`
+      <div class="tile-num">${i+1}</div>
+      <div style="flex:1">
+        <div class="tile-text">${isRevealed?ans.text:'?????'}</div>
+        ${isRevealed?`<div class="tile-finder">found by ${answered[i].user}</div>`:''}
+      </div>
+      <div class="tile-pts">${isRevealed?ans.pts+' pts':''}</div>`;
+    grid.appendChild(tile);
+  });
+}
+
+function revealTile(i){
+  const tile=document.getElementById('tile-'+i);
+  if(!tile)return;
+  tile.classList.add('revealed');
+  const ans=activeQuestion.answers[i];
+  tile.querySelector('.tile-text').textContent=ans.text;
+  tile.querySelector('.tile-pts').textContent=ans.pts+' pts';
+  const finder=answered[i]?.user||'';
+  if(finder) tile.querySelector('.tile-finder')?.remove(), tile.querySelector('[style]')
+    .insertAdjacentHTML('beforeend',`<div class="tile-finder">found by ${finder}</div>`);
+}
+
+// ══ GUESS HANDLING ══
+function handleGuess(user, msg){
+  if(!activeQuestion||document.querySelector('.view.active').id!=='game-view')return;
+  const idx=fuzzyMatch(msg, activeQuestion.answers);
+  if(idx===-1)return;
+  if(answered[idx]!==undefined)return; // already found
+  // Award points
+  const pts=activeQuestion.answers[idx].pts;
+  answered[idx]={user,pts};
+  if(!scores[user])scores[user]=0;
+  scores[user]+=pts;
+  revealTile(idx);
+  renderLeaderboard();
+  showFlash(`+${pts} — ${activeQuestion.answers[idx].text}`,true);
+  // Check if all answers found
+  if(Object.keys(answered).length===activeQuestion.answers.length){
+    stopTimer();
+    setTimeout(()=>endQuestion(),1200);
+  }
+}
+
+// ══ REVEAL ALL (host button) ══
+function revealAll(){
+  activeQuestion.answers.forEach((_,i)=>{
+    if(answered[i]===undefined){
+      answered[i]={user:'(revealed)',pts:0};
+      revealTile(i);
+    }
+  });
+}
+
+// ══ TIMER ══
+function startTimer(){
+  timerLeft=timerSecs;
+  const bar=document.getElementById('timer-bar');
+  const label=document.getElementById('timer-label');
+  bar.style.transition='none';
+  bar.style.width='100%';
+  bar.style.background='var(--gold)';
+  label.textContent=timerLeft+'s';
+  requestAnimationFrame(()=>{
+    bar.style.transition='width 1s linear,background .3s';
+    timerInterval=setInterval(()=>{
+      timerLeft--;
+      label.textContent=timerLeft+'s';
+      const pct=(timerLeft/timerSecs)*100;
+      bar.style.width=pct+'%';
+      if(timerLeft<=10)bar.style.background='var(--red)';
+      if(timerLeft<=0){stopTimer();endQuestion();}
+    },1000);
+  });
+}
+function stopTimer(){clearInterval(timerInterval);timerInterval=null;}
+
+// ══ END QUESTION ══
+function endQuestion(){
+  stopTimer();
+  revealAll();
+  const q=activeQuestion;
+  const totalPts=q.answers.reduce((a,b)=>a+b.pts,0);
+  const foundPts=Object.values(answered).reduce((a,b)=>a+(b.pts||0),0);
+  const foundCount=Object.keys(answered).length;
+
+  // Between screen
+  const title=document.getElementById('between-title');
+  title.textContent=`${foundCount} of ${q.answers.length} answers found (${foundPts}/${totalPts} pts)`;
+
+  // Top scorers this question
+  const thisQ=Object.values(answered)
+    .filter(a=>a.pts>0)
+    .sort((a,b)=>b.pts-a.pts)
+    .slice(0,5);
+  document.getElementById('between-scores').innerHTML=
+    thisQ.length
+      ? thisQ.map(a=>`<strong>${a.user}</strong> found <em>${activeQuestion.answers.find(x=>x.pts===a.pts&&answered[activeQuestion.answers.indexOf(x)]?.user===a.user)?.text||'an answer'}</em> (+${a.pts})`).join('<br>')
+      : 'Nobody found any answers!';
+
+  qIdx++;
+  document.getElementById('btn-next-q').textContent=
+    qIdx>=questions.length?'🏆 SHOW WINNER':'NEXT QUESTION →';
+
+  showView('between-view');
+}
+
+// ══ LEADERBOARD ══
+function renderLeaderboard(){
+  const sorted=Object.entries(scores).sort(([,a],[,b])=>b-a);
+  const list=document.getElementById('lb-list');
+  list.innerHTML='';
+  sorted.slice(0,20).forEach(([u,pts],i)=>{
+    const row=document.createElement('div');
+    row.className='lb-row';
+    row.innerHTML=`<span class="lb-rank${i===0?' gold':''}">${i+1}</span>
+      <span class="lb-name">${u}</span>
+      <span class="lb-pts">${pts}</span>`;
+    list.appendChild(row);
+  });
+}
+
+// ══ FLASH ══
+let flashTimeout=null;
+function showFlash(msg,correct){
+  const f=document.getElementById('flash');
+  const fi=document.getElementById('flash-inner');
+  fi.textContent=msg;
+  fi.className=correct?'flash-correct':'flash-wrong';
+  f.className='flash show '+(correct?'correct':'wrong');
+  clearTimeout(flashTimeout);
+  flashTimeout=setTimeout(()=>f.className='flash',1400);
+}
+
+// ══ WIN ══
+function showWinner(){
+  disconnectChat();
+  const sorted=Object.entries(scores).sort(([,a],[,b])=>b-a);
+  const winner=sorted[0];
+  document.getElementById('win-name').textContent=winner?winner[0]:'Nobody scored!';
+  document.getElementById('win-pts').textContent=winner?winner[1]+' points total':'';
+  const board=document.getElementById('win-board');
+  board.innerHTML=sorted.slice(0,10).map(([u,p],i)=>
+    `<div class="lb-row"><span class="lb-rank${i===0?' gold':''}">${i+1}</span>
+     <span class="lb-name">${u}</span><span class="lb-pts">${p}</span></div>`
+  ).join('');
+  showView('win-view');
+}
+
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+</script>
+</body>
+</html>
