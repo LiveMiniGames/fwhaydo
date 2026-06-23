@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Russian Roulette — FwHaydo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a10;--surface:#13131c;--card:#1a1a26;--border:#252535;
+  --red:#e63946;--red2:#c1121f;--red-glow:rgba(230,57,70,.35);
+  --green:#2dc653;--green-glow:rgba(45,198,83,.3);
+  --gold:#f4b942;--purple:#9147ff;
+  --text:#efeff1;--muted:#8888a0;
+  --life-full:#e63946;--life-empty:#2a2a3a;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',system-ui,sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;overflow-x:hidden}
+
+/* ── TOPBAR ── */
+#topbar{width:100%;background:#0e0e18;border-bottom:1px solid var(--border);
+  padding:0 20px;height:50px;display:flex;align-items:center;gap:12px;flex-shrink:0}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:4px;padding:4px 10px}
+.back-home:hover{color:#fff;border-color:var(--purple)}
+#tb-title{font-weight:900;font-size:.95rem;color:#fff;flex:1}
+#tb-badge{background:var(--red);color:#fff;font-size:.6rem;font-weight:800;
+  padding:3px 7px;border-radius:3px;letter-spacing:.5px}
+
+/* ── VIEWS ── */
+.view{display:none;width:100%;max-width:1100px;padding:24px 20px;flex-direction:column;align-items:center}
+.view.active{display:flex}
+
+/* ── SETUP VIEW ── */
+#setup-wrap{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:32px;width:100%;max-width:520px;display:flex;flex-direction:column;gap:20px}
+.setup-title{font-size:1.8rem;font-weight:900;text-align:center;letter-spacing:1px}
+.setup-title span{color:var(--red)}
+.cfg-row{display:flex;flex-direction:column;gap:6px}
+.cfg-label{font-size:.75rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.8px}
+.cfg-input{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;color:#fff;font-size:.95rem;font-family:inherit;width:100%;outline:none}
+.cfg-input:focus{border-color:var(--red)}
+.cfg-row-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.start-btn{background:var(--red);color:#fff;border:none;border-radius:6px;padding:14px;
+  font-size:1rem;font-weight:800;cursor:pointer;font-family:inherit;letter-spacing:.5px;
+  transition:all .2s;width:100%}
+.start-btn:hover{background:var(--red2);transform:translateY(-1px)}
+.cfg-note{font-size:.73rem;color:var(--muted);text-align:center;line-height:1.5}
+
+/* ── LOBBY VIEW ── */
+#lobby-inner{width:100%;max-width:700px;display:flex;flex-direction:column;align-items:center;gap:20px}
+.lobby-title{font-size:2rem;font-weight:900;letter-spacing:1px}
+.lobby-title span{color:var(--red)}
+#lobby-channel{font-size:.9rem;color:var(--muted);margin-top:-12px}
+#lobby-count{font-size:3.5rem;font-weight:900;color:var(--red);line-height:1}
+#lobby-sub{font-size:.85rem;color:var(--muted)}
+#lobby-grid{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;
+  max-height:220px;overflow-y:auto;width:100%}
+.lobby-chip{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:4px 12px;font-size:.75rem;font-weight:600;color:var(--text)}
+.lobby-chip.new{border-color:var(--green);color:var(--green)}
+.big-btn{padding:14px 48px;font-size:1rem;font-weight:800;border:none;border-radius:6px;
+  cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.5px}
+.big-btn:hover:not(:disabled){transform:translateY(-2px)}
+.big-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.big-btn.red{background:var(--red);color:#fff}
+.big-btn.red:hover:not(:disabled){background:var(--red2)}
+.big-btn.green{background:var(--green);color:#000}
+.big-btn.grey{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+
+/* ── GAME VIEW ── */
+#game-layout{width:100%;display:flex;gap:16px;align-items:flex-start}
+
+/* Left — player list */
+#player-panel{width:240px;flex-shrink:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:8px;overflow:hidden}
+#player-panel-head{padding:10px 14px;background:var(--card);border-bottom:1px solid var(--border);
+  font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--muted);
+  display:flex;justify-content:space-between}
+#player-list{max-height:560px;overflow-y:auto}
+.player-row{display:flex;align-items:center;gap:8px;padding:7px 14px;
+  border-bottom:1px solid var(--border);transition:all .3s}
+.player-row.eliminated{opacity:.35}
+.player-row.eliminated .pr-name{text-decoration:line-through}
+.player-row.just-out{background:rgba(230,57,70,.15)}
+.pr-name{font-size:.78rem;font-weight:600;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pr-lives{display:flex;gap:3px}
+.life-dot{width:8px;height:8px;border-radius:50%;background:var(--life-full)}
+.life-dot.gone{background:var(--life-empty);border:1px solid #333}
+
+/* Center — main game */
+#game-center{flex:1;display:flex;flex-direction:column;align-items:center;gap:16px}
+
+/* Gun / round display */
+#gun-wrap{position:relative;display:flex;flex-direction:column;align-items:center;gap:8px}
+#gun-emoji{font-size:6rem;line-height:1;filter:drop-shadow(0 0 20px rgba(230,57,70,0))}
+#gun-emoji.loaded{filter:drop-shadow(0 0 24px var(--red-glow))}
+#gun-emoji.safe-glow{filter:drop-shadow(0 0 24px var(--green-glow))}
+#round-badge{background:var(--card);border:1px solid var(--border);border-radius:20px;
+  padding:4px 16px;font-size:.72rem;font-weight:800;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+
+/* Phase panels */
+#phase-host{display:flex;flex-direction:column;align-items:center;gap:14px;width:100%}
+#phase-host-title{font-size:1.1rem;font-weight:900;color:var(--muted);text-align:center}
+#host-btn-row{display:flex;gap:14px}
+.host-choice-btn{width:160px;height:100px;border:2px solid var(--border);border-radius:10px;
+  background:var(--card);color:#fff;font-size:1rem;font-weight:800;cursor:pointer;
+  font-family:inherit;transition:all .25s;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:6px;letter-spacing:.5px}
+.host-choice-btn .hcb-icon{font-size:2.2rem;line-height:1}
+.host-choice-btn.load-btn:hover{background:rgba(230,57,70,.15);border-color:var(--red);color:var(--red)}
+.host-choice-btn.safe-btn:hover{background:rgba(45,198,83,.12);border-color:var(--green);color:var(--green)}
+.host-choice-btn.chosen-load{background:rgba(230,57,70,.2);border-color:var(--red);color:var(--red)}
+.host-choice-btn.chosen-safe{background:rgba(45,198,83,.15);border-color:var(--green);color:var(--green)}
+
+/* Timer ring */
+#timer-wrap{position:relative;width:90px;height:90px}
+#timer-svg{transform:rotate(-90deg)}
+#timer-track{fill:none;stroke:var(--border);stroke-width:6}
+#timer-ring{fill:none;stroke:var(--red);stroke-width:6;stroke-linecap:round;
+  transition:stroke-dashoffset .95s linear,stroke .3s}
+#timer-num{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;font-weight:900}
+
+/* Vote summary bar */
+#vote-bar-wrap{width:100%;max-width:400px;display:flex;flex-direction:column;gap:6px}
+.vote-row{display:flex;align-items:center;gap:10px;font-size:.8rem;font-weight:700}
+.vote-label{width:48px;text-align:right}
+.vote-track{flex:1;background:var(--border);border-radius:4px;height:22px;overflow:hidden}
+.vote-fill{height:100%;border-radius:4px;transition:width .4s ease;display:flex;align-items:center;
+  justify-content:flex-end;padding-right:8px;font-size:.7rem;font-weight:800;color:#000;min-width:0}
+.vote-fill.pull{background:var(--red)}
+.vote-fill.pass{background:var(--green)}
+.vote-count{width:32px;text-align:left;color:var(--muted)}
+
+/* Result banner */
+#result-banner{width:100%;max-width:500px;border-radius:10px;padding:20px 24px;
+  display:none;flex-direction:column;gap:10px;text-align:center}
+#result-banner.loaded-result{background:rgba(230,57,70,.12);border:1px solid var(--red)}
+#result-banner.safe-result{background:rgba(45,198,83,.08);border:1px solid var(--green)}
+#result-title{font-size:1.5rem;font-weight:900;letter-spacing:1px}
+#result-sub{font-size:.85rem;color:var(--muted);line-height:1.5}
+#result-elim-list{font-size:.8rem;color:var(--red);font-weight:700;line-height:1.8}
+#result-life-list{font-size:.8rem;color:var(--gold);font-weight:700;line-height:1.8}
+
+/* Next round / game over */
+#next-row{display:flex;gap:12px;align-items:center}
+
+/* Win screen */
+#win-view .trophy{font-size:5rem;line-height:1;margin-bottom:8px}
+#win-view .win-title{font-size:2.4rem;font-weight:900;letter-spacing:1px;color:var(--gold)}
+#win-view .win-name{font-size:1.6rem;font-weight:900;margin-top:4px}
+#win-view .win-stats{font-size:.85rem;color:var(--muted);margin-top:8px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+
+/* Phase states */
+#phase-voting{display:none;flex-direction:column;align-items:center;gap:14px;width:100%}
+#phase-result{display:none;flex-direction:column;align-items:center;gap:14px;width:100%}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← Back</a>
+  <span id="tb-title">🔫 Russian Roulette</span>
+  <span id="tb-badge">LIVE</span>
+</div>
+
+<!-- ══════════════════ SETUP VIEW ══════════════════ -->
+<div class="view active" id="setup-view">
+  <div id="setup-wrap">
+    <div class="setup-title">🔫 RUSSIAN <span>ROULETTE</span></div>
+    <div class="cfg-row">
+      <div class="cfg-label">Twitch Channel</div>
+      <input class="cfg-input" id="cfg-channel" type="text" placeholder="fwhaydo"/>
+    </div>
+    <div class="cfg-row-2">
+      <div class="cfg-row">
+        <div class="cfg-label">Round Timer (seconds)</div>
+        <input class="cfg-input" id="cfg-timer" type="number" value="20" min="5" max="60"/>
+      </div>
+      <div class="cfg-row">
+        <div class="cfg-label">Game Duration (minutes)</div>
+        <input class="cfg-input" id="cfg-duration" type="number" value="10" min="3" max="20"/>
+      </div>
+    </div>
+    <div class="cfg-row">
+      <div class="cfg-label">Lives per player</div>
+      <input class="cfg-input" id="cfg-lives" type="number" value="3" min="1" max="5"/>
+    </div>
+    <button class="start-btn" onclick="goToLobby()">OPEN LOBBY →</button>
+    <div class="cfg-note">Chat types <strong>!join</strong> to enter the lobby · Host controls are only visible to you</div>
+  </div>
+</div>
+
+<!-- ══════════════════ LOBBY VIEW ══════════════════ -->
+<div class="view" id="lobby-view">
+  <div id="lobby-inner">
+    <div class="lobby-title">🔫 RUSSIAN <span>ROULETTE</span></div>
+    <div id="lobby-channel"></div>
+    <div id="lobby-count">0</div>
+    <div id="lobby-sub">players in lobby — chat types !join</div>
+    <div id="lobby-grid"></div>
+    <div style="display:flex;gap:12px">
+      <button class="big-btn green" onclick="startGame()" id="btn-start-game">START GAME</button>
+      <button class="big-btn grey" onclick="backToSetup()">← Back</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ GAME VIEW ══════════════════ -->
+<div class="view" id="game-view">
+  <div id="game-layout">
+
+    <!-- Left: player list -->
+    <div id="player-panel">
+      <div id="player-panel-head">
+        <span>PLAYERS</span>
+        <span id="alive-count">0 alive</span>
+      </div>
+      <div id="player-list"></div>
+    </div>
+
+    <!-- Center -->
+    <div id="game-center">
+
+      <div id="gun-wrap">
+        <div id="round-badge">ROUND 1</div>
+        <div id="gun-emoji">🔫</div>
+      </div>
+
+      <!-- PHASE: host picks -->
+      <div id="phase-host">
+        <div id="phase-host-title">PICK YOUR MOVE — CHAT CAN'T SEE THIS</div>
+        <div id="host-btn-row">
+          <button class="host-choice-btn load-btn" onclick="hostPick('load')">
+            <span class="hcb-icon">🔴</span>LOAD
+          </button>
+          <button class="host-choice-btn safe-btn" onclick="hostPick('safe')">
+            <span class="hcb-icon">🟢</span>SAFE
+          </button>
+        </div>
+      </div>
+
+      <!-- PHASE: voting timer -->
+      <div id="phase-voting">
+        <div style="font-size:.9rem;font-weight:800;color:var(--muted);letter-spacing:1px">
+          CHAT: TYPE !pull OR !pass
+        </div>
+        <div id="timer-wrap">
+          <svg id="timer-svg" width="90" height="90" viewBox="0 0 90 90">
+            <circle id="timer-track" cx="45" cy="45" r="38"/>
+            <circle id="timer-ring" cx="45" cy="45" r="38"/>
+          </svg>
+          <div id="timer-num">20</div>
+        </div>
+        <div id="vote-bar-wrap">
+          <div class="vote-row">
+            <span class="vote-label" style="color:var(--red)">!PULL</span>
+            <div class="vote-track"><div class="vote-fill pull" id="pull-fill" style="width:0%">0</div></div>
+            <span class="vote-count" id="pull-count">0</span>
+          </div>
+          <div class="vote-row">
+            <span class="vote-label" style="color:var(--green)">!PASS</span>
+            <div class="vote-track"><div class="vote-fill pass" id="pass-fill" style="width:0%">0</div></div>
+            <span class="vote-count" id="pass-count">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- PHASE: result -->
+      <div id="phase-result">
+        <div id="result-banner">
+          <div id="result-title"></div>
+          <div id="result-sub"></div>
+          <div id="result-elim-list"></div>
+          <div id="result-life-list"></div>
+        </div>
+        <div id="next-row">
+          <button class="big-btn red" id="btn-next-round" onclick="nextRound()">NEXT ROUND →</button>
+          <button class="big-btn grey" onclick="endGameEarly()">End Game</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ WIN VIEW ══════════════════ -->
+<div class="view" id="win-view">
+  <div class="trophy">🏆</div>
+  <div class="win-title">WINNER!</div>
+  <div class="win-name" id="win-name"></div>
+  <div class="win-stats" id="win-stats"></div>
+  <div style="height:20px"></div>
+  <button class="big-btn red" onclick="backToSetup()">PLAY AGAIN</button>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════════
+let channel='', roundTimer=20, gameDurationMs=600000, maxLives=3;
+let players={};       // username -> { lives, eliminated, pullCount, passCount }
+let roundNum=0;
+let hostChoice=null;  // 'load' | 'safe'
+let votes={};         // username -> 'pull' | 'pass'  (current round)
+let timerInterval=null, timerLeft=0;
+let gameStartTime=0;
+let ws=null;
+const CIRCUMFERENCE = 2 * Math.PI * 38;
+
+// ═══════════════════════════════════════════════════════
+//  VIEWS
+// ═══════════════════════════════════════════════════════
+function showView(id){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function backToSetup(){
+  stopTimer(); disconnectChat();
+  showView('setup-view');
+}
+
+// ═══════════════════════════════════════════════════════
+//  SETUP → LOBBY
+// ═══════════════════════════════════════════════════════
+function goToLobby(){
+  channel = document.getElementById('cfg-channel').value.trim().toLowerCase();
+  roundTimer = parseInt(document.getElementById('cfg-timer').value)||20;
+  gameDurationMs = (parseInt(document.getElementById('cfg-duration').value)||10)*60000;
+  maxLives = parseInt(document.getElementById('cfg-lives').value)||3;
+  if(!channel){ alert('Enter your Twitch channel name'); return; }
+  players={};
+  document.getElementById('lobby-channel').textContent='twitch.tv/'+channel;
+  document.getElementById('lobby-count').textContent='0';
+  renderLobbyGrid();
+  showView('lobby-view');
+  connectChat();
+}
+
+// ═══════════════════════════════════════════════════════
+//  TWITCH CHAT
+// ═══════════════════════════════════════════════════════
+function connectChat(){
+  if(ws) ws.close();
+  ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  ws.onopen=()=>{
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    ws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+    ws.send('JOIN #'+channel);
+  };
+  ws.onmessage=e=>{
+    const raw=e.data.split('\r\n');
+    raw.forEach(line=>{
+      if(line.startsWith('PING')){ ws.send('PONG :tmi.twitch.tv'); return; }
+      if(!line.includes('PRIVMSG')) return;
+      const userMatch = line.match(/display-name=([^;]+)/);
+      const msgMatch  = line.match(/PRIVMSG #\S+ :(.+)/);
+      if(!userMatch||!msgMatch) return;
+      const user = userMatch[1].trim();
+      const msg  = msgMatch[1].trim().toLowerCase();
+      handleChatMsg(user, msg);
+    });
+  };
+}
+
+function disconnectChat(){ if(ws){ ws.close(); ws=null; } }
+
+function handleChatMsg(user, msg){
+  const view = document.querySelector('.view.active').id;
+
+  // Lobby: !join
+  if(view==='lobby-view' && msg==='!join'){
+    if(!players[user]){
+      players[user]={ lives:maxLives, eliminated:false, pullCount:0, passCount:0 };
+      document.getElementById('lobby-count').textContent=Object.keys(players).length;
+      renderLobbyGrid(user);
+    }
+    return;
+  }
+
+  // Game: !pull or !pass during voting phase
+  if(view==='game-view' && document.getElementById('phase-voting').style.display==='flex'){
+    if((msg==='!pull'||msg==='!pass') && players[user] && !players[user].eliminated && !votes[user]){
+      votes[user]=msg==='!pull'?'pull':'pass';
+      updateVoteBars();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════
+//  LOBBY
+// ═══════════════════════════════════════════════════════
+function renderLobbyGrid(newUser=null){
+  const grid=document.getElementById('lobby-grid');
+  if(newUser){
+    const chip=document.createElement('div');
+    chip.className='lobby-chip new';
+    chip.textContent=newUser;
+    chip.id='chip-'+newUser;
+    grid.prepend(chip);
+    setTimeout(()=>chip.classList.remove('new'),2000);
+  } else {
+    grid.innerHTML='';
+    Object.keys(players).forEach(u=>{
+      const chip=document.createElement('div');
+      chip.className='lobby-chip';
+      chip.textContent=u;
+      grid.appendChild(chip);
+    });
+  }
+}
+
+function startGame(){
+  const count=Object.keys(players).length;
+  if(count<2){ alert('Need at least 2 players to start'); return; }
+  roundNum=0;
+  gameStartTime=Date.now();
+  showView('game-view');
+  renderPlayerList();
+  nextRound();
+}
+
+// ═══════════════════════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════════════════════
+function alivePlayers(){ return Object.entries(players).filter(([,p])=>!p.eliminated); }
+
+function nextRound(){
+  // Check win condition
+  const alive=alivePlayers();
+  if(alive.length<=1){
+    showWinner(alive[0]?alive[0][0]:null);
+    return;
+  }
+  // Check time limit
+  if(Date.now()-gameStartTime >= gameDurationMs){
+    // Force end — most lives remaining wins
+    const sorted=alive.sort(([,a],[,b])=>b.lives-a.lives);
+    showWinner(sorted[0][0]);
+    return;
+  }
+
+  roundNum++;
+  hostChoice=null;
+  votes={};
+  document.getElementById('round-badge').textContent='ROUND '+roundNum;
+  document.getElementById('gun-emoji').className='';
+  document.getElementById('gun-emoji').textContent='🔫';
+
+  // Show host pick phase
+  showPhase('host');
+  document.querySelectorAll('.host-choice-btn').forEach(b=>b.classList.remove('chosen-load','chosen-safe'));
+}
+
+function showPhase(p){
+  document.getElementById('phase-host').style.display   = p==='host'   ? 'flex':'none';
+  document.getElementById('phase-voting').style.display = p==='voting' ? 'flex':'none';
+  document.getElementById('phase-result').style.display = p==='result' ? 'flex':'none';
+  document.getElementById('result-banner').style.display= p==='result' ? 'flex':'none';
+}
+
+function hostPick(choice){
+  hostChoice=choice;
+  // Visual feedback on button
+  document.querySelectorAll('.host-choice-btn').forEach(b=>b.classList.remove('chosen-load','chosen-safe'));
+  document.querySelector(choice==='load'?'.load-btn':'.safe-btn')
+    .classList.add(choice==='load'?'chosen-load':'chosen-safe');
+  // Start voting immediately
+  setTimeout(()=>startVoting(), 400);
+}
+
+function startVoting(){
+  showPhase('voting');
+  resetVoteBars();
+  timerLeft=roundTimer;
+  document.getElementById('timer-num').textContent=timerLeft;
+  const ring=document.getElementById('timer-ring');
+  ring.style.strokeDasharray=CIRCUMFERENCE;
+  ring.style.strokeDashoffset='0';
+  ring.style.stroke='var(--red)';
+
+  timerInterval=setInterval(()=>{
+    timerLeft--;
+    document.getElementById('timer-num').textContent=timerLeft;
+    const pct=(timerLeft/roundTimer);
+    ring.style.strokeDashoffset=CIRCUMFERENCE*(1-pct);
+    if(timerLeft<=5) ring.style.stroke='var(--red)';
+    if(timerLeft<=0){ stopTimer(); resolveRound(); }
+  },1000);
+}
+
+function stopTimer(){ clearInterval(timerInterval); timerInterval=null; }
+
+// ═══════════════════════════════════════════════════════
+//  ROUND RESOLUTION
+// ═══════════════════════════════════════════════════════
+function resolveRound(){
+  // Anyone alive who didn't vote loses a life (AFK penalty)
+  const alive=alivePlayers();
+  alive.forEach(([u])=>{ if(!votes[u]) votes[u]='afk'; });
+
+  const pullers = alive.filter(([u])=>votes[u]==='pull').map(([u])=>u);
+  const passers  = alive.filter(([u])=>votes[u]==='pass').map(([u])=>u);
+  const afk      = alive.filter(([u])=>votes[u]==='afk').map(([u])=>u);
+
+  let eliminated=[], lostLife=[], banner='';
+
+  if(hostChoice==='load'){
+    // Gun is LOADED — some pullers get eliminated, passers are safe
+    document.getElementById('gun-emoji').className='loaded';
+    document.getElementById('gun-emoji').textContent='💥';
+
+    // Calculate elimination %, scales with player count and time remaining
+    const totalPlayers=alive.length;
+    const timeElapsed=Date.now()-gameStartTime;
+    const timeFraction=Math.min(timeElapsed/gameDurationMs,1);
+    // Start at ~20% elimination early, ramp to ~60% near end
+    const elimPct=0.20+timeFraction*0.40;
+    const elimCount=Math.max(1, Math.round(pullers.length*elimPct));
+
+    // Shuffle pullers and eliminate the first N
+    const shuffled=[...pullers].sort(()=>Math.random()-.5);
+    eliminated=shuffled.slice(0,Math.min(elimCount,shuffled.length));
+    eliminated.forEach(u=>{ players[u].eliminated=true; });
+
+    // AFK players also lose a life
+    afk.forEach(u=>{
+      players[u].lives--;
+      if(players[u].lives<=0){ players[u].eliminated=true; eliminated.push(u); }
+      else lostLife.push(u);
+    });
+
+    banner='load';
+  } else {
+    // Gun is SAFE — passers lose a life, pullers are safe
+    document.getElementById('gun-emoji').className='safe-glow';
+    document.getElementById('gun-emoji').textContent='🔫';
+
+    passers.forEach(u=>{
+      players[u].lives--;
+      if(players[u].lives<=0){ players[u].eliminated=true; eliminated.push(u); }
+      else lostLife.push(u);
+    });
+
+    // AFK players also lose a life
+    afk.forEach(u=>{
+      players[u].lives--;
+      if(players[u].lives<=0){ players[u].eliminated=true; eliminated.push(u); }
+      else lostLife.push(u);
+    });
+
+    banner='safe';
+  }
+
+  renderPlayerList(eliminated);
+  showResult(banner, eliminated, lostLife, pullers, passers, afk);
+}
+
+function showResult(type, eliminated, lostLife, pullers, passers, afk){
+  showPhase('result');
+  const banner=document.getElementById('result-banner');
+  banner.className='';
+  banner.classList.add(type==='load'?'loaded-result':'safe-result');
+
+  document.getElementById('result-title').textContent =
+    type==='load' ? '💥 GUN WAS LOADED' : '✅ GUN WAS SAFE';
+
+  const pullCount=pullers.length, passCount=passers.length;
+  document.getElementById('result-sub').textContent =
+    type==='load'
+      ? `${pullCount} pulled the trigger · ${passCount} passed · gun fired on ${eliminated.length} puller${eliminated.length!==1?'s':''}`
+      : `${pullCount} pulled safely · ${passCount} passed (lost a life) · ${afk.length} AFK`;
+
+  document.getElementById('result-elim-list').textContent =
+    eliminated.length ? '☠️ ELIMINATED: '+eliminated.join(', ') : '';
+
+  document.getElementById('result-life-list').textContent =
+    lostLife.length ? '💛 LOST A LIFE: '+lostLife.join(', ') : '';
+
+  // Check if game should auto-end next round
+  const stillAlive=alivePlayers().length;
+  document.getElementById('btn-next-round').textContent =
+    stillAlive<=1 ? '🏆 SHOW WINNER' : 'NEXT ROUND →';
+}
+
+// ═══════════════════════════════════════════════════════
+//  PLAYER LIST
+// ═══════════════════════════════════════════════════════
+function renderPlayerList(newlyElim=[]){
+  const list=document.getElementById('player-list');
+  list.innerHTML='';
+  // Sort: alive first, then eliminated
+  const sorted=Object.entries(players).sort(([,a],[,b])=>{
+    if(a.eliminated!==b.eliminated) return a.eliminated?1:-1;
+    return b.lives-a.lives;
+  });
+  sorted.forEach(([u,p])=>{
+    const row=document.createElement('div');
+    row.className='player-row'+(p.eliminated?' eliminated':'')+(newlyElim.includes(u)?' just-out':'');
+    const dots=[...Array(maxLives)].map((_,i)=>
+      `<div class="life-dot${i>=p.lives?' gone':''}"></div>`).join('');
+    row.innerHTML=`<span class="pr-name">${u}</span><span class="pr-lives">${dots}</span>`;
+    list.appendChild(row);
+  });
+  const aliveCount=alivePlayers().length;
+  document.getElementById('alive-count').textContent=aliveCount+' alive';
+}
+
+// ═══════════════════════════════════════════════════════
+//  VOTE BARS
+// ═══════════════════════════════════════════════════════
+function resetVoteBars(){
+  document.getElementById('pull-fill').style.width='0%';
+  document.getElementById('pass-fill').style.width='0%';
+  document.getElementById('pull-fill').textContent='';
+  document.getElementById('pass-fill').textContent='';
+  document.getElementById('pull-count').textContent='0';
+  document.getElementById('pass-count').textContent='0';
+}
+
+function updateVoteBars(){
+  const alive=alivePlayers().length;
+  const pullN=Object.values(votes).filter(v=>v==='pull').length;
+  const passN=Object.values(votes).filter(v=>v==='pass').length;
+  const total=Math.max(alive,1);
+  const pullPct=Math.round((pullN/total)*100);
+  const passPct=Math.round((passN/total)*100);
+  document.getElementById('pull-fill').style.width=pullPct+'%';
+  document.getElementById('pass-fill').style.width=passPct+'%';
+  document.getElementById('pull-fill').textContent=pullPct>8?pullPct+'%':'';
+  document.getElementById('pass-fill').textContent=passPct>8?passPct+'%':'';
+  document.getElementById('pull-count').textContent=pullN;
+  document.getElementById('pass-count').textContent=passN;
+}
+
+// ═══════════════════════════════════════════════════════
+//  WIN / END
+// ═══════════════════════════════════════════════════════
+function showWinner(username){
+  stopTimer(); disconnectChat();
+  document.getElementById('win-name').textContent = username || 'Nobody!';
+  const total=roundNum;
+  document.getElementById('win-stats').textContent =
+    username
+      ? `Survived ${total} rounds with ${players[username]?.lives||0} ${players[username]?.lives===1?'life':'lives'} remaining`
+      : `Everyone was eliminated after ${total} rounds`;
+  showView('win-view');
+}
+
+function endGameEarly(){
+  stopTimer();
+  const alive=alivePlayers();
+  if(alive.length===0){ showWinner(null); return; }
+  const sorted=alive.sort(([,a],[,b])=>b.lives-a.lives);
+  showWinner(sorted[0][0]);
+}
+</script>
+</body>
+</html>
