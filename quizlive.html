@@ -156,7 +156,8 @@ textarea.paste-box:focus{outline:none;border-color:var(--purple)}
 #interim-list{width:100%;max-width:480px;display:flex;flex-direction:column;gap:6px;max-height:50vh;overflow-y:auto;margin-bottom:20px}
 
 /* Sidebar */
-#play-sidebar{width:280px;flex-shrink:0;border-left:1px solid var(--border);display:flex;
+#play-sidebar{width:280px;flex-shrink:0;border-left:1px solid var(--border);display:flex;}
+#play-sidebar.hidden{display:none !important}
   flex-direction:column;overflow:hidden;background:#111}
 #sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
 .s-tab{flex:1;padding:10px 4px;background:none;border:none;color:var(--muted);font-size:.7rem;font-weight:700;
@@ -714,6 +715,7 @@ function nextQuestion(){
   renderLeaderboard();
   playQuestionStartSound();
   startTimer();
+  document.getElementById('play-sidebar').classList.add('hidden');
 }
 
 function startTimer(){
@@ -825,6 +827,7 @@ function renderLeaderboard(){
 }
 
 function showInterimLeaderboard(){
+  document.getElementById('play-sidebar').classList.remove('hidden');
   clearInterval(timerInterval);
   questionLive = false;
   document.getElementById('play-stage').classList.add('hidden');
@@ -851,6 +854,7 @@ function showInterimLeaderboard(){
 //  FINAL RESULTS (podium)
 // ═══════════════════════════════════════
 function showFinalResults(){
+  document.getElementById('play-sidebar').classList.remove('hidden');
   document.getElementById('play-stage').classList.add('hidden');
   document.getElementById('host-controls-bar').style.display = 'none';
   document.getElementById('interim-leaderboard').classList.remove('show');
