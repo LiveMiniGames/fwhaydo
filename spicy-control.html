@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Spicy Overlay Control</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:#0a0a14;color:#fff;font-family:'Inter',sans-serif;min-height:100vh;padding:16px}
+h1{font-size:1.1rem;font-weight:900;color:#f97316;margin-bottom:4px;letter-spacing:1px}
+.sub{font-size:.75rem;color:#666;margin-bottom:16px}
+.status{font-size:.75rem;font-weight:700;margin-bottom:12px;padding:6px 10px;border-radius:5px;display:inline-block}
+.status.ok{background:rgba(34,197,94,.15);color:#22c55e;border:1px solid rgba(34,197,94,.3)}
+.status.err{background:rgba(239,68,68,.15);color:#ef4444;border:1px solid rgba(239,68,68,.3)}
+.status.wait{background:rgba(255,255,255,.06);color:#888;border:1px solid #333}
+
+.setup-box{background:#13131f;border:1px solid #252535;border-radius:8px;padding:14px;margin-bottom:14px}
+.setup-box label{font-size:.7rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px}
+.inp{background:#0a0a14;border:1px solid #252535;border-radius:5px;padding:8px 12px;color:#fff;font-size:.85rem;font-family:inherit;width:100%;outline:none;margin-bottom:8px}
+.inp:focus{border-color:#f97316}
+.btn{padding:10px 18px;font-size:.82rem;font-weight:800;border:none;border-radius:5px;cursor:pointer;font-family:inherit;letter-spacing:.5px;width:100%;margin-top:4px}
+.btn-orange{background:#f97316;color:#fff}
+.btn-orange:hover{background:#ea6c10}
+
+.food-grid{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.food-btn{
+  background:#13131f;border:2px solid #252535;border-radius:8px;
+  padding:12px 14px;cursor:pointer;text-align:left;transition:all .15s;
+  display:flex;align-items:center;gap:12px;
+}
+.food-btn:hover{border-color:#f97316;background:#1a1a2a}
+.food-btn.active{border-color:#f97316;background:rgba(249,115,22,.12)}
+.food-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.food-name{font-size:.88rem;font-weight:700;flex:1}
+.food-shu{font-size:.68rem;color:#888;margin-top:1px}
+.food-pct{font-size:.75rem;font-weight:800;color:#f97316}
+
+.controls{background:#13131f;border:1px solid #252535;border-radius:8px;padding:14px;margin-bottom:14px}
+.ctrl-label{font-size:.7rem;font-weight:700;color:#666;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px}
+.slider-wrap{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+input[type=range]{flex:1;accent-color:#f97316}
+.slider-val{font-size:.8rem;font-weight:800;color:#f97316;min-width:40px;text-align:right}
+.toggle-row{display:flex;gap:8px;margin-top:6px}
+.tbtn{flex:1;padding:8px;font-size:.75rem;font-weight:800;border:none;border-radius:5px;cursor:pointer;font-family:inherit}
+.tbtn-show{background:#22c55e;color:#000}
+.tbtn-hide{background:#252535;color:#888}
+</style>
+</head>
+<body>
+<h1>🌶️ SPICY OVERLAY CONTROL</h1>
+<div class="sub">Control panel for FwHaydo's spicy food challenge</div>
+
+<div class="setup-box">
+  <label>Ably API Key (get free at ably.com)</label>
+  <input class="inp" id="ably-key" type="text" placeholder="xxxxxxxxxxx:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"/>
+  <label>Overlay Password</label>
+  <input class="inp" id="password" type="password" placeholder="Set a password (both files must match)" value="spicy2024"/>
+  <button class="btn btn-orange" onclick="doConnect()">CONNECT & GO LIVE</button>
+  <div class="status wait" id="conn-status">Not connected</div>
+</div>
+
+<div id="main" style="display:none">
+  <div class="food-grid" id="food-grid"></div>
+
+  <div class="controls">
+    <div class="ctrl-label">Heat Meter Override</div>
+    <div class="slider-wrap">
+      <input type="range" min="0" max="100" value="50" id="heat-slider" oninput="onSlider(this.value)"/>
+      <span class="slider-val" id="slider-val">50%</span>
+    </div>
+    <div class="ctrl-label" style="margin-top:8px">Visibility</div>
+    <div class="toggle-row">
+      <button class="tbtn tbtn-show" onclick="setVisible(true)">👁 Show Overlay</button>
+      <button class="tbtn tbtn-hide" onclick="setVisible(false)">Hide Overlay</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+const ITEMS = [{"name": "Family Hot Pretzel Twists", "shu": "~1,000 SHU", "pct": 2, "color": "#facc15"}, {"name": "Flamin' Hot Cheetos Xxtra", "shu": "~50,000 SHU", "pct": 18, "color": "#f97316"}, {"name": "Takis Fuego", "shu": "~50,000\u2013100,000 SHU", "pct": 25, "color": "#fb923c"}, {"name": "Tabasco Salsa Picante", "shu": "~2,500\u20135,000 SHU", "pct": 8, "color": "#fbbf24"}, {"name": "Ghost Pepper Hot Sauce", "shu": "~1,000,000 SHU", "pct": 68, "color": "#ef4444"}, {"name": "Hot Ones Smoky Chili Ramen", "shu": "~135,600 SHU", "pct": 38, "color": "#f87171"}, {"name": "Da Bomb Beyond Insanity", "shu": "~135,600 SHU", "pct": 82, "color": "#dc2626"}, {"name": "One Chip Challenge", "shu": "~2,000,000+ SHU", "pct": 99, "color": "#7c3aed"}];
+
+let ably, channel;
+let state = {
+  visible: true,
+  currentItem: null,
+  heatOverride: null,
+};
+
+function doConnect(){
+  const key = document.getElementById('ably-key').value.trim();
+  const pwd = document.getElementById('password').value.trim();
+  if(!key){ alert('Enter your Ably API key'); return; }
+  if(!pwd){ alert('Set a password'); return; }
+
+  localStorage.setItem('spicy-ably-key', key);
+  localStorage.setItem('spicy-password', pwd);
+
+  const el = document.getElementById('conn-status');
+  el.className = 'status wait'; el.textContent = 'Connecting...';
+
+  try{
+    ably = new Ably.Realtime({ key });
+    ably.connection.on('connected', ()=>{
+      el.className = 'status ok'; el.textContent = '✓ Connected — overlay is live';
+      channel = ably.channels.get('spicy-overlay-' + btoa(pwd).slice(0,8));
+      document.getElementById('main').style.display = 'block';
+      document.querySelector('.setup-box').style.marginBottom = '10px';
+      renderFoodGrid();
+      push();
+    });
+    ably.connection.on('failed', ()=>{ el.className='status err'; el.textContent='Connection failed — check API key'; });
+  }catch(e){ el.className='status err'; el.textContent='Error: '+e.message; }
+}
+
+// Restore saved key on load
+window.addEventListener('load', ()=>{
+  const k = localStorage.getItem('spicy-ably-key');
+  const p = localStorage.getItem('spicy-password');
+  if(k) document.getElementById('ably-key').value = k;
+  if(p) document.getElementById('password').value = p;
+});
+
+function push(){
+  if(!channel) return;
+  channel.publish('state', { state, items: ITEMS });
+}
+
+function renderFoodGrid(){
+  const grid = document.getElementById('food-grid');
+  grid.innerHTML = '';
+  ITEMS.forEach((item, i) => {
+    const btn = document.createElement('div');
+    btn.className = 'food-btn' + (state.currentItem === i ? ' active' : '');
+    btn.innerHTML = `
+      <div class="food-dot" style="background:${item.color}"></div>
+      <div>
+        <div class="food-name">${item.name}</div>
+        <div class="food-shu">${item.shu}</div>
+      </div>
+      <div class="food-pct">${item.pct}%</div>`;
+    btn.onclick = () => selectItem(i);
+    grid.appendChild(btn);
+  });
+}
+
+function selectItem(i){
+  state.currentItem = i;
+  state.heatOverride = null;
+  document.getElementById('heat-slider').value = ITEMS[i].pct;
+  document.getElementById('slider-val').textContent = ITEMS[i].pct + '%';
+  renderFoodGrid();
+  push();
+}
+
+function onSlider(val){
+  document.getElementById('slider-val').textContent = val + '%';
+  state.heatOverride = parseInt(val);
+  push();
+}
+
+function setVisible(v){
+  state.visible = v;
+  push();
+}
+</script>
+</body>
+</html>
