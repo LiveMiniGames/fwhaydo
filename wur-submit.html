@@ -8,73 +8,57 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
-  --purple:#9147ff;--purple2:#772ce8;--text:#efeff1;--muted:#8888a0;--red:#e63946;--green:#2dc653}
+  --purple:#9147ff;--purple2:#772ce8;--green:#2dc653;--red:#e63946;--text:#efeff1;--muted:#8888a0}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
-  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
 #box{background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:28px;width:100%;max-width:480px;display:flex;flex-direction:column;gap:16px}
-h1{font-size:1.6rem;font-weight:900;text-align:center;letter-spacing:.5px}
+  padding:28px;width:100%;max-width:460px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:1.5rem;font-weight:900;text-align:center}
 h1 span{color:var(--purple)}
-.sub{font-size:.82rem;color:var(--muted);text-align:center}
+.sub{font-size:.8rem;color:var(--muted);text-align:center}
+.lbl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
 .inp{background:var(--card);border:1px solid var(--border);border-radius:6px;
   padding:11px 14px;color:#fff;font-size:.9rem;font-family:inherit;width:100%;outline:none}
 .inp:focus{border-color:var(--purple)}
-.or-divider{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.78rem;font-weight:800}
-.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:.78rem;font-weight:800}
+.or::before,.or::after{content:'';flex:1;height:1px;background:var(--border)}
 .btn{padding:13px;font-size:.95rem;font-weight:800;border:none;border-radius:6px;
-  cursor:pointer;font-family:inherit;background:var(--purple);color:#fff;transition:all .2s}
+  cursor:pointer;font-family:inherit;background:var(--purple);color:#fff;width:100%}
 .btn:hover{background:var(--purple2)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
-.msg{font-size:.82rem;text-align:center;font-weight:700;min-height:20px}
-.msg.ok{color:var(--green)}
-.msg.err{color:var(--red)}
+.msg{font-size:.8rem;font-weight:700;text-align:center;min-height:18px}
+.ok{color:var(--green)}.err{color:var(--red)}
 </style>
 </head>
 <body>
 <div id="box">
   <h1>WOULD U <span>RATHER</span></h1>
   <div class="sub">Submit your Would U Rather for the stream!</div>
-  <div>
-    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Your Name</div>
-    <input class="inp" id="inp-name" type="text" placeholder="Your Twitch username" maxlength="32"/>
-  </div>
-  <div>
-    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Option 1</div>
-    <input class="inp" id="inp-a" type="text" placeholder="Would you rather..." maxlength="120"/>
-  </div>
-  <div class="or-divider">OR</div>
-  <div>
-    <div style="font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:5px">Option 2</div>
-    <input class="inp" id="inp-b" type="text" placeholder="Would you rather..." maxlength="120"/>
-  </div>
-  <button class="btn" id="submit-btn" onclick="submit()">SUBMIT →</button>
+  <div><div class="lbl">Your Name</div><input class="inp" id="nm" type="text" placeholder="Your Twitch username" maxlength="32"/></div>
+  <div><div class="lbl">Option 1</div><input class="inp" id="oa" type="text" placeholder="Would you rather..." maxlength="120"/></div>
+  <div class="or">OR</div>
+  <div><div class="lbl">Option 2</div><input class="inp" id="ob" type="text" placeholder="Would you rather..." maxlength="120"/></div>
+  <button class="btn" id="sbtn" onclick="submit()">SUBMIT →</button>
   <div class="msg" id="msg"></div>
 </div>
 <script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
 <script>
-const KEY = new URLSearchParams(location.search).get('key') || '';
+const KEY=new URLSearchParams(location.search).get('key')||'';
 let ch;
-if(KEY){
-  const ab = new Ably.Realtime({key:KEY});
-  ab.connection.on('connected', ()=>{
-    ch = ab.channels.get('wur-game');
-  });
-}
-
+if(KEY){const ab=new Ably.Realtime({key:KEY});ab.connection.on('connected',()=>{ch=ab.channels.get('wur-game');});}
 function submit(){
-  const name = document.getElementById('inp-name').value.trim();
-  const a = document.getElementById('inp-a').value.trim();
-  const b = document.getElementById('inp-b').value.trim();
-  const msg = document.getElementById('msg');
-  if(!name){msg.className='msg err';msg.textContent='Enter your name';return;}
+  const nm=document.getElementById('nm').value.trim();
+  const a=document.getElementById('oa').value.trim();
+  const b=document.getElementById('ob').value.trim();
+  const msg=document.getElementById('msg');
+  if(!nm){msg.className='msg err';msg.textContent='Enter your name';return;}
   if(!a||!b){msg.className='msg err';msg.textContent='Fill in both options';return;}
-  if(!ch){msg.className='msg err';msg.textContent='Not connected — try refreshing';return;}
-  ch.publish('submission',{name,a,b,id:Date.now()});
-  msg.className='msg ok';msg.textContent='✓ Submitted! Watch the stream to see if yours gets picked.';
-  document.getElementById('inp-a').value='';
-  document.getElementById('inp-b').value='';
-  document.getElementById('submit-btn').disabled=true;
-  setTimeout(()=>{document.getElementById('submit-btn').disabled=false;msg.textContent=''},5000);
+  if(!ch){msg.className='msg err';msg.textContent='Not connected — refresh and try again';return;}
+  ch.publish('submission',{name:nm,a,b,id:Date.now()});
+  msg.className='msg ok';msg.textContent='✓ Submitted! Watch stream to see if yours gets picked.';
+  document.getElementById('oa').value='';document.getElementById('ob').value='';
+  document.getElementById('sbtn').disabled=true;
+  setTimeout(()=>{document.getElementById('sbtn').disabled=false;msg.textContent='';},5000);
 }
 </script>
 </body>

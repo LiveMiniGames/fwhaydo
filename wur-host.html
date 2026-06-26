@@ -7,32 +7,29 @@
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{
-  --bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
+:root{--bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
   --purple:#9147ff;--purple2:#772ce8;--purple3:#bf94ff;
-  --green:#2dc653;--red:#e63946;--gold:#f4b942;
-  --text:#efeff1;--muted:#8888a0;
-}
+  --green:#2dc653;--red:#e63946;--gold:#f4b942;--text:#efeff1;--muted:#8888a0}
 body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
 
-/* TOPBAR */
 #topbar{background:#0e0e18;border-bottom:1px solid var(--border);padding:0 16px;height:48px;
-  display:flex;align-items:center;gap:12px}
+  display:flex;align-items:center;gap:10px}
 #tb-title{font-weight:900;font-size:.95rem;color:var(--purple);flex:1}
-.dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
 .dot.ok{background:var(--green)}
 #conn-lbl{font-size:.72rem;color:var(--muted)}
 
-/* LOGIN */
-#login-view{display:flex;flex-direction:column;align-items:center;justify-content:center;
-  min-height:calc(100vh - 48px);gap:12px;padding:20px}
+#login-view{display:flex;align-items:center;justify-content:center;
+  min-height:calc(100vh - 48px);padding:20px}
 #login-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;
   padding:28px;width:100%;max-width:380px;display:flex;flex-direction:column;gap:12px}
 .login-title{font-size:1.3rem;font-weight:900;text-align:center;color:var(--purple)}
+.lbl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:4px}
 .inp{background:var(--card);border:1px solid var(--border);border-radius:6px;
   padding:10px 14px;color:#fff;font-size:.88rem;font-family:inherit;width:100%;outline:none}
 .inp:focus{border-color:var(--purple)}
-textarea.inp{min-height:180px;resize:vertical;font-size:.78rem;line-height:1.7;font-family:monospace}
+textarea.inp{min-height:160px;resize:vertical;font-size:.78rem;line-height:1.7;font-family:monospace}
 .btn{padding:11px;font-size:.88rem;font-weight:800;border:none;border-radius:6px;
   cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.5px}
 .btn-purple{background:var(--purple);color:#fff;width:100%}
@@ -43,81 +40,76 @@ textarea.inp{min-height:180px;resize:vertical;font-size:.78rem;line-height:1.7;f
 .btn-red:hover{background:#c0392b}
 .btn-grey{background:var(--card);color:var(--muted);border:1px solid var(--border)}
 .btn-grey:hover{color:#fff;border-color:var(--purple)}
-.btn-sm{padding:6px 14px;font-size:.74rem;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:inherit}
-.err-txt{font-size:.78rem;color:var(--red);text-align:center;min-height:18px}
+.btn-sm{padding:6px 12px;font-size:.74rem;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:inherit}
+.err{font-size:.78rem;color:var(--red);text-align:center;min-height:16px}
 
-/* MAIN */
-#main-view{display:none;flex-direction:column;min-height:calc(100vh - 48px)}
-#layout{display:flex;gap:0;height:calc(100vh - 48px);overflow:hidden}
+#main-view{display:none;min-height:calc(100vh - 48px)}
+#layout{display:flex;height:calc(100vh - 48px);overflow:hidden}
 
-/* LEFT: queue + submissions */
-#left-panel{width:300px;flex-shrink:0;display:flex;flex-direction:column;
-  border-right:1px solid var(--border);background:var(--surface)}
-.panel-head{padding:10px 14px;border-bottom:1px solid var(--border);
-  font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);
+/* LEFT */
+#left{width:290px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column}
+.ph{padding:9px 13px;border-bottom:1px solid var(--border);font-size:.66rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);
   display:flex;justify-content:space-between;align-items:center}
-#queue-list{flex:1;overflow-y:auto;padding:8px}
-.q-item{background:var(--card);border:1px solid var(--border);border-radius:6px;
-  padding:10px 12px;margin-bottom:6px;display:flex;flex-direction:column;gap:6px}
-.q-item-opts{font-size:.78rem;font-weight:700;display:flex;gap:6px;align-items:flex-start}
-.q-opt{flex:1;padding:4px 8px;border-radius:4px;background:rgba(145,71,255,.1);
-  border:1px solid rgba(145,71,255,.2);font-size:.74rem}
-.q-or{font-size:.62rem;font-weight:800;color:var(--muted);padding-top:2px;flex-shrink:0}
-.q-meta{font-size:.62rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.q-item.pending{border-color:var(--gold);background:rgba(244,185,66,.05)}
-.q-item.pending .q-opt{background:rgba(244,185,66,.1);border-color:rgba(244,185,66,.3)}
-.q-actions{display:flex;gap:5px}
+#queue-list{flex:1;overflow-y:auto;padding:6px}
+.q-item{background:var(--card);border:1px solid var(--border);border-radius:7px;
+  padding:10px;margin-bottom:6px;display:flex;flex-direction:column;gap:6px}
+.q-item.pending{border-color:var(--gold)}
+.q-opts{display:flex;gap:5px}
+.q-opt{flex:1;font-size:.74rem;font-weight:700;padding:5px 8px;border-radius:4px;
+  background:rgba(145,71,255,.1);border:1px solid rgba(145,71,255,.2);line-height:1.3}
+.q-or{font-size:.6rem;color:var(--muted);align-self:center;flex-shrink:0}
+.q-meta{font-size:.6rem;color:var(--muted);display:flex;justify-content:space-between}
+.q-acts{display:flex;gap:5px}
 
-/* RIGHT: active game */
-#right-panel{flex:1;display:flex;flex-direction:column;align-items:center;
-  justify-content:flex-start;padding:20px;gap:14px;overflow-y:auto}
+/* RIGHT */
+#right{flex:1;padding:16px;display:flex;flex-direction:column;gap:12px;overflow-y:auto}
 
 /* Mode tabs */
-#mode-tabs{display:flex;gap:8px;width:100%;max-width:620px}
-.mode-tab{flex:1;padding:9px;font-size:.78rem;font-weight:800;border:none;border-radius:6px;
+#tabs{display:flex;gap:6px;max-width:600px}
+.tab{flex:1;padding:9px;font-size:.76rem;font-weight:800;border:none;border-radius:6px;
   cursor:pointer;font-family:inherit;background:var(--card);color:var(--muted);
-  border:1px solid var(--border);transition:all .18s;text-transform:uppercase;letter-spacing:.5px}
-.mode-tab.active{background:rgba(145,71,255,.15);color:var(--purple3);border-color:var(--purple)}
+  border:1px solid var(--border);transition:all .15s;text-transform:uppercase;letter-spacing:.5px}
+.tab.active{background:rgba(145,71,255,.15);color:var(--purple3);border-color:var(--purple)}
 
-/* Panels per mode */
-.mode-panel{display:none;width:100%;max-width:620px;flex-direction:column;gap:10px}
-.mode-panel.active{display:flex}
+.mode{display:none;flex-direction:column;gap:10px;max-width:600px}
+.mode.active{display:flex}
 
-/* Active WUR display */
-#active-wur{width:100%;max-width:620px;background:var(--surface);border:1px solid var(--border);
-  border-radius:10px;padding:20px;display:flex;flex-direction:column;gap:12px}
-#active-wur-title{font-size:.68rem;font-weight:800;color:var(--muted);text-transform:uppercase;
+/* Active display */
+#active-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:16px;max-width:600px;display:none;flex-direction:column;gap:10px}
+#active-label{font-size:.65rem;font-weight:800;color:var(--muted);text-transform:uppercase;
   letter-spacing:1.5px;text-align:center}
-#active-opts{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.active-opt{border-radius:8px;padding:16px 14px;text-align:center;
-  font-size:.95rem;font-weight:800;line-height:1.3;min-height:80px;
-  display:flex;align-items:center;justify-content:center}
-.active-opt.opt1{background:rgba(49,130,246,.2);border:2px solid #3b82f6;color:#93c5fd}
-.active-opt.opt2{background:rgba(239,68,68,.18);border:2px solid #ef4444;color:#fca5a5}
-#active-or{font-size:.85rem;font-weight:900;color:var(--muted);text-align:center}
+#active-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.a-opt{border-radius:7px;padding:14px;text-align:center;font-size:.88rem;font-weight:800;
+  line-height:1.3;min-height:70px;display:flex;align-items:center;justify-content:center}
+.a-opt.o1{background:rgba(29,78,216,.2);border:2px solid #3b82f6;color:#93c5fd}
+.a-opt.o2{background:rgba(220,38,38,.18);border:2px solid #ef4444;color:#fca5a5}
 
-/* Vote bars */
-#vote-bars{width:100%;max-width:620px;display:flex;flex-direction:column;gap:8px}
-.vb-row{display:flex;align-items:center;gap:10px}
-.vb-label{font-size:.72rem;font-weight:800;width:20px;text-align:center}
-.vb-track{flex:1;background:var(--border);border-radius:4px;height:28px;overflow:hidden}
-.vb-fill{height:100%;border-radius:4px;display:flex;align-items:center;
-  padding-right:10px;justify-content:flex-end;transition:width .4s ease;
-  font-size:.72rem;font-weight:800;color:#000;min-width:0}
-.vb-fill.f1{background:#3b82f6}
-.vb-fill.f2{background:#ef4444}
-.vb-count{font-size:.72rem;font-weight:800;color:var(--muted);min-width:28px}
+/* Vote live */
+#vote-live{max-width:600px;display:none;flex-direction:column;gap:6px}
+.vr{display:flex;align-items:center;gap:8px}
+.vr-lbl{font-size:.7rem;font-weight:800;width:18px;text-align:center}
+.vr-track{flex:1;background:var(--border);border-radius:4px;height:24px;overflow:hidden}
+.vr-fill{height:100%;border-radius:4px;display:flex;align-items:center;justify-content:flex-end;
+  padding-right:8px;font-size:.68rem;font-weight:800;color:#000;transition:width .4s}
+.vr-fill.f1{background:#3b82f6}
+.vr-fill.f2{background:#ef4444}
+.vr-n{font-size:.7rem;font-weight:800;color:var(--muted);min-width:24px}
 
-/* Submit URL box */
-#submit-url-box{background:var(--card);border:1px solid var(--border);border-radius:8px;
-  padding:12px 14px;font-size:.75rem;color:var(--muted);word-break:break-all;width:100%;max-width:620px}
-#submit-url-box strong{color:var(--purple);display:block;margin-bottom:4px;font-size:.68rem;
-  text-transform:uppercase;letter-spacing:1px}
+/* Submit URL */
+#url-box{background:var(--card);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;font-size:.73rem;color:var(--muted);word-break:break-all;max-width:600px}
+#url-box b{color:var(--purple);display:block;font-size:.65rem;text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:3px}
 
-/* Bulk paste */
-#bulk-note{font-size:.72rem;color:var(--muted);line-height:1.6;
-  background:var(--card);border-radius:6px;padding:10px 12px;border-left:3px solid var(--purple)}
-#bulk-note strong{color:var(--purple)}
+/* History */
+#history{max-width:600px;display:flex;flex-direction:column;gap:4px}
+.h-item{background:var(--card);border:1px solid var(--border);border-radius:5px;
+  padding:7px 10px;font-size:.72rem;display:flex;gap:8px;align-items:center}
+.h-pick{font-weight:800;color:var(--green)}
+.h-vs{color:var(--muted);flex:1}
 
 ::-webkit-scrollbar{width:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -131,182 +123,135 @@ textarea.inp{min-height:180px;resize:vertical;font-size:.78rem;line-height:1.7;f
   <span id="conn-lbl">Not connected</span>
 </div>
 
-<!-- LOGIN -->
 <div id="login-view">
   <div id="login-box">
     <div class="login-title">🎮 Would U Rather</div>
-    <div>
-      <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:4px">ABLY API KEY</div>
-      <input class="inp" id="inp-key" type="text" placeholder="xxxxxxxxxxx:xxxxxxxx..."/>
-    </div>
-    <div>
-      <div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:4px">HOST PASSWORD</div>
-      <input class="inp" id="inp-pwd" type="password" placeholder="Set a password"/>
-    </div>
+    <div><div class="lbl">Ably API Key</div><input class="inp" id="inp-key" type="text" placeholder="xxxxxxxxxxx:xxxxxxxx..."/></div>
+    <div><div class="lbl">Twitch Channel</div><input class="inp" id="inp-ch" type="text" placeholder="fwhaydo"/></div>
     <button class="btn btn-purple" onclick="doConnect()">CONNECT →</button>
-    <div class="err-txt" id="login-err"></div>
+    <div class="err" id="login-err"></div>
   </div>
 </div>
 
-<!-- MAIN -->
 <div id="main-view">
   <div id="layout">
-
-    <!-- LEFT: submission queue -->
-    <div id="left-panel">
-      <div class="panel-head">
-        <span>SUBMISSIONS</span>
-        <span id="sub-count" style="font-size:.72rem">0</span>
-      </div>
+    <div id="left">
+      <div class="ph"><span>SUBMISSIONS</span><span id="sub-ct">0</span></div>
       <div id="queue-list"></div>
     </div>
+    <div id="right">
+      <div id="url-box"><b>📋 Share this submit link in chat</b><span id="url-txt">—</span></div>
 
-    <!-- RIGHT: game controls -->
-    <div id="right-panel">
-
-      <!-- Submit URL -->
-      <div id="submit-url-box">
-        <strong>📋 Viewer Submit URL — share this in chat</strong>
-        <span id="submit-url-text">—</span>
+      <div id="tabs">
+        <button class="tab active" onclick="setMode('viewer')">👥 Viewer Queue</button>
+        <button class="tab" onclick="setMode('bulk')">📋 Bulk Paste</button>
+        <button class="tab" onclick="setMode('random')">🎲 Random</button>
       </div>
 
-      <!-- Mode tabs -->
-      <div id="mode-tabs">
-        <button class="mode-tab active" onclick="setMode('viewer')">👥 Viewer Queue</button>
-        <button class="mode-tab" onclick="setMode('bulk')">📋 Bulk Paste</button>
-        <button class="mode-tab" onclick="setMode('random')">🎲 Random</button>
+      <div class="mode active" id="mode-viewer">
+        <div style="font-size:.78rem;color:var(--muted)">Approve submissions from the left, then click Play on any approved one — or use the button below to auto-play the next in queue.</div>
+        <button class="btn btn-green" onclick="playNext()">▶ Play Next in Queue</button>
       </div>
 
-      <!-- VIEWER MODE -->
-      <div class="mode-panel active" id="mode-viewer">
-        <div style="font-size:.8rem;color:var(--muted);text-align:center">
-          Approve a submission from the left panel to play it, or pick one already in queue below.
+      <div class="mode" id="mode-bulk">
+        <div style="font-size:.72rem;color:var(--muted);background:var(--card);border-radius:6px;padding:10px;border-left:3px solid var(--purple)">
+          One WUR per line, separate options with <b style="color:var(--purple)"> | </b><br>
+          Example: <code>Be able to fly | Be able to be invisible</code>
         </div>
+        <textarea class="inp" id="bulk-in" placeholder="Be able to fly | Be able to be invisible&#10;Have a dragon | Be a dragon"></textarea>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-green btn-sm" style="flex:1;padding:10px" onclick="pickFromQueue()">▶ Play Next in Queue</button>
+          <button class="btn btn-purple" style="flex:1" onclick="loadBulk()">LOAD INTO QUEUE</button>
+          <button class="btn btn-green" style="flex:1" onclick="playNext()">▶ Play Next</button>
         </div>
+        <div id="bulk-st" style="font-size:.73rem;color:var(--muted)"></div>
       </div>
 
-      <!-- BULK MODE -->
-      <div class="mode-panel" id="mode-bulk">
-        <div class="bulk-note" id="bulk-note">
-          <strong>Format:</strong> Each line = one WUR pair. Separate the two options with a pipe |<br>
-          Example:<br>
-          <code>Be able to fly | Be able to be invisible</code><br>
-          <code>Have a dragon | Be a dragon</code>
-        </div>
-        <textarea class="inp" id="bulk-input" placeholder="Be able to fly | Be able to be invisible&#10;Have a dragon | Be a dragon&#10;Always be hot | Always be cold"></textarea>
-        <div style="display:flex;gap:8px">
-          <button class="btn btn-purple" style="flex:1" onclick="loadBulk()">LOAD BULK LIST</button>
-        </div>
-        <div style="font-size:.75rem;color:var(--muted)" id="bulk-status"></div>
-        <button class="btn btn-green" onclick="pickFromQueue()" id="bulk-play-btn" style="display:none">▶ Play Next</button>
+      <div class="mode" id="mode-random">
+        <div style="font-size:.78rem;color:var(--muted)">Picks randomly from approved queue. Falls back to 50 built-in WURs if empty.</div>
+        <button class="btn btn-green" onclick="playRandom()">🎲 Random Pick → Stream</button>
       </div>
 
-      <!-- RANDOM MODE -->
-      <div class="mode-panel" id="mode-random">
-        <div style="font-size:.8rem;color:var(--muted);text-align:center">
-          Picks randomly from approved viewer submissions. Falls back to built-in list if queue is empty.
-        </div>
-        <button class="btn btn-green" onclick="playRandom()">🎲 RANDOM PICK</button>
-      </div>
-
-      <!-- Active WUR -->
-      <div id="active-wur" style="display:none">
-        <div id="active-wur-title">WOULD YOU RATHER...</div>
+      <div id="active-box">
+        <div id="active-label">NOW ON STREAM</div>
         <div id="active-opts">
-          <div class="active-opt opt1" id="opt1-text">—</div>
-          <div class="active-opt opt2" id="opt2-text">—</div>
+          <div class="a-opt o1" id="ao1">—</div>
+          <div class="a-opt o2" id="ao2">—</div>
         </div>
-        <div id="active-or">— OR —</div>
+        <button class="btn btn-grey" onclick="clearActive()" style="margin-top:4px">✕ Clear Screen</button>
       </div>
 
-      <!-- Vote bars -->
-      <div id="vote-bars" style="display:none">
-        <div class="vb-row">
-          <span class="vb-label" style="color:#93c5fd">1</span>
-          <div class="vb-track"><div class="vb-fill f1" id="bar1" style="width:0%">0</div></div>
-          <span class="vb-count" id="cnt1">0</span>
+      <div id="vote-live">
+        <div style="font-size:.66rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Live Votes</div>
+        <div class="vr">
+          <span class="vr-lbl" style="color:#93c5fd">1</span>
+          <div class="vr-track"><div class="vr-fill f1" id="vb1" style="width:0%"></div></div>
+          <span class="vr-n" id="vc1">0</span>
         </div>
-        <div class="vb-row">
-          <span class="vb-label" style="color:#fca5a5">2</span>
-          <div class="vb-track"><div class="vb-fill f2" id="bar2" style="width:0%">0</div></div>
-          <span class="vb-count" id="cnt2">0</span>
+        <div class="vr">
+          <span class="vr-lbl" style="color:#fca5a5">2</span>
+          <div class="vr-track"><div class="vr-fill f2" id="vb2" style="width:0%"></div></div>
+          <span class="vr-n" id="vc2">0</span>
         </div>
       </div>
 
-      <!-- Game controls -->
-      <div style="display:flex;gap:8px;width:100%;max-width:620px" id="game-controls" style="display:none">
-        <button class="btn btn-red btn-sm" style="flex:1;padding:10px" onclick="endRound()">⏹ End Round</button>
-        <button class="btn btn-grey btn-sm" style="flex:1;padding:10px" onclick="clearActive()">✕ Clear</button>
+      <div id="history" style="display:none">
+        <div style="font-size:.66rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px">Round History</div>
       </div>
-
     </div>
   </div>
 </div>
 
 <script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
 <script>
-const BUILTIN_WURS = [["Never use social media again", "Never watch TV/movies again"], ["Always be 10 minutes late", "Always be 20 minutes early"], ["Have no phone for a month", "Have no internet for a month"], ["Eat the same meal every day", "Never eat your favorite food again"], ["Be famous but broke", "Be rich but unknown"], ["Live in the past", "Live in the future"], ["Have super strength", "Have super speed"], ["Never sleep again", "Sleep 20 hours a day"], ["Always speak your mind", "Never speak again"], ["Be able to fly", "Be able to be invisible"], ["Know how you die", "Know when you die"], ["Lose all your memories", "Never make new ones"], ["Be incredibly smart", "Be incredibly attractive"], ["Have unlimited money but no friends", "Have amazing friends but no money"], ["Never be able to lie", "Never be able to tell the truth"], ["Live in a world with no music", "Live in a world with no color"], ["Always be hot", "Always be cold"], ["Be able to talk to animals", "Speak every human language"], ["Go back to age 10 with all your memories", "Jump forward to age 60 with $10 million"], ["Have no WiFi ever", "Have no AC/heat ever"], ["Be the funniest person in the room", "Be the smartest person in the room"], ["Only eat spicy food forever", "Only eat bland food forever"], ["Never use YouTube again", "Never use Netflix/streaming again"], ["Win $1M but never leave your country", "Travel the world but earn $20k/year"], ["Be able to read minds", "Be able to see the future"], ["Have a personal chef", "Have a personal driver"], ["Never eat junk food", "Never eat healthy food"], ["Live without electricity", "Live without running water"], ["Be 4 feet tall", "Be 8 feet tall"], ["Have hiccups forever", "Have an itch you can never scratch"], ["Only be able to whisper", "Only be able to shout"], ["Fight 100 duck sized horses", "Fight 1 horse sized duck"], ["Know every language", "Play every instrument"], ["Have a photographic memory", "Forget anything you want"], ["Never eat pizza again", "Never eat burgers again"], ["Always sing instead of talk", "Always dance instead of walk"], ["Have free flights anywhere forever", "Have free food anywhere forever"], ["Be a professional gamer", "Be a professional athlete"], ["Live in a haunted house", "Live next to a cemetery"], ["Only drink water forever", "Never drink water again"], ["Be able to pause time", "Be able to rewind time"], ["Have a dragon", "Be a dragon"], ["Always know when someone is lying", "Always lie without being detected"], ["Live with no sense of taste", "Live with no sense of smell"], ["Be the worst on the best team", "Be the best on the worst team"], ["Have 1 wish granted now", "Have 3 wishes in 10 years"], ["Never age physically", "Never age mentally"], ["Be extremely lucky", "Be extremely smart"], ["Have the ability to teleport", "Have the ability to time travel"], ["Always win arguments", "Always win fights"]];
+const BUILTIN = [["Never use social media again", "Never watch TV/movies again"], ["Always be 10 minutes late", "Always be 20 minutes early"], ["Have no phone for a month", "Have no internet for a month"], ["Eat the same meal every day", "Never eat your favorite food again"], ["Be famous but broke", "Be rich but unknown"], ["Live in the past", "Live in the future"], ["Have super strength", "Have super speed"], ["Never sleep again", "Sleep 20 hours a day"], ["Always speak your mind", "Never speak again"], ["Be able to fly", "Be able to be invisible"], ["Know how you die", "Know when you die"], ["Lose all your memories", "Never make new ones"], ["Be incredibly smart", "Be incredibly attractive"], ["Have unlimited money but no friends", "Have amazing friends but no money"], ["Never be able to lie", "Never be able to tell the truth"], ["Live in a world with no music", "Live in a world with no color"], ["Always be hot", "Always be cold"], ["Be able to talk to animals", "Speak every human language"], ["Go back to age 10 with all your memories", "Jump forward to age 60 with $10 million"], ["Have no WiFi ever", "Have no AC/heat ever"], ["Be the funniest person in the room", "Be the smartest person in the room"], ["Only eat spicy food forever", "Only eat bland food forever"], ["Never use YouTube again", "Never use Netflix/streaming again"], ["Win $1M but never leave your country", "Travel the world but earn $20k/year"], ["Be able to read minds", "Be able to see the future"], ["Have a personal chef", "Have a personal driver"], ["Never eat junk food", "Never eat healthy food"], ["Live without electricity", "Live without running water"], ["Be 4 feet tall", "Be 8 feet tall"], ["Have hiccups forever", "Have an itch you can never scratch"], ["Only be able to whisper", "Only be able to shout"], ["Fight 100 duck sized horses", "Fight 1 horse sized duck"], ["Know every language", "Play every instrument"], ["Have a photographic memory", "Forget anything you want"], ["Never eat pizza again", "Never eat burgers again"], ["Always sing instead of talk", "Always dance instead of walk"], ["Have free flights anywhere forever", "Have free food anywhere forever"], ["Be a professional gamer", "Be a professional athlete"], ["Live in a haunted house", "Live next to a cemetery"], ["Only drink water forever", "Never drink water again"], ["Be able to pause time", "Be able to rewind time"], ["Have a dragon", "Be a dragon"], ["Always know when someone is lying", "Always lie without being detected"], ["Live with no sense of taste", "Live with no sense of smell"], ["Be the worst on the best team", "Be the best on the worst team"], ["Have 1 wish granted now", "Have 3 wishes in 10 years"], ["Never age physically", "Never age mentally"], ["Be extremely lucky", "Be extremely smart"], ["Have the ability to teleport", "Have the ability to time travel"], ["Always win arguments", "Always win fights"]];
+let ably, ch, tws;
+let queue=[], submissions=[], votes={1:0,2:0}, voters={}, activeWUR=null;
+let history=[];
 
-let ably, hostCh, subCh;
-let submissions = []; // pending approval
-let queue = [];       // approved, waiting to play
-let votes = {1:0, 2:0};
-let voters = {};
-let activeWUR = null;
-let pwd = '';
-let ablyKey = '';
-
-// === CONNECT ===
 function doConnect(){
-  ablyKey = document.getElementById('inp-key').value.trim();
-  pwd = document.getElementById('inp-pwd').value.trim();
-  const err = document.getElementById('login-err');
-  if(!ablyKey){err.textContent='Enter your Ably API key';return;}
-  if(!pwd){err.textContent='Set a password';return;}
+  const key=document.getElementById('inp-key').value.trim();
+  const twCh=document.getElementById('inp-ch').value.trim().toLowerCase();
+  const err=document.getElementById('login-err');
+  if(!key){err.textContent='Enter your Ably API key';return;}
+  localStorage.setItem('wur-key',key);
+  localStorage.setItem('wur-ch',twCh);
   err.textContent='Connecting...';
-  localStorage.setItem('wur-key', ablyKey);
-  localStorage.setItem('wur-pwd', pwd);
 
-  ably = new Ably.Realtime({key: ablyKey});
-  ably.connection.on('connected', ()=>{
-    hostCh = ably.channels.get('wur-game');
-    subCh  = ably.channels.get('wur-game'); // same channel
-
-    // Listen for viewer submissions
-    hostCh.subscribe('submission', msg=>{
-      const s = msg.data;
-      s.status = 'pending';
-      submissions.unshift(s);
+  ably=new Ably.Realtime({key});
+  ably.connection.on('connected',()=>{
+    ch=ably.channels.get('wur-game');
+    ch.subscribe('submission',msg=>{
+      submissions.unshift(Object.assign({},msg.data,{status:'pending'}));
       renderQueue();
     });
-
-    // Listen for chat votes (from overlay)
-    hostCh.subscribe('vote', msg=>{
-      const {user, choice} = msg.data;
-      if(voters[user]) return;
-      voters[user] = choice;
-      votes[choice] = (votes[choice]||0)+1;
+    ch.subscribe('vote',msg=>{
+      const {user,choice}=msg.data;
+      if(voters[user])return;
+      voters[user]=choice;votes[choice]=(votes[choice]||0)+1;
       updateVoteBars();
     });
-
+    // Streamer picked — auto advance
+    ch.subscribe('streamer-pick',msg=>{
+      const d=msg.data;
+      history.unshift({picked:d.picked,a:d.a,b:d.b,v1:d.v1,v2:d.v2});
+      renderHistory();
+      // Auto-play next after 3s
+      setTimeout(()=>playNext(true),3000);
+    });
     setConn(true);
     document.getElementById('login-view').style.display='none';
-    document.getElementById('main-view').style.display='flex';
-    setSubmitURL();
-    // Restore saved key
+    document.getElementById('main-view').style.display='block';
+    const url=location.origin+location.pathname.replace('wur-host','wur-submit')+'?key='+encodeURIComponent(key);
+    document.getElementById('url-txt').textContent=url;
+    if(twCh) connectTwitch(twCh);
   });
-  ably.connection.on('failed', ()=>{
-    document.getElementById('login-err').textContent='Connection failed — check your API key';
-  });
+  ably.connection.on('failed',()=>err.textContent='Connection failed — check API key');
 }
 
-// Pre-fill saved key
-window.addEventListener('load', ()=>{
-  const k=localStorage.getItem('wur-key'), p=localStorage.getItem('wur-pwd');
-  if(k) document.getElementById('inp-key').value=k;
-  if(p) document.getElementById('inp-pwd').value=p;
+window.addEventListener('load',()=>{
+  const k=localStorage.getItem('wur-key'),c=localStorage.getItem('wur-ch');
+  if(k)document.getElementById('inp-key').value=k;
+  if(c)document.getElementById('inp-ch').value=c;
 });
 
 function setConn(ok){
@@ -314,206 +259,152 @@ function setConn(ok){
   document.getElementById('conn-lbl').textContent=ok?'Connected':'Disconnected';
 }
 
-function setSubmitURL(){
-  const url = location.origin+location.pathname.replace('wur-host','wur-submit')+'?key='+encodeURIComponent(ablyKey);
-  document.getElementById('submit-url-text').textContent=url;
+function connectTwitch(twCh){
+  if(tws)tws.close();
+  tws=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  tws.onopen=()=>{
+    tws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    tws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+    tws.send('JOIN #'+twCh);
+  };
+  tws.onmessage=e=>{
+    e.data.split('\r\n').forEach(raw=>{
+      if(raw.startsWith('PING')){tws.send('PONG :tmi.twitch.tv');return;}
+      if(!raw.includes('PRIVMSG'))return;
+      const um=raw.match(/display-name=([^;]+)/),mm=raw.match(/PRIVMSG #\S+ :(.+)/);
+      if(!um||!mm)return;
+      const user=um[1].trim(),msg=mm[1].trim();
+      if((msg==='1'||msg==='2')&&activeWUR&&!voters[user]){
+        const choice=parseInt(msg);
+        voters[user]=choice;votes[choice]=(votes[choice]||0)+1;
+        ch.publish('vote',{user,choice});
+        updateVoteBars();
+      }
+    });
+  };
 }
 
-// === QUEUE ===
+// ── QUEUE ──
 function renderQueue(){
-  const list = document.getElementById('queue-list');
+  const list=document.getElementById('queue-list');
   list.innerHTML='';
-  const all = [...submissions.filter(s=>s.status==='pending'), ...queue.map(s=>{s._inqueue=true;return s;}), ...submissions.filter(s=>s.status==='rejected')];
-  const show = [...submissions, ...queue.map(s=>Object.assign({},s,{_inqueue:true}))];
-
-  // Show pending first
-  const pending = submissions.filter(s=>s.status==='pending');
-  const approved = queue;
-
-  if(pending.length===0 && approved.length===0){
-    list.innerHTML='<div style="padding:20px;text-align:center;font-size:.78rem;color:var(--muted)">No submissions yet</div>';
-    return;
+  const pending=submissions.filter(s=>s.status==='pending');
+  const approved=queue;
+  if(!pending.length&&!approved.length){
+    list.innerHTML='<div style="padding:16px;text-align:center;font-size:.76rem;color:var(--muted)">No submissions yet</div>';
   }
-
-  if(pending.length>0){
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-size:.62rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 4px';
-    hdr.textContent='Pending Approval ('+pending.length+')';
-    list.appendChild(hdr);
-    pending.forEach(s=>list.appendChild(makeQItem(s,true)));
+  if(pending.length){
+    const h=document.createElement('div');
+    h.style.cssText='font-size:.6rem;font-weight:800;color:var(--gold);text-transform:uppercase;letter-spacing:1px;padding:7px 10px 3px';
+    h.textContent='Pending ('+pending.length+')';list.appendChild(h);
+    pending.forEach(s=>list.appendChild(mkItem(s,true)));
   }
-  if(approved.length>0){
-    const hdr=document.createElement('div');
-    hdr.style.cssText='font-size:.62rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:1px;padding:8px 12px 4px';
-    hdr.textContent='Approved Queue ('+approved.length+')';
-    list.appendChild(hdr);
-    approved.forEach(s=>list.appendChild(makeQItem(s,false)));
+  if(approved.length){
+    const h=document.createElement('div');
+    h.style.cssText='font-size:.6rem;font-weight:800;color:var(--green);text-transform:uppercase;letter-spacing:1px;padding:7px 10px 3px';
+    h.textContent='Queue ('+approved.length+')';list.appendChild(h);
+    approved.forEach(s=>list.appendChild(mkItem(s,false)));
   }
-  document.getElementById('sub-count').textContent=pending.length+approved.length;
+  document.getElementById('sub-ct').textContent=pending.length+approved.length;
 }
 
-function makeQItem(s, isPending){
-  const div=document.createElement('div');
-  div.className='q-item'+(isPending?' pending':'');
-  div.innerHTML=`
-    <div class="q-meta"><span>${s.name||'Anonymous'}</span></div>
-    <div class="q-item-opts">
+function mkItem(s,isPending){
+  const d=document.createElement('div');
+  d.className='q-item'+(isPending?' pending':'');
+  d.innerHTML=`<div class="q-meta"><span>${s.name||'Anon'}</span></div>
+    <div class="q-opts">
       <div class="q-opt">${esc(s.a)}</div>
       <div class="q-or">OR</div>
       <div class="q-opt">${esc(s.b)}</div>
     </div>
-    <div class="q-actions">
+    <div class="q-acts">
       ${isPending
-        ? `<button class="btn btn-green btn-sm" onclick="approve('${s.id}')">✓ Approve</button>
-           <button class="btn btn-red btn-sm" onclick="reject('${s.id}')">✕ Delete</button>`
-        : `<button class="btn btn-purple btn-sm" onclick="playWUR('${esc(s.a)}','${esc(s.b)}')">▶ Play</button>
-           <button class="btn btn-red btn-sm" onclick="removeFromQueue('${s.id}')">✕</button>`
+        ?`<button class="btn btn-green btn-sm" onclick="approve('${s.id}')">✓</button><button class="btn btn-red btn-sm" onclick="reject('${s.id}')">✕</button>`
+        :`<button class="btn btn-purple btn-sm" onclick="playWUR('${esc(s.a)}','${esc(s.b)}')">▶ Play</button><button class="btn btn-red btn-sm" onclick="removeQ('${s.id}')">✕</button>`
       }
     </div>`;
-  return div;
+  return d;
 }
 
-function approve(id){
-  const idx=submissions.findIndex(s=>s.id==id);
-  if(idx<0)return;
-  const s=submissions.splice(idx,1)[0];
-  s.status='approved';
-  queue.push(s);
-  renderQueue();
-}
-function reject(id){
-  submissions=submissions.filter(s=>s.id!=id);
-  renderQueue();
-}
-function removeFromQueue(id){
-  queue=queue.filter(s=>s.id!=id);
-  renderQueue();
-}
+function approve(id){const i=submissions.findIndex(s=>s.id==id);if(i<0)return;const s=submissions.splice(i,1)[0];s.status='approved';queue.push(s);renderQueue();}
+function reject(id){submissions=submissions.filter(s=>s.id!=id);renderQueue();}
+function removeQ(id){queue=queue.filter(s=>s.id!=id);renderQueue();}
 
-// === MODES ===
-let currentMode='viewer';
+// ── MODES ──
 function setMode(m){
-  currentMode=m;
-  document.querySelectorAll('.mode-tab').forEach((t,i)=>{
-    t.classList.toggle('active',['viewer','bulk','random'][i]===m);
-  });
-  document.querySelectorAll('.mode-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['viewer','bulk','random'][i]===m));
+  document.querySelectorAll('.mode').forEach(p=>p.classList.remove('active'));
   document.getElementById('mode-'+m).classList.add('active');
 }
 
 function loadBulk(){
-  const raw=document.getElementById('bulk-input').value;
-  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l&&l.includes('|'));
-  const parsed=lines.map(l=>{const[a,...rest]=l.split('|');return{a:a.trim(),b:rest.join('|').trim(),name:'Bulk',id:Date.now()+Math.random(),status:'approved'}}).filter(x=>x.a&&x.b);
-  queue.push(...parsed);
-  renderQueue();
-  document.getElementById('bulk-status').textContent='✓ '+parsed.length+' loaded into queue';
-  document.getElementById('bulk-play-btn').style.display='block';
+  const raw=document.getElementById('bulk-in').value;
+  const parsed=raw.split('\n').map(l=>l.trim()).filter(l=>l.includes('|')).map(l=>{
+    const[a,...r]=l.split('|');return{a:a.trim(),b:r.join('|').trim(),name:'Bulk',id:Date.now()+Math.random(),status:'approved'};
+  }).filter(x=>x.a&&x.b);
+  queue.push(...parsed);renderQueue();
+  document.getElementById('bulk-st').textContent='✓ '+parsed.length+' loaded';
 }
 
-function pickFromQueue(){
-  if(queue.length===0){alert('Queue is empty — add some first');return;}
-  const s=queue.shift();
-  renderQueue();
+function playNext(auto=false){
+  if(!queue.length){
+    if(!auto)alert('Queue is empty');
+    ch.publish('active-wur',{active:false});
+    document.getElementById('active-box').style.display='none';
+    document.getElementById('vote-live').style.display='none';
+    return;
+  }
+  const s=queue.shift();renderQueue();
   playWUR(s.a,s.b);
 }
 
 function playRandom(){
-  // Mix queue + built-in
-  const pool=queue.length>0?queue:BUILTIN_WURS.map(([a,b])=>{return{a,b}});
-  const pick=pool[Math.floor(Math.random()*pool.length)];
-  if(queue.length>0) queue.splice(queue.indexOf(pick),1);
-  renderQueue();
-  playWUR(pick.a||pick[0], pick.b||pick[1]);
+  const pool=queue.length?queue:BUILTIN.map(([a,b])=>{return{a,b}});
+  const s=pool[Math.floor(Math.random()*pool.length)];
+  if(queue.length)queue.splice(queue.indexOf(s),1);
+  renderQueue();playWUR(s.a||s[0],s.b||s[1]);
 }
 
-// === ACTIVE WUR ===
 function playWUR(a,b){
-  activeWUR={a,b};
-  votes={1:0,2:0};
-  voters={};
-  document.getElementById('opt1-text').textContent=a;
-  document.getElementById('opt2-text').textContent=b;
-  document.getElementById('active-wur').style.display='flex';
-  document.getElementById('vote-bars').style.display='flex';
-  document.getElementById('game-controls').style.display='flex';
+  activeWUR={a,b};votes={1:0,2:0};voters={};
+  document.getElementById('ao1').textContent=a;
+  document.getElementById('ao2').textContent=b;
+  document.getElementById('active-box').style.display='flex';
+  document.getElementById('vote-live').style.display='flex';
+  document.getElementById('history').style.display='flex';
   updateVoteBars();
-  // Broadcast to overlay/chat listener
-  hostCh.publish('active-wur',{a,b,active:true});
-}
-
-function endRound(){
-  hostCh.publish('active-wur',{active:false,result:{
-    a:activeWUR.a, b:activeWUR.b,
-    v1:votes[1], v2:votes[2]
-  }});
+  ch.publish('active-wur',{a,b,active:true});
 }
 
 function clearActive(){
   activeWUR=null;
-  document.getElementById('active-wur').style.display='none';
-  document.getElementById('vote-bars').style.display='none';
-  document.getElementById('game-controls').style.display='none';
-  hostCh.publish('active-wur',{active:false});
+  document.getElementById('active-box').style.display='none';
+  document.getElementById('vote-live').style.display='none';
+  ch.publish('active-wur',{active:false});
 }
 
 function updateVoteBars(){
   const t=Math.max(1,(votes[1]||0)+(votes[2]||0));
-  const p1=Math.round((votes[1]||0)/t*100), p2=100-p1;
-  const b1=document.getElementById('bar1'),b2=document.getElementById('bar2');
-  b1.style.width=p1+'%'; b1.textContent=p1>8?p1+'%':'';
-  b2.style.width=p2+'%'; b2.textContent=p2>8?p2+'%':'';
-  document.getElementById('cnt1').textContent=votes[1]||0;
-  document.getElementById('cnt2').textContent=votes[2]||0;
+  const p1=Math.round((votes[1]||0)/t*100);
+  document.getElementById('vb1').style.width=p1+'%';document.getElementById('vb1').textContent=p1>10?p1+'%':'';
+  document.getElementById('vb2').style.width=(100-p1)+'%';document.getElementById('vb2').textContent=(100-p1)>10?(100-p1)+'%':'';
+  document.getElementById('vc1').textContent=votes[1]||0;
+  document.getElementById('vc2').textContent=votes[2]||0;
+}
+
+function renderHistory(){
+  const el=document.getElementById('history');
+  const items=el.querySelectorAll('.h-item');
+  items.forEach(i=>i.remove());
+  history.slice(0,8).forEach(h=>{
+    const d=document.createElement('div');d.className='h-item';
+    const picked=h.picked===1?h.a:h.b;
+    d.innerHTML=`<span class="h-pick">${h.picked===1?'🔵':'🔴'}</span><span class="h-vs">${esc(h.a)} OR ${esc(h.b)}</span><span style="font-size:.65rem;color:var(--muted)">${h.v1}/${h.v2}</span>`;
+    el.appendChild(d);
+  });
 }
 
 function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-// === TWITCH CHAT → vote forwarding ===
-let twitchWS;
-function connectTwitch(channel){
-  if(twitchWS) twitchWS.close();
-  twitchWS = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-  twitchWS.onopen = () => {
-    twitchWS.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-    twitchWS.send('NICK justinfan'+Math.floor(Math.random()*99999));
-    twitchWS.send('JOIN #'+channel.toLowerCase());
-  };
-  twitchWS.onmessage = e => {
-    const lines = e.data.split('\r\n');
-    for(const raw of lines){
-      if(raw.startsWith('PING')){ twitchWS.send('PONG :tmi.twitch.tv'); continue; }
-      if(!raw.includes('PRIVMSG')) continue;
-      const um = raw.match(/display-name=([^;]+)/);
-      const mm = raw.match(/PRIVMSG #\S+ :(.+)/);
-      if(!um||!mm) continue;
-      const user = um[1].trim();
-      const msg  = mm[1].trim();
-      if(msg === '1' || msg === '2'){
-        if(!activeWUR) continue;
-        hostCh.publish('vote', {user, choice: parseInt(msg)});
-      }
-    }
-  };
-}
-
-// Add channel input to login box after password
-window.addEventListener('DOMContentLoaded', () => {
-  const box = document.getElementById('login-box');
-  const div = document.createElement('div');
-  div.innerHTML = '<div style="font-size:.7rem;font-weight:700;color:var(--muted);margin-bottom:4px">TWITCH CHANNEL (for vote reading)</div><input class="inp" id="inp-channel" type="text" placeholder="fwhaydo"/>';
-  box.insertBefore(div, box.querySelector('.btn-purple'));
-  const saved = localStorage.getItem('wur-channel');
-  if(saved) document.getElementById('inp-channel').value = saved;
-});
-
-const _origConnect = doConnect;
-window.doConnect = function(){
-  const ch = document.getElementById('inp-channel')?.value.trim();
-  if(ch) localStorage.setItem('wur-channel', ch);
-  _origConnect();
-  if(ch) setTimeout(()=>connectTwitch(ch), 2000);
-};
 </script>
 </body>
 </html>
