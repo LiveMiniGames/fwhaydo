@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>WUR Overlay</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1920px;height:1080px;background:transparent;overflow:hidden;
+  font-family:'Inter',system-ui,sans-serif}
+
+#wur-overlay{
+  position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+  width:900px;display:none;flex-direction:column;align-items:center;gap:0;
+}
+#wur-overlay.active{display:flex}
+
+#wur-title{
+  font-size:1.1rem;font-weight:900;color:rgba(255,255,255,.6);
+  letter-spacing:6px;text-transform:uppercase;margin-bottom:16px;
+}
+
+#wur-cards{display:flex;align-items:center;gap:0;width:100%}
+
+.wur-card{
+  flex:1;padding:32px 28px;min-height:200px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1.6rem;font-weight:900;line-height:1.3;text-align:center;
+  text-shadow:0 2px 8px rgba(0,0,0,.6);
+}
+#wur-card1{
+  background:linear-gradient(135deg,#1e3a8a,#1d4ed8);
+  border-radius:16px 0 0 16px;
+  border:3px solid #3b82f6;border-right:none;
+  color:#dbeafe;
+  box-shadow:0 0 40px rgba(59,130,246,.4),-4px 0 20px rgba(0,0,0,.4);
+}
+#wur-card2{
+  background:linear-gradient(135deg,#7f1d1d,#dc2626);
+  border-radius:0 16px 16px 0;
+  border:3px solid #ef4444;border-left:none;
+  color:#fee2e2;
+  box-shadow:0 0 40px rgba(239,68,68,.4),4px 0 20px rgba(0,0,0,.4);
+}
+#wur-or{
+  width:72px;height:72px;border-radius:50%;flex-shrink:0;z-index:1;
+  background:#0a0a14;border:3px solid rgba(255,255,255,.2);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.85rem;font-weight:900;color:rgba(255,255,255,.7);
+  letter-spacing:1px;
+  box-shadow:0 0 20px rgba(0,0,0,.8);
+}
+
+/* Vote bars */
+#wur-bars{width:100%;display:flex;gap:0;margin-top:0;}
+#bar-1-wrap,#bar-2-wrap{flex:1;height:14px;overflow:hidden}
+#bar-1-wrap{border-radius:0 0 0 10px}
+#bar-2-wrap{border-radius:0 0 10px 0}
+#bar-1{height:100%;background:#3b82f6;transition:width .6s ease;border-radius:0 0 0 10px}
+#bar-2{height:100%;background:#ef4444;transition:width .6s ease;float:right;border-radius:0 0 10px 0}
+
+/* Vote counts */
+#wur-counts{width:100%;display:flex;justify-content:space-between;margin-top:6px;padding:0 4px}
+.wur-count{font-size:1.1rem;font-weight:900;padding:6px 18px;border-radius:6px}
+#count1{color:#93c5fd;background:rgba(59,130,246,.15)}
+#count2{color:#fca5a5;background:rgba(239,68,68,.12)}
+
+#wur-type-hint{
+  font-size:.85rem;font-weight:700;color:rgba(255,255,255,.35);
+  letter-spacing:2px;margin-top:10px;text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+<div id="wur-overlay">
+  <div id="wur-title">WOULD YOU RATHER...</div>
+  <div id="wur-cards">
+    <div class="wur-card" id="wur-card1">—</div>
+    <div id="wur-or">OR</div>
+    <div class="wur-card" id="wur-card2">—</div>
+  </div>
+  <div id="wur-bars">
+    <div id="bar-1-wrap"><div id="bar-1" style="width:50%"></div></div>
+    <div id="bar-2-wrap"><div id="bar-2" style="width:50%"></div></div>
+  </div>
+  <div id="wur-counts">
+    <span class="wur-count" id="count1">0 voted 1</span>
+    <span class="wur-count" id="count2">0 voted 2</span>
+  </div>
+  <div id="wur-type-hint">Type 1 or 2 in chat to vote</div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+const KEY = new URLSearchParams(location.search).get('key')||'';
+const PWD = new URLSearchParams(location.search).get('pwd')||'wur';
+let votes={1:0,2:0},voters={};
+
+if(KEY){
+  const ab=new Ably.Realtime({key:KEY});
+  const ch=ab.channels.get('wur-game');
+
+  ch.subscribe('active-wur', msg=>{
+    const d=msg.data;
+    if(!d.active){
+      document.getElementById('wur-overlay').classList.remove('active');
+      return;
+    }
+    votes={1:0,2:0};voters={};
+    document.getElementById('wur-card1').textContent=d.a;
+    document.getElementById('wur-card2').textContent=d.b;
+    document.getElementById('wur-overlay').classList.add('active');
+    updateBars();
+  });
+
+  // Listen to Twitch chat indirectly via Ably (host forwards votes)
+  ch.subscribe('vote', msg=>{
+    const {user,choice}=msg.data;
+    if(voters[user])return;
+    voters[user]=choice;
+    votes[choice]=(votes[choice]||0)+1;
+    updateBars();
+  });
+}
+
+function updateBars(){
+  const t=Math.max(1,(votes[1]||0)+(votes[2]||0));
+  const p1=Math.round((votes[1]||0)/t*100),p2=100-p1;
+  document.getElementById('bar-1').style.width=p1+'%';
+  document.getElementById('bar-2').style.width=p2+'%';
+  document.getElementById('count1').textContent=(votes[1]||0)+' voted 1';
+  document.getElementById('count2').textContent=(votes[2]||0)+' voted 2';
+}
+</script>
+</body>
+</html>
