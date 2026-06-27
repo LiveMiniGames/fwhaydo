@@ -196,31 +196,49 @@ const FOOD_EMOJIS = ['🍔','🍕','🌮','🍩','🍟','🍗','🧁','🌭','�
 const FEED_CMDS = new Set(['!feed','feed','!FEED','FEED','!Feed','Feed','!FEED','!feed ']);
 
 function connectTwitch(){
+  setStatus('Connecting...','#facc15');
   const ws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
   ws.onopen = ()=>{
-    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    ws.send('PASS oauth:x');
     ws.send('NICK justinfan'+Math.floor(Math.random()*99999));
     ws.send('JOIN #'+CHANNEL.toLowerCase());
+    setStatus('Connected','#22c55e');
   };
   ws.onmessage = e=>{
-    e.data.split('
-').forEach(raw=>{
-      if(raw.startsWith('PING')){ws.send('PONG :tmi.twitch.tv');return;}
-      if(!raw.includes('PRIVMSG'))return;
-      const um=raw.match(/display-name=([^;]+)/);
-      const mm=raw.match(/PRIVMSG #\S+ :(.+)/);
-      if(!um||!mm)return;
-      const user=um[1].trim();
-      const msg=mm[1].trim().toLowerCase().replace(/\s+$/,'');
-      if(msg==='!feed'||msg==='feed'){
+    const lines = e.data.split('\r\n');
+    for(const raw of lines){
+      if(!raw) continue;
+      if(raw.indexOf('PING') === 0){ws.send('PONG :tmi.twitch.tv');continue;}
+      if(raw.indexOf('366') > -1){setStatus('Live in #'+CHANNEL+' \u2713','#22c55e');continue;}
+      if(raw.indexOf('PRIVMSG') === -1) continue;
+      let user = 'viewer';
+      const tagMatch = raw.match(/display-name=([^;\s]+)/);
+      if(tagMatch && tagMatch[1] && tagMatch[1] !== '') user = tagMatch[1];
+      else { const pm = raw.match(/^:([^!]+)!/); if(pm) user = pm[1]; }
+      const mm = raw.match(/PRIVMSG #[^\s]+ :(.+)/);
+      if(!mm) continue;
+      const msg = mm[1].trim().toLowerCase();
+      if(msg === '!feed' || msg === 'feed'){
         addWeight(user);
       }
-    });
+    }
   };
-  ws.onclose=()=>setTimeout(connectTwitch,3000);
-  ws.onerror=()=>ws.close();
+  ws.onclose = ()=>{ setStatus('Reconnecting...','#f97316'); setTimeout(connectTwitch,3000); };
+  ws.onerror  = ()=>{ setStatus('Error','#ef4444'); ws.close(); };
 }
 
+function setStatus(msg, color){
+  var el = document.getElementById('conn-status');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'conn-status';
+    el.style.cssText = 'position:fixed;top:8px;right:12px;font-size:.7rem;font-weight:800;' +
+      'z-index:999;padding:4px 10px;border-radius:4px;background:rgba(0,0,0,.6);letter-spacing:.5px;font-family:Inter,sans-serif';
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.style.color = color;
+}
 function addWeight(user){
   if(exploded)return;
   weight=Math.min(MAX_W,weight+1);
