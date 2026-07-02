@@ -122,10 +122,25 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
 <!-- WAITING TO JOIN -->
 <div id="waiting">
   <div id="wait-title">🎱 BINGO</div>
-  <div id="wait-sub">Enter your Twitch username and join when the streamer starts a game!</div>
-  <input id="name-inp" type="text" placeholder="Your Twitch username" maxlength="25" autocomplete="off"/>
-  <button class="join-btn" onclick="joinGame()">JOIN GAME</button>
+  <div id="wait-sub">Log in with Twitch to get your bingo card!</div>
+  <button class="join-btn" id="twitch-login-btn" onclick="twitchLogin()" style="background:#9147ff;display:flex;align-items:center;gap:10px;margin:0 auto">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="white"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
+    LOGIN WITH TWITCH
+  </button>
   <div id="status-msg"></div>
+</div>
+
+<div id="logged-in-wait" style="display:none;flex-direction:column;align-items:center;gap:16px;text-align:center;padding:20px;min-height:100vh;justify-content:center">
+  <div id="wait-title2" style="font-family:Anton,sans-serif;font-size:3rem;color:#9147ff;letter-spacing:2px">🎱 BINGO</div>
+  <div id="user-badge" style="display:flex;align-items:center;gap:10px;background:#13131f;border:1px solid #252535;border-radius:8px;padding:10px 16px">
+    <div id="user-avatar" style="width:36px;height:36px;border-radius:50%;background:#9147ff;overflow:hidden"></div>
+    <div>
+      <div id="user-name" style="font-weight:900;font-size:.9rem"></div>
+      <div style="font-size:.7rem;color:#8888a0">Logged in with Twitch ✓</div>
+    </div>
+  </div>
+  <button class="join-btn" onclick="joinGame()">JOIN GAME</button>
+  <div id="status-msg2" style="font-size:.8rem;color:#8888a0;min-height:20px"></div>
 </div>
 
 <!-- BINGO CARD -->
@@ -176,9 +191,24 @@ let gameActive = false;
 
 // ── CONNECT ──────────────────────────────────────────────────────────────────
 if(!KEY){
-  document.getElementById('status-msg').textContent='Missing key in URL — use the link from the host';
-  document.getElementById('status-msg').className='err';
+  // Check if returning from OAuth with key in session
+  const saved = sessionStorage.getItem('bingo-params');
+  if(saved && saved.includes('key=')){
+    location.href = location.pathname + saved + location.hash;
+  } else {
+    document.getElementById('waiting').style.display='flex';
+    document.getElementById('status-msg').textContent='Missing key in URL — use the link from the host';
+    document.getElementById('status-msg').className='err';
+  }
 } else {
+  // Check for OAuth callback first
+  handleOAuthCallback().then(loggedIn => {
+    if(!loggedIn){
+      // Not returning from OAuth — show login button
+      document.getElementById('waiting').style.display='flex';
+    }
+  });
+
   ably = new Ably.Realtime({key:KEY});
   ably.connection.on('connected',()=>{
     ch = ably.channels.get('bingo-game');
@@ -234,22 +264,64 @@ if(!KEY){
   });
 }
 
+// ── TWITCH OAUTH ─────────────────────────────────────────────────────────────
+const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
+const REDIRECT_URI = location.origin + location.pathname;
+
+function twitchLogin(){
+  // Store current params so we can restore after redirect
+  sessionStorage.setItem('bingo-params', location.search);
+  const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=user:read:email`;
+  location.href = authUrl;
+}
+
+async function handleOAuthCallback(){
+  const hash = location.hash;
+  if(!hash.includes('access_token')) return false;
+  const params = new URLSearchParams(hash.slice(1));
+  const token = params.get('access_token');
+  if(!token) return false;
+
+  // Restore original query params
+  const savedParams = sessionStorage.getItem('bingo-params');
+  if(savedParams) {
+    // Update URL to restore key and ch params without the hash
+    const newUrl = location.pathname + savedParams;
+    history.replaceState(null,'',newUrl);
+  } else {
+    history.replaceState(null,'',location.pathname + location.search);
+  }
+
+  // Fetch Twitch username
+  try{
+    const resp = await fetch('https://api.twitch.tv/helix/users',{
+      headers:{'Authorization':'Bearer '+token,'Client-Id':TWITCH_CLIENT_ID}
+    });
+    const data = await resp.json();
+    const user = data.data && data.data[0];
+    if(user){
+      username = user.display_name;
+      // Show logged in state
+      document.getElementById('waiting').style.display='none';
+      document.getElementById('logged-in-wait').style.display='flex';
+      document.getElementById('user-name').textContent = username;
+      if(user.profile_image_url){
+        document.getElementById('user-avatar').innerHTML = `<img src="${user.profile_image_url}" style="width:100%;height:100%;object-fit:cover"/>`;
+      }
+      return true;
+    }
+  }catch(e){console.error('Twitch user fetch failed',e);}
+  return false;
+}
+
 // ── JOIN ──────────────────────────────────────────────────────────────────────
 function joinGame(){
-  const nm = document.getElementById('name-inp').value.trim();
-  if(!nm){
-    setStatus('Enter your Twitch username','err');return;
-  }
-  if(!ch){setStatus('Not connected yet — wait a moment','err');return;}
-  username = nm;
-  setStatus('Joining...','');
-
-  // Tell host we want to join
+  if(!username){ twitchLogin(); return; }
+  if(!ch){ setStatus2('Not connected yet — wait a moment','err'); return; }
+  setStatus2('Joining...','');
   ch.publish('player-join',{username, cardSeed: Math.floor(Math.random()*999999)});
-
-  // If no confirmation in 3s, show error
   setTimeout(()=>{
-    if(!myCard) setStatus('No active game right now — wait for the host to start one','err');
+    if(!myCard) setStatus2('No active game yet — the host will start one soon!','');
   },3000);
 }
 
@@ -260,7 +332,11 @@ function doJoin(){
 
 function setStatus(msg,cls){
   const el=document.getElementById('status-msg');
-  el.textContent=msg;el.className=cls;
+  if(el){el.textContent=msg;el.className=cls;}
+}
+function setStatus2(msg,cls){
+  const el=document.getElementById('status-msg2');
+  if(el){el.textContent=msg;el.className=cls;}
 }
 
 // ── CARD ──────────────────────────────────────────────────────────────────────
