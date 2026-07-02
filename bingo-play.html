@@ -173,6 +173,19 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
   <div id="cf-text"></div>
 </div>
 
+<script>
+// Define early so button onclick works before Ably loads
+const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
+const REDIRECT_URI = location.origin + location.pathname;
+
+function twitchLogin(){
+  localStorage.setItem('bingo-params', location.search);
+  const authUrl = 'https://id.twitch.tv/oauth2/authorize?client_id=' + TWITCH_CLIENT_ID
+    + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+    + '&response_type=token&scope=user:read:email';
+  location.href = authUrl;
+}
+</script>
 <script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
 <script>
 // ── STARTUP: handle OAuth callback or restore params ─────────────────────────
@@ -285,15 +298,7 @@ function startAbly(KEY, CHANNEL){
 }
 
 // ── TWITCH OAUTH ─────────────────────────────────────────────────────────────
-const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
-const REDIRECT_URI = location.origin + location.pathname;
-
-function twitchLogin(){
-  // Store current params so we can restore after redirect
-  localStorage.setItem('bingo-params', location.search);
-  const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=user:read:email`;
-  location.href = authUrl;
-}
+// TWITCH_CLIENT_ID, REDIRECT_URI, twitchLogin defined in early script above
 
 async function handleOAuthCallback(KEY, CHANNEL){
   const hash = location.hash;
