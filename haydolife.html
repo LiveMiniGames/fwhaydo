@@ -335,6 +335,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
 </div>
 
 <script>
+// Global error catcher - shows errors visibly
+window.onerror = function(msg, src, line, col, err){
+  const d = document.createElement('div');
+  d.style.cssText = 'position:fixed;top:0;left:0;right:0;background:red;color:#fff;padding:12px;z-index:9999;font-size:.8rem;font-family:monospace;word-break:break-all';
+  d.textContent = 'JS ERROR: ' + msg + ' (line ' + line + ')';
+  document.body.appendChild(d);
+  return false;
+};
 // ══════════════════════════════════════════════════════════════════
 //  STATE
 // ══════════════════════════════════════════════════════════════════
