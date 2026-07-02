@@ -397,10 +397,10 @@ const MILESTONES = [
   {viewers:50,    icon:'📈', title:'50 VIEWERS!',          sub:'you might actually make it'},
   {viewers:100,   icon:'💯', title:'100 VIEWERS!',         sub:'triple digits just dropped'},
   {viewers:250,   icon:'🔥', title:'250 VIEWERS!',         sub:'chat is getting spicy'},
-  {viewers:500,   icon:'💜', title:'500 VIEWERS!',         sub:'you're not a small streamer anymore'},
+  {viewers:500,   icon:'💜', title:'500 VIEWERS!',         sub:'you are not a small streamer anymore'},
   {viewers:1000,  icon:'🚀', title:'1K VIEWERS!',          sub:'four digits. insane.'},
   {viewers:2500,  icon:'⭐', title:'2,500 VIEWERS!',       sub:'KcCarson is proud of you'},
-  {viewers:5000,  icon:'👑', title:'5,000 VIEWERS!',       sub:'FwDad is watching and he's hyped'},
+  {viewers:5000,  icon:'👑', title:'5,000 VIEWERS!',       sub:'FwDad is watching and he is hyped'},
   {viewers:10000, icon:'💎', title:'10,000 VIEWERS!',      sub:'you actually made it bro'},
   {viewers:25000, icon:'🌍', title:'25,000 VIEWERS!',      sub:'the ski mask stays ON'},
   {viewers:50000, icon:'🏆', title:'50K VIEWERS!',         sub:'HAYDO IS EATING GOOD'},
@@ -428,7 +428,7 @@ const DECISIONS = [
   },
   {
     id:'d_start2', context:'Going Live', trigger:'stream',
-    q:'It's been 3 days since you last streamed. Chat is asking where you been.',
+    q:'It is been 3 days since you last streamed. Chat is asking where you been.',
     opts:[
       {t:'"I was living my life, chill"',      v:+8,  e:0,  tw:+4,  tk:0,  log:'The mysterious absence made chat want you more.', type:'good'},
       {t:'Explain everything in detail',       v:-5,  e:0,  tw:0,   tk:0,  log:'No one asked for the full story. Viewers dipped.', type:'bad'},
@@ -470,13 +470,13 @@ const DECISIONS = [
     q:'KcCarson just typed something in chat that makes no sense. Chat is confused.',
     opts:[
       {t:'Call KcCarson out live on stream',   v:+25, e:0,   tw:+10, tk:+15,log:'KcCarson lore moment. Entire chat went wild asking who KcCarson is.', type:'good'},
-      {t:'Pretend you didn't see it',         v:0,   e:0,   tw:0,   tk:0,  log:'The mystery of KcCarson continues.', type:'neutral'},
+      {t:'Pretend you didnt see it',         v:0,   e:0,   tw:0,   tk:0,  log:'The mystery of KcCarson continues.', type:'neutral'},
       {t:'Make KcCarson explain himself',      v:+20, e:0,   tw:+8,  tk:+5, log:'KcCarson went quiet. Even more mysterious now.', type:'good'},
     ]
   },
   {
     id:'d_rand2', context:'Mid Stream', trigger:'random',
-    q:'Chat is calling you fat again. You're clearly not fat but this is the 47th time today.',
+    q:'Chat is calling you fat again. You are clearly not fat but this is the 47th time today.',
     opts:[
       {t:'Flex on them and keep going',        v:+10, e:0,   tw:+5,  tk:+8, log:'The confidence clip is doing numbers.', type:'good'},
       {t:'Act offended for content',           v:+20, e:-5,  tw:+10, tk:+15,log:'The fake meltdown was hilarious. TikTok blew up.', type:'good'},
@@ -494,19 +494,19 @@ const DECISIONS = [
   },
   {
     id:'d_rand4', context:'Mid Stream', trigger:'random',
-    q:'Someone in chat asks if you're actually bald under the ski mask.',
+    q:'Someone in chat asks if you are actually bald under the ski mask.',
     opts:[
       {t:'"I will never remove this mask"',    v:+20, e:0,   tw:+10, tk:+20,log:'The ski mask lore is now legendary. TikTok went crazy.', type:'good'},
-      {t:'Tease removing it but don't',       v:+30, e:0,   tw:+15, tk:+25,log:'The fake-out clip is your most viral moment yet.', type:'good'},
+      {t:'Tease removing it but dont',       v:+30, e:0,   tw:+15, tk:+25,log:'The fake-out clip is your most viral moment yet.', type:'good'},
       {t:'Actually remove it briefly',         v:+50, e:0,   tw:+30, tk:+50,log:'WAIT WHAT. The internet broke. You peaked today.', type:'good'},
     ]
   },
   {
     id:'d_rand5', context:'Mid Stream', trigger:'random',
-    q:'FwDad just joined the stream and said "what's up chat" in the most dad way possible.',
+    q:'FwDad just joined the stream and said "whats up chat" in the most dad way possible.',
     opts:[
       {t:'Hype him up and make him play',      v:+30, e:0,   tw:+15, tk:+20,log:'FwDad arc content. Chat LOVED it.', type:'good'},
-      {t:'Pretend you don't know him',        v:+15, e:0,   tw:+8,  tk:+10,log:'The bit was funny. FwDad played along.', type:'good'},
+      {t:'Pretend you dont know him',        v:+15, e:0,   tw:+8,  tk:+10,log:'The bit was funny. FwDad played along.', type:'good'},
       {t:'End stream immediately',             v:-10, e:+5,  tw:-3,  tk:0,  log:'The suspicious ending raised more questions than answers.', type:'bad'},
     ]
   },
@@ -530,9 +530,9 @@ const DECISIONS = [
   },
   {
     id:'d_rand8', context:'Mid Stream', trigger:'random',
-    q:'You're 6 hours into the stream and you're clearly tired. Chat notices.',
+    q:'You are 6 hours into the stream and you are clearly tired. Chat notices.',
     opts:[
-      {t:'Power through on pure will',         v:+10, e:-20, tw:+5,  tk:0,  log:'The dedication is respectable. But you're running on empty.', type:'neutral'},
+      {t:'Power through on pure will',         v:+10, e:-20, tw:+5,  tk:0,  log:'The dedication is respectable. But you are running on empty.', type:'neutral'},
       {t:'Announce a 30 min break',            v:-5,  e:+15, tw:0,   tk:0,  log:'Viewer count dipped during the break.', type:'neutral'},
       {t:'End stream and sleep',               v:-15, e:+30, tw:0,   tk:0,  log:'The responsible choice. Energy fully recovering.', type:'neutral'},
     ]
@@ -558,10 +558,10 @@ const DECISIONS = [
   // ── SLEEP ──
   {
     id:'d_sleep1', context:'Bedtime', trigger:'sleep',
-    q:'It's 4am. Chat is begging you to keep going but your eyes are closing.',
+    q:'It is 4am. Chat is begging you to keep going but your eyes are closing.',
     opts:[
       {t:'Do a sleep stream',                  v:-10, e:+40, tw:+5,  tk:+3, log:'The snoring content was oddly entertaining apparently.', type:'neutral'},
-      {t:'Force through until 6am',            v:+15, e:-30, tw:+8,  tk:0,  log:'Respect. But you're gonna crash hard tomorrow.', type:'neutral'},
+      {t:'Force through until 6am',            v:+15, e:-30, tw:+8,  tk:0,  log:'Respect. But you are gonna crash hard tomorrow.', type:'neutral'},
       {t:'End stream and sleep properly',      v:-20, e:+60, tw:0,   tk:0,  log:'Good decision. Energy fully restored.', type:'neutral'},
     ]
   },
@@ -578,7 +578,7 @@ const DECISIONS = [
   // ── EATING ──
   {
     id:'d_eat1', context:'Taking a Break', trigger:'eat',
-    q:'You're eating on stream. Chat immediately says "bro you really do eat everything."',
+    q:'You are eating on stream. Chat immediately says "bro you really do eat everything."',
     opts:[
       {t:'Make it a mukbang moment',           v:+10, e:+25, tw:+5, tk:+15, log:'Accidental mukbang arc. Viewers liked it.', type:'good'},
       {t:'Eat quickly and get back to gaming', v:-5,  e:+20, tw:0,  tk:0,   log:'Viewers dropped while you stepped away.', type:'neutral'},
@@ -634,10 +634,10 @@ const RANDOM_EVENTS = [
   },
   {
     context:'Energy Warning', trigger:'random',
-    q:'You're clearly yawning on stream and your energy is getting low.',
+    q:'You are clearly yawning on stream and your energy is getting low.',
     opts:[
       {t:'Grab an energy drink and keep going', v:+5, e:+15, tw:+2, tk:0,  log:'The caffeine kicked in. Barely.', type:'neutral'},
-      {t:'Announce you're ending soon',        v:-8, e:0,  tw:0,  tk:0,   log:'Early warning caused viewers to start leaving.', type:'bad'},
+      {t:'Announce you are ending soon',        v:-8, e:0,  tw:0,  tk:0,   log:'Early warning caused viewers to start leaving.', type:'bad'},
     ]
   },
 ];
