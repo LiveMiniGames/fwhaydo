@@ -357,7 +357,13 @@ const DEFAULT_STATE = {
   consecutiveDaysStreamed: 0,
 };
 
-let S = loadState();
+let S;
+try {
+  S = loadState();
+  if(!(S.milestonesHit instanceof Set)) S.milestonesHit = new Set(S.milestonesHit||[]);
+} catch(e) {
+  S = {...DEFAULT_STATE, milestonesHit: new Set()};
+}
 let decisionQueue = [];
 let currentDecision = null;
 let gameTickInterval = null;
@@ -652,7 +658,7 @@ function loadState(){
 function startGame(){
   document.getElementById('intro').style.display='none';
   document.getElementById('game').style.display='flex';
-  updateUI();
+  try{ updateUI(); }catch(e){}
   startTick();
   logEvent('🎮 Day '+S.day+' — Haydo boots up the PC and gets ready to go live.','neutral');
   if(S.day > 1) logEvent('💾 Progress loaded from last session.','neutral');
@@ -984,8 +990,8 @@ function fmtTime(h){
   return h12+':00 '+ampm;
 }
 
-// Init
-updateUI();
+// Init — safely update UI on load without breaking button if elements hidden
+try{ updateUI(); }catch(e){ console.log('pre-game UI skipped'); }
 </script>
 </body>
 </html>
