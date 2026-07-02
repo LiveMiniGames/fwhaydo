@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Bingo Host — FwHaydo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&family=Anton&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
+  --purple:#9147ff;--purple2:#772ce8;--purple3:#bf94ff;
+  --green:#2dc653;--red:#e63946;--gold:#f4b942;--blue:#3b82f6;
+  --text:#efeff1;--muted:#8888a0;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh}
+#topbar{background:#0e0e18;border-bottom:1px solid var(--border);padding:0 16px;height:48px;
+  display:flex;align-items:center;gap:10px}
+#tb-title{font-weight:900;font-size:.95rem;color:var(--purple);flex:1}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
+.dot.ok{background:var(--green)}
+#conn-lbl{font-size:.72rem;color:var(--muted)}
+
+/* LOGIN */
+#login-view{display:flex;align-items:center;justify-content:center;
+  min-height:calc(100vh - 48px);padding:20px}
+#login-box{background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:28px;width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px}
+.login-title{font-size:1.3rem;font-weight:900;text-align:center;color:var(--purple)}
+.lbl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.inp{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:10px 14px;color:#fff;font-size:.88rem;font-family:inherit;width:100%;outline:none}
+.inp:focus{border-color:var(--purple)}
+.btn{padding:11px;font-size:.88rem;font-weight:800;border:none;border-radius:6px;
+  cursor:pointer;font-family:inherit;transition:all .2s;letter-spacing:.5px}
+.btn-purple{background:var(--purple);color:#fff;width:100%}
+.btn-purple:hover{background:var(--purple2)}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{background:#22a84a}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:#c0392b}
+.btn-grey{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn-grey:hover{color:#fff;border-color:var(--purple)}
+.btn-gold{background:var(--gold);color:#000}
+.btn-gold:hover{background:#e0a800}
+.btn-sm{padding:6px 12px;font-size:.74rem;font-weight:700;border:none;border-radius:4px;cursor:pointer;font-family:inherit}
+.err{font-size:.78rem;color:var(--red);text-align:center;min-height:16px}
+
+/* MAIN */
+#main-view{display:none;min-height:calc(100vh - 48px)}
+#layout{display:flex;height:calc(100vh - 48px);overflow:hidden}
+
+/* LEFT */
+#left{width:280px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow:hidden}
+.ph{padding:9px 13px;border-bottom:1px solid var(--border);font-size:.66rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
+#player-list{flex:1;overflow-y:auto;padding:6px}
+.pl-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;
+  border:1px solid var(--border);margin-bottom:4px;background:var(--card)}
+.pl-name{font-size:.76rem;font-weight:700;flex:1}
+.pl-prog{font-size:.68rem;color:var(--muted)}
+.pl-bingo{font-size:.68rem;font-weight:800;color:var(--gold);background:rgba(244,185,66,.15);
+  border:1px solid rgba(244,185,66,.3);border-radius:3px;padding:2px 6px}
+
+/* RIGHT */
+#right{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#right-top{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+#game-phase{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:1px}
+#right-content{flex:1;overflow-y:auto;padding:16px;display:flex;gap:16px}
+
+/* SETUP PANEL */
+#setup-panel{flex:1;display:flex;flex-direction:column;gap:14px;max-width:680px}
+.section{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.section-title{font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:1.2px;color:var(--muted);padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* Bingo grid editor */
+#grid-editor{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.grid-cell{position:relative}
+.grid-cell input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:5px;
+  padding:8px 6px;color:#fff;font-size:.72rem;font-family:inherit;outline:none;text-align:center;
+  min-height:52px;resize:none;overflow:hidden}
+.grid-cell input:focus{border-color:var(--purple)}
+.grid-cell.free-space input{background:rgba(145,71,255,.15);border-color:var(--purple);color:var(--purple3);font-weight:800}
+.cell-num{position:absolute;top:3px;left:5px;font-size:.5rem;color:var(--muted);font-weight:700}
+
+/* Mode select */
+#mode-btns{display:flex;gap:6px;flex-wrap:wrap}
+.mode-btn{padding:8px 14px;font-size:.76rem;font-weight:800;border:1px solid var(--border);
+  border-radius:6px;cursor:pointer;font-family:inherit;background:var(--card);color:var(--muted);
+  transition:all .15s;letter-spacing:.5px}
+.mode-btn.active{background:rgba(145,71,255,.15);color:var(--purple3);border-color:var(--purple)}
+
+/* GAME PANEL */
+#game-panel{display:none;flex:1;flex-direction:column;gap:14px;max-width:780px}
+
+/* Called squares */
+#called-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.called-cell{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:8px 6px;font-size:.7rem;font-weight:700;text-align:center;cursor:pointer;
+  min-height:54px;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;line-height:1.3;position:relative}
+.called-cell:hover{border-color:var(--purple);background:rgba(145,71,255,.1)}
+.called-cell.called{background:rgba(145,71,255,.25);border-color:var(--purple);color:var(--purple3)}
+.called-cell.free{background:rgba(145,71,255,.15);border-color:var(--purple);color:var(--purple3);cursor:default}
+
+/* URL box */
+#url-box{background:var(--card);border:1px solid var(--border);border-radius:7px;
+  padding:10px 12px;font-size:.73rem;color:var(--muted);word-break:break-all}
+#url-box b{color:var(--purple);display:block;font-size:.65rem;text-transform:uppercase;
+  letter-spacing:1px;margin-bottom:3px}
+
+/* Winner banner */
+#winner-banner{background:rgba(244,185,66,.12);border:2px solid var(--gold);border-radius:10px;
+  padding:16px 20px;text-align:center;display:none;flex-direction:column;gap:6px}
+#winner-name{font-family:'Anton',sans-serif;font-size:2rem;color:var(--gold);letter-spacing:2px}
+#winner-mode{font-size:.82rem;color:var(--muted)}
+
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div id="topbar">
+  <span id="tb-title">🎱 Bingo Host</span>
+  <div class="dot" id="dot"></div>
+  <span id="conn-lbl">Not connected</span>
+</div>
+
+<div id="login-view">
+  <div id="login-box">
+    <div class="login-title">🎱 Bingo Host</div>
+    <div><div class="lbl">Ably API Key</div><input class="inp" id="inp-key" type="text" placeholder="xxxxxxxxxxx:xxxxxxxx..."/></div>
+    <div><div class="lbl">Twitch Channel</div><input class="inp" id="inp-ch" type="text" placeholder="fwhaydo"/></div>
+    <button class="btn btn-purple" onclick="doConnect()">CONNECT →</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</div>
+
+<div id="main-view">
+  <div id="layout">
+    <!-- LEFT: player list -->
+    <div id="left">
+      <div class="ph"><span>PLAYERS</span><span id="player-count">0</span></div>
+      <div id="player-list"><div style="padding:16px;text-align:center;font-size:.76rem;color:var(--muted)">Waiting for players...</div></div>
+    </div>
+
+    <!-- RIGHT -->
+    <div id="right">
+      <div id="right-top">
+        <span id="game-phase">SETUP</span>
+        <div style="flex:1"></div>
+        <button class="btn btn-sm btn-grey" id="btn-setup" onclick="showSetup()" style="display:none">← Edit Setup</button>
+        <button class="btn btn-sm btn-green" id="btn-start" onclick="startGame()">▶ Start Game</button>
+        <button class="btn btn-sm btn-red" id="btn-end" onclick="endGame()" style="display:none">⏹ End Game</button>
+      </div>
+
+      <div id="right-content">
+        <!-- SETUP -->
+        <div id="setup-panel">
+          <div id="url-box"><b>📋 Viewer Link — share in chat</b><span id="viewer-url">Connect first to generate link</span></div>
+
+          <div class="section">
+            <div class="section-title">Game Mode</div>
+            <div id="mode-btns">
+              <button class="mode-btn active" onclick="setMode('bingo')" data-mode="bingo">⬛ Standard Bingo</button>
+              <button class="mode-btn" onclick="setMode('blackout')" data-mode="blackout">🔲 Blackout</button>
+              <button class="mode-btn" onclick="setMode('fourcorners')" data-mode="fourcorners">⬜ Four Corners</button>
+              <button class="mode-btn" onclick="setMode('x')" data-mode="x">✖ X Pattern</button>
+              <button class="mode-btn" onclick="setMode('t')" data-mode="t">➕ T Shape</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Bingo Card Squares (24 + free center)</div>
+            <div id="grid-editor"></div>
+            <div style="display:flex;gap:8px;margin-top:4px">
+              <button class="btn btn-sm btn-grey" onclick="clearAll()" style="flex:1">Clear All</button>
+              <button class="btn btn-sm btn-grey" onclick="loadExample()" style="flex:1">Load TikTok Example</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- GAME -->
+        <div id="game-panel">
+          <div id="winner-banner">
+            <div style="font-size:.8rem;font-weight:800;color:var(--muted)">🏆 BINGO!</div>
+            <div id="winner-name"></div>
+            <div id="winner-mode"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">Click to call a square</div>
+            <div id="called-grid"></div>
+          </div>
+
+          <div class="section" style="flex-direction:row;gap:8px;align-items:center">
+            <div style="font-size:.78rem;color:var(--muted);flex:1">
+              <span id="called-count">0</span> of 24 squares called
+            </div>
+            <button class="btn btn-sm btn-red" onclick="uncallLast()">↩ Undo Last</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+const EXAMPLES = {
+  tiktok: ['Dance challenge','Cat video','Food review','Life hack','GRWM vlog','Drama story time','Prank video','Satisfying video','POV skit','Trending sound','Pet does something funny','Someone crying','Cringe comment pinned','Plot twist ending','Outfit check','Room tour','Day in my life','Cooking fail','Unexpected flex','Motivational speech','Hot take opinion','Random skill shown off','Viral product review','Celebrity impression'],
+  youtube: ['Ad mid-sentence','Subscribe reminder','Like button beg','Merch plug','"This video is sponsored"','Dramatic thumbnail face','10 minute intro','Comment read','Patreon mention','End screen segment','Long pause for effect','Story gets sidetracked','Camera quality change','Background noise','Editing mistake','Over-explain simple thing','Reaction face close-up','Reading mean comments','Vlog b-roll','Behind the scenes','Discord plug','Social media plug','Clickbait title reference','Previous video mention'],
+  gaming: ['Rage moment','Clutch play','Game crash','Voice chat chaos','Getting stream sniped','Achievement unlocked','Death to same enemy 3x','Blaming teammates','"I swear this never happens"','Camping spotted','Lag complaint','Controller throw threat','New strategy attempt','Chat backseat gaming','Stream alert interrupts','Accidental spoiler','Trash talk','Victory royale/win','Disconnect','Settings change mid-game','Tutorial skipped','Pro tip ignored','Rage quit attempt','Game glitch found'],
+};
+
+let ably, ch, tws;
+let squares = Array(24).fill('');
+let gameMode = 'bingo';
+let players = {}; // username -> {card, marked, hasBingo}
+let calledSquares = new Set(); // indices 0-23 that have been called
+let gameActive = false;
+let calledHistory = [];
+let ablyKey = '', twChannel = '';
+
+// ── CONNECT ──────────────────────────────────────────────────────────────────
+function doConnect(){
+  ablyKey = document.getElementById('inp-key').value.trim();
+  twChannel = document.getElementById('inp-ch').value.trim().toLowerCase();
+  const err = document.getElementById('login-err');
+  if(!ablyKey){err.textContent='Enter your Ably API key';return;}
+  if(!twChannel){err.textContent='Enter your Twitch channel';return;}
+  localStorage.setItem('bingo-key',ablyKey);
+  localStorage.setItem('bingo-ch',twChannel);
+  err.textContent='Connecting...';
+
+  ably = new Ably.Realtime({key:ablyKey});
+  ably.connection.on('connected',()=>{
+    ch = ably.channels.get('bingo-game');
+    ch.subscribe('player-join', msg=>{
+      const {username, cardSeed} = msg.data;
+      if(!players[username]){
+        players[username] = {card: generateCard(cardSeed), marked: new Set(), hasBingo:false, hasWon:false};
+        renderPlayerList();
+      }
+    });
+    ch.subscribe('player-mark', msg=>{
+      const {username, idx} = msg.data;
+      const p = players[username];
+      if(!p) return;
+      p.marked.add(idx);
+      checkPlayerBingo(username);
+      renderPlayerList();
+    });
+
+    setConn(true);
+    document.getElementById('login-view').style.display='none';
+    document.getElementById('main-view').style.display='block';
+    updateViewerUrl();
+    buildGridEditor();
+    if(twChannel) connectTwitch();
+  });
+  ably.connection.on('failed',()=>err.textContent='Connection failed — check API key');
+}
+
+window.addEventListener('load',()=>{
+  const k=localStorage.getItem('bingo-key'),c=localStorage.getItem('bingo-ch');
+  if(k)document.getElementById('inp-key').value=k;
+  if(c)document.getElementById('inp-ch').value=c;
+});
+
+function setConn(ok){
+  document.getElementById('dot').className='dot'+(ok?' ok':'');
+  document.getElementById('conn-lbl').textContent=ok?'Connected':'Disconnected';
+}
+
+function updateViewerUrl(){
+  const base = location.origin + location.pathname.replace('bingo-host','bingo-play');
+  const url = base + '?key=' + encodeURIComponent(ablyKey) + '&ch=' + encodeURIComponent(twChannel);
+  document.getElementById('viewer-url').textContent = url;
+}
+
+// ── TWITCH ───────────────────────────────────────────────────────────────────
+function connectTwitch(){
+  tws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+  tws.onopen=()=>{
+    tws.send('PASS oauth:x');
+    tws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+    tws.send('JOIN #'+twChannel);
+  };
+  tws.onmessage=e=>{
+    e.data.split('\r\n').forEach(raw=>{
+      if(!raw)return;
+      if(raw.indexOf('PING')===0){tws.send('PONG :tmi.twitch.tv');return;}
+      if(raw.indexOf('PRIVMSG')===-1)return;
+      const um=raw.match(/display-name=([^;\s]+)/);
+      const mm=raw.match(/PRIVMSG #[^\s]+ :(.+)/);
+      if(!um||!mm)return;
+      const user=um[1].trim();
+      const msg=mm[1].trim().toLowerCase();
+      if(msg==='!join'||msg==='join'){
+        if(!players[user] && gameActive){
+          const seed=Math.floor(Math.random()*999999);
+          players[user]={card:generateCard(seed),marked:new Set(),hasBingo:false,hasWon:false};
+          ch.publish('game-join-confirm',{username:user, cardSeed:seed, squares, mode:gameMode});
+          renderPlayerList();
+        }
+      }
+    });
+  };
+  tws.onclose=()=>setTimeout(connectTwitch,3000);
+  tws.onerror=()=>tws.close();
+}
+
+// ── GRID EDITOR ───────────────────────────────────────────────────────────────
+function buildGridEditor(){
+  const grid = document.getElementById('grid-editor');
+  grid.innerHTML='';
+  let sqIdx=0;
+  for(let row=0;row<5;row++){
+    for(let col=0;col<5;col++){
+      const isFree = row===2&&col===2;
+      const div=document.createElement('div');
+      div.className='grid-cell'+(isFree?' free-space':'');
+      if(isFree){
+        div.innerHTML='<span class="cell-num">FREE</span><input type="text" value="FREE SPACE" readonly/>';
+      } else {
+        const idx=sqIdx++;
+        div.innerHTML=`<span class="cell-num">${idx+1}</span><input type="text" placeholder="Square ${idx+1}" value="${esc(squares[idx]||'')}" oninput="squares[${idx}]=this.value"/>`;
+      }
+      grid.appendChild(div);
+    }
+  }
+}
+
+function clearAll(){squares=Array(24).fill('');buildGridEditor();}
+
+function loadExample(){
+  const keys=Object.keys(EXAMPLES);
+  const ex=EXAMPLES[keys[Math.floor(Math.random()*keys.length)]];
+  squares=[...ex];
+  buildGridEditor();
+}
+
+// ── MODES ──────────────────────────────────────────────────────────────────
+function setMode(m){
+  gameMode=m;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.toggle('active',b.dataset.mode===m));
+}
+
+// ── GAME ──────────────────────────────────────────────────────────────────────
+function startGame(){
+  const filled=squares.filter(s=>s.trim()).length;
+  if(filled<24){
+    alert(`Fill in all 24 squares first (${24-filled} still empty)`);return;
+  }
+  gameActive=true;
+  players={};
+  calledSquares=new Set();
+  calledHistory=[];
+  document.getElementById('setup-panel').style.display='none';
+  document.getElementById('game-panel').style.display='flex';
+  document.getElementById('btn-start').style.display='none';
+  document.getElementById('btn-end').style.display='';
+  document.getElementById('btn-setup').style.display='';
+  document.getElementById('game-phase').textContent='GAME ACTIVE — '+modeName(gameMode).toUpperCase();
+  document.getElementById('winner-banner').style.display='none';
+  buildCalledGrid();
+  renderPlayerList();
+  // Announce game start
+  ch.publish('game-start',{squares, mode:gameMode});
+  updateViewerUrl();
+}
+
+function endGame(){
+  gameActive=false;
+  document.getElementById('game-phase').textContent='SETUP';
+  document.getElementById('btn-start').style.display='';
+  document.getElementById('btn-end').style.display='none';
+  document.getElementById('btn-setup').style.display='none';
+  document.getElementById('setup-panel').style.display='flex';
+  document.getElementById('game-panel').style.display='none';
+  ch.publish('game-end',{});
+}
+
+function showSetup(){
+  document.getElementById('setup-panel').style.display='flex';
+  document.getElementById('game-panel').style.display='none';
+}
+
+function buildCalledGrid(){
+  const grid=document.getElementById('called-grid');
+  grid.innerHTML='';
+  let sqIdx=0;
+  for(let row=0;row<5;row++){
+    for(let col=0;col<5;col++){
+      const isFree=row===2&&col===2;
+      const div=document.createElement('div');
+      div.className='called-cell'+(isFree?' free':'');
+      if(isFree){div.textContent='⭐ FREE';div.style.cursor='default';}
+      else{
+        const idx=sqIdx++;
+        div.textContent=squares[idx]||'';
+        div.dataset.idx=idx;
+        div.classList.toggle('called',calledSquares.has(idx));
+        div.onclick=()=>toggleCall(idx,div);
+      }
+      grid.appendChild(div);
+    }
+  }
+  updateCalledCount();
+}
+
+function toggleCall(idx,el){
+  if(calledSquares.has(idx)){
+    calledSquares.delete(idx);
+    calledHistory=calledHistory.filter(i=>i!==idx);
+    el.classList.remove('called');
+  } else {
+    calledSquares.add(idx);
+    calledHistory.push(idx);
+    el.classList.add('called');
+  }
+  updateCalledCount();
+  // Broadcast to all viewers
+  ch.publish('square-called',{calledSquares:[...calledSquares]});
+  // Recheck all players
+  Object.keys(players).forEach(u=>checkPlayerBingo(u));
+  renderPlayerList();
+}
+
+function uncallLast(){
+  if(!calledHistory.length)return;
+  const idx=calledHistory.pop();
+  calledSquares.delete(idx);
+  buildCalledGrid();
+  ch.publish('square-called',{calledSquares:[...calledSquares]});
+  Object.keys(players).forEach(u=>checkPlayerBingo(u));
+  renderPlayerList();
+}
+
+function updateCalledCount(){
+  document.getElementById('called-count').textContent=calledSquares.size;
+}
+
+// ── CARD GENERATION ───────────────────────────────────────────────────────────
+function generateCard(seed){
+  // Seeded shuffle so same seed = same card
+  let s=seed;
+  function rand(){s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;}
+  const indices=[...Array(24).keys()];
+  for(let i=indices.length-1;i>0;i--){
+    const j=Math.floor(rand()*(i+1));
+    [indices[i],indices[j]]=[indices[j],indices[i]];
+  }
+  return indices; // card[position] = square index
+}
+
+// ── BINGO CHECK ───────────────────────────────────────────────────────────────
+function checkPlayerBingo(username){
+  const p=players[username];
+  if(!p||p.hasWon)return;
+
+  // Build 5x5 grid of marked status
+  // Position 0-24, position 12 = free space
+  const grid=Array(25).fill(false);
+  grid[12]=true; // free space
+  p.card.forEach((sqIdx,pos)=>{
+    const actualPos=pos<12?pos:pos+1;
+    if(calledSquares.has(sqIdx)||p.marked.has(sqIdx)){
+      grid[actualPos]=true;
+    }
+  });
+
+  let won=false;
+  const mode=gameMode;
+
+  if(mode==='bingo'){
+    // Check rows
+    for(let r=0;r<5;r++){if([0,1,2,3,4].every(c=>grid[r*5+c])){won=true;break;}}
+    // Check cols
+    if(!won)for(let c=0;c<5;c++){if([0,1,2,3,4].every(r=>grid[r*5+c])){won=true;break;}}
+    // Check diagonals
+    if(!won&&[0,6,12,18,24].every(i=>grid[i]))won=true;
+    if(!won&&[4,8,12,16,20].every(i=>grid[i]))won=true;
+  } else if(mode==='blackout'){
+    won=grid.every(v=>v);
+  } else if(mode==='fourcorners'){
+    won=grid[0]&&grid[4]&&grid[20]&&grid[24];
+  } else if(mode==='x'){
+    won=[0,6,12,18,24].every(i=>grid[i])&&[4,8,12,16,20].every(i=>grid[i]);
+  } else if(mode==='t'){
+    // Top row + middle column
+    won=[0,1,2,3,4].every(i=>grid[i])&&[2,7,12,17,22].every(i=>grid[i]);
+  }
+
+  if(won&&!p.hasWon){
+    p.hasWon=true;
+    p.hasBingo=true;
+    showWinner(username);
+    ch.publish('player-won',{username, mode:gameMode});
+  }
+}
+
+function showWinner(username){
+  const banner=document.getElementById('winner-banner');
+  banner.style.display='flex';
+  document.getElementById('winner-name').textContent=username.toUpperCase();
+  document.getElementById('winner-mode').textContent=modeName(gameMode).toUpperCase()+' — BINGO!';
+}
+
+function modeName(m){
+  return{bingo:'Standard Bingo',blackout:'Blackout',fourcorners:'Four Corners',x:'X Pattern',t:'T Shape'}[m]||m;
+}
+
+function renderPlayerList(){
+  const list=document.getElementById('player-list');
+  const entries=Object.entries(players);
+  document.getElementById('player-count').textContent=entries.length;
+  if(!entries.length){
+    list.innerHTML='<div style="padding:16px;text-align:center;font-size:.76rem;color:var(--muted)">No players yet — share the link!</div>';
+    return;
+  }
+  // Sort by progress
+  entries.sort(([,a],[,b])=>(b.marked.size+calledSquares.size)-(a.marked.size+calledSquares.size));
+  list.innerHTML='';
+  entries.forEach(([name,p])=>{
+    const total=24,marked=p.marked.size+[...calledSquares].filter(i=>p.card.includes(i)).length;
+    const div=document.createElement('div');
+    div.className='pl-item';
+    div.innerHTML=`<span class="pl-name">${esc(name)}</span>
+      <span class="pl-prog">${Math.min(total,marked)}/${total}</span>
+      ${p.hasBingo?'<span class="pl-bingo">BINGO!</span>':''}`;
+    list.appendChild(div);
+  });
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+</script>
+</body>
+</html>

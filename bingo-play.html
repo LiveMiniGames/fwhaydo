@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0">
+<title>Bingo — FwHaydo</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
+  --purple:#9147ff;--purple2:#772ce8;--purple3:#bf94ff;
+  --green:#2dc653;--red:#e63946;--gold:#f4b942;
+  --text:#efeff1;--muted:#8888a0;
+}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;
+  padding:12px;overflow-x:hidden}
+
+/* WAITING */
+#waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:100vh;gap:16px;text-align:center;padding:20px}
+#wait-title{font-family:'Anton',sans-serif;font-size:3rem;color:var(--purple);letter-spacing:2px}
+#wait-sub{font-size:.9rem;color:var(--muted);line-height:1.6}
+.join-btn{background:var(--purple);color:#fff;border:none;border-radius:8px;
+  padding:16px 40px;font-size:1.1rem;font-weight:900;cursor:pointer;
+  font-family:inherit;letter-spacing:.5px;transition:all .2s;margin-top:8px}
+.join-btn:hover{background:var(--purple2);transform:translateY(-2px)}
+#name-inp{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:12px 16px;color:#fff;font-size:.95rem;font-family:inherit;
+  width:100%;max-width:280px;outline:none;text-align:center}
+#name-inp:focus{border-color:var(--purple)}
+#status-msg{font-size:.8rem;color:var(--muted);min-height:20px}
+#status-msg.ok{color:var(--green)}
+#status-msg.err{color:var(--red)}
+
+/* BINGO CARD */
+#game-view{display:none;flex-direction:column;align-items:center;gap:10px;width:100%;max-width:480px}
+
+#card-header{width:100%;display:flex;justify-content:space-between;align-items:center}
+#player-tag{font-size:.78rem;font-weight:700;color:var(--muted)}
+#mode-tag{font-size:.72rem;font-weight:800;color:var(--purple3);background:rgba(145,71,255,.15);
+  border:1px solid rgba(145,71,255,.3);border-radius:4px;padding:3px 8px;letter-spacing:.5px}
+
+/* BINGO header letters */
+#bingo-letters{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%}
+.bingo-letter{background:var(--purple);border-radius:6px;padding:8px 4px;
+  text-align:center;font-family:'Anton',sans-serif;font-size:1.4rem;color:#fff;letter-spacing:1px}
+
+/* Card grid */
+#bingo-card{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;width:100%}
+.bingo-cell{
+  background:var(--card);border:2px solid var(--border);border-radius:6px;
+  padding:6px 4px;min-height:60px;display:flex;align-items:center;justify-content:center;
+  text-align:center;font-size:.68rem;font-weight:700;line-height:1.3;cursor:pointer;
+  transition:all .2s;position:relative;
+}
+.bingo-cell:hover{border-color:var(--purple);background:rgba(145,71,255,.1)}
+.bingo-cell.marked{
+  background:linear-gradient(135deg,rgba(145,71,255,.35),rgba(119,44,232,.25));
+  border-color:var(--purple);color:var(--purple3);
+}
+.bingo-cell.called{
+  background:linear-gradient(135deg,rgba(45,198,83,.25),rgba(34,168,74,.15));
+  border-color:var(--green);
+}
+.bingo-cell.called.marked{
+  background:linear-gradient(135deg,rgba(45,198,83,.4),rgba(34,168,74,.3));
+  border-color:var(--green);
+}
+.bingo-cell.free{
+  background:linear-gradient(135deg,rgba(244,185,66,.2),rgba(224,169,0,.1));
+  border-color:var(--gold);cursor:default;
+}
+.bingo-cell.winning-cell{
+  animation:winPulse .6s ease infinite alternate;
+}
+@keyframes winPulse{
+  from{border-color:var(--gold);box-shadow:0 0 8px rgba(244,185,66,.4)}
+  to{border-color:#fff;box-shadow:0 0 20px rgba(244,185,66,.8)}
+}
+.check-mark{position:absolute;top:3px;right:5px;font-size:.7rem}
+
+/* Progress */
+#progress-wrap{width:100%;background:var(--card);border:1px solid var(--border);
+  border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px}
+#prog-bar-bg{flex:1;height:8px;background:var(--border);border-radius:4px;overflow:hidden}
+#prog-bar{height:100%;background:linear-gradient(90deg,var(--purple),var(--purple3));
+  border-radius:4px;transition:width .4s ease;width:0%}
+#prog-label{font-size:.72rem;font-weight:800;color:var(--muted);min-width:40px;text-align:right}
+
+/* Win banner */
+#win-banner{
+  display:none;background:rgba(244,185,66,.12);border:3px solid var(--gold);
+  border-radius:12px;padding:20px;text-align:center;width:100%;flex-direction:column;gap:8px;
+  animation:winPop .4s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes winPop{0%{transform:scale(0)}100%{transform:scale(1)}}
+#win-banner.show{display:flex}
+#win-title{font-family:'Anton',sans-serif;font-size:2.5rem;color:var(--gold);letter-spacing:2px}
+#win-sub{font-size:.85rem;color:rgba(255,255,255,.6)}
+
+/* Notification toast */
+#notif{position:fixed;bottom:16px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:var(--surface);border:1px solid var(--border);border-radius:6px;
+  padding:10px 18px;font-size:.8rem;color:#fff;z-index:999;
+  transition:transform .25s;pointer-events:none;white-space:nowrap}
+#notif.show{transform:translateX(-50%) translateY(0)}
+
+/* Called square flash */
+#called-flash{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);
+  background:rgba(0,0,0,.9);border:3px solid var(--purple);border-radius:12px;
+  padding:20px 36px;text-align:center;z-index:500;pointer-events:none;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1);}
+#called-flash.show{transform:translate(-50%,-50%) scale(1)}
+#cf-label{font-size:.7rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:2px;margin-bottom:6px}
+#cf-text{font-size:1.3rem;font-weight:900;color:#fff}
+</style>
+</head>
+<body>
+
+<!-- WAITING TO JOIN -->
+<div id="waiting">
+  <div id="wait-title">🎱 BINGO</div>
+  <div id="wait-sub">Enter your Twitch username and join when the streamer starts a game!</div>
+  <input id="name-inp" type="text" placeholder="Your Twitch username" maxlength="25" autocomplete="off"/>
+  <button class="join-btn" onclick="joinGame()">JOIN GAME</button>
+  <div id="status-msg"></div>
+</div>
+
+<!-- BINGO CARD -->
+<div id="game-view">
+  <div id="card-header">
+    <span id="player-tag">Loading...</span>
+    <span id="mode-tag">BINGO</span>
+  </div>
+  <div id="bingo-letters">
+    <div class="bingo-letter">B</div>
+    <div class="bingo-letter">I</div>
+    <div class="bingo-letter">N</div>
+    <div class="bingo-letter">G</div>
+    <div class="bingo-letter">O</div>
+  </div>
+  <div id="bingo-card"></div>
+  <div id="progress-wrap">
+    <div id="prog-bar-bg"><div id="prog-bar"></div></div>
+    <div id="prog-label">0/24</div>
+  </div>
+  <div id="win-banner">
+    <div id="win-title">🎉 BINGO!</div>
+    <div id="win-sub">The host has been notified!</div>
+  </div>
+</div>
+
+<div id="notif"></div>
+<div id="called-flash">
+  <div id="cf-label">Square Called!</div>
+  <div id="cf-text"></div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+const params  = new URLSearchParams(location.search);
+const KEY     = params.get('key') || '';
+const CHANNEL = params.get('ch')  || 'fwhaydo';
+
+let ably, ch;
+let myCard    = null;  // Array of 24 square indices (positions 0-11, 13-24 = my card layout)
+let mySquares = [];    // The actual square texts
+let calledSet = new Set();
+let markedSet = new Set();  // indices I manually marked
+let username  = '';
+let gameMode  = 'bingo';
+let hasWon    = false;
+let gameActive = false;
+
+// ── CONNECT ──────────────────────────────────────────────────────────────────
+if(!KEY){
+  document.getElementById('status-msg').textContent='Missing key in URL — use the link from the host';
+  document.getElementById('status-msg').className='err';
+} else {
+  ably = new Ably.Realtime({key:KEY});
+  ably.connection.on('connected',()=>{
+    ch = ably.channels.get('bingo-game');
+
+    // Game just started
+    ch.subscribe('game-start', msg=>{
+      mySquares = msg.data.squares;
+      gameMode  = msg.data.mode;
+      gameActive = true;
+      calledSet = new Set();
+      markedSet = new Set();
+      hasWon    = false;
+      if(username) doJoin();
+    });
+
+    // Host confirmed our join
+    ch.subscribe('game-join-confirm', msg=>{
+      if(msg.data.username !== username) return;
+      myCard    = msg.data.card;
+      mySquares = msg.data.squares;
+      gameMode  = msg.data.mode;
+      gameActive = true;
+      showCard();
+    });
+
+    // Square called
+    ch.subscribe('square-called', msg=>{
+      calledSet = new Set(msg.data.calledSquares);
+      renderCard();
+      // Flash if one of my squares was called
+      const newlyAffected = myCard && myCard.filter(idx=>calledSet.has(idx));
+      if(newlyAffected && newlyAffected.length>0){
+        const lastCalled=[...calledSet].pop();
+        const pos=myCard ? myCard.indexOf(lastCalled) : -1;
+        if(pos>=0) showCalledFlash(mySquares[lastCalled]);
+      }
+    });
+
+    // Someone won
+    ch.subscribe('player-won', msg=>{
+      if(msg.data.username !== username){
+        showNotif('🎉 '+msg.data.username+' got BINGO!');
+      }
+    });
+
+    ch.subscribe('game-end', ()=>{
+      gameActive=false;
+      showNotif('Game ended by host');
+    });
+
+    document.getElementById('status-msg').className='ok';
+    document.getElementById('status-msg').textContent='Connected! Enter your username and join.';
+  });
+}
+
+// ── JOIN ──────────────────────────────────────────────────────────────────────
+function joinGame(){
+  const nm = document.getElementById('name-inp').value.trim();
+  if(!nm){
+    setStatus('Enter your Twitch username','err');return;
+  }
+  if(!ch){setStatus('Not connected yet — wait a moment','err');return;}
+  username = nm;
+  setStatus('Joining...','');
+
+  // Tell host we want to join
+  ch.publish('player-join',{username, cardSeed: Math.floor(Math.random()*999999)});
+
+  // If no confirmation in 3s, show error
+  setTimeout(()=>{
+    if(!myCard) setStatus('No active game right now — wait for the host to start one','err');
+  },3000);
+}
+
+function doJoin(){
+  const seed=Math.floor(Math.random()*999999);
+  ch.publish('player-join',{username, cardSeed:seed});
+}
+
+function setStatus(msg,cls){
+  const el=document.getElementById('status-msg');
+  el.textContent=msg;el.className=cls;
+}
+
+// ── CARD ──────────────────────────────────────────────────────────────────────
+function generateCard(seed){
+  let s=seed;
+  function rand(){s=(s*1664525+1013904223)&0xffffffff;return(s>>>0)/0xffffffff;}
+  const indices=[...Array(24).keys()];
+  for(let i=indices.length-1;i>0;i--){
+    const j=Math.floor(rand()*(i+1));
+    [indices[i],indices[j]]=[indices[j],indices[i]];
+  }
+  return indices;
+}
+
+function showCard(){
+  document.getElementById('waiting').style.display='none';
+  document.getElementById('game-view').style.display='flex';
+  document.getElementById('player-tag').textContent=username;
+  document.getElementById('mode-tag').textContent={
+    bingo:'STANDARD BINGO',blackout:'BLACKOUT',fourcorners:'FOUR CORNERS',x:'X PATTERN',t:'T SHAPE'
+  }[gameMode]||gameMode.toUpperCase();
+  renderCard();
+}
+
+function renderCard(){
+  const grid=document.getElementById('bingo-card');
+  grid.innerHTML='';
+  let sqPos=0;
+  for(let row=0;row<5;row++){
+    for(let col=0;col<5;col++){
+      const isFree=row===2&&col===2;
+      const cell=document.createElement('div');
+      cell.className='bingo-cell';
+      if(isFree){
+        cell.classList.add('free');
+        cell.innerHTML='⭐<br><span style="font-size:.65rem">FREE</span>';
+      } else {
+        const cardPos=sqPos++;
+        const sqIdx=myCard ? myCard[cardPos] : cardPos;
+        const text=mySquares[sqIdx]||'';
+        const isCalled=calledSet.has(sqIdx);
+        const isMarked=markedSet.has(sqIdx);
+        if(isCalled)cell.classList.add('called');
+        if(isMarked)cell.classList.add('marked');
+        if(isCalled||isMarked)cell.innerHTML=`<span class="check-mark">✓</span>${esc(text)}`;
+        else cell.textContent=text;
+        cell.onclick=()=>toggleMark(sqIdx,cardPos);
+        cell.dataset.idx=sqIdx;
+      }
+      grid.appendChild(cell);
+    }
+  }
+  updateProgress();
+  checkWin();
+}
+
+function toggleMark(sqIdx){
+  if(markedSet.has(sqIdx))markedSet.delete(sqIdx);
+  else{
+    markedSet.add(sqIdx);
+    ch.publish('player-mark',{username,idx:sqIdx});
+  }
+  renderCard();
+}
+
+function updateProgress(){
+  if(!myCard)return;
+  const total=24;
+  let marked=0;
+  myCard.forEach(idx=>{if(calledSet.has(idx)||markedSet.has(idx))marked++;});
+  const pct=(marked/total)*100;
+  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-label').textContent=marked+'/'+total;
+}
+
+function checkWin(){
+  if(!myCard||hasWon)return;
+  const grid=Array(25).fill(false);
+  grid[12]=true;
+  myCard.forEach((sqIdx,pos)=>{
+    const actualPos=pos<12?pos:pos+1;
+    if(calledSet.has(sqIdx)||markedSet.has(sqIdx))grid[actualPos]=true;
+  });
+
+  let won=false;
+  const winCells=[];
+  if(gameMode==='bingo'){
+    for(let r=0;r<5;r++){const row=[0,1,2,3,4].map(c=>r*5+c);if(row.every(i=>grid[i])){won=true;winCells.push(...row);break;}}
+    if(!won)for(let c=0;c<5;c++){const col=[0,1,2,3,4].map(r=>r*5+c);if(col.every(i=>grid[i])){won=true;winCells.push(...col);break;}}
+    if(!won){const d1=[0,6,12,18,24];if(d1.every(i=>grid[i])){won=true;winCells.push(...d1);}}
+    if(!won){const d2=[4,8,12,16,20];if(d2.every(i=>grid[i])){won=true;winCells.push(...d2);}}
+  } else if(gameMode==='blackout'){won=grid.every(v=>v);if(won)winCells.push(...Array(25).keys());}
+  else if(gameMode==='fourcorners'){if(grid[0]&&grid[4]&&grid[20]&&grid[24]){won=true;winCells.push(0,4,20,24);}}
+  else if(gameMode==='x'){if([0,6,12,18,24].every(i=>grid[i])&&[4,8,12,16,20].every(i=>grid[i])){won=true;winCells.push(0,4,6,8,12,16,18,20,24);}}
+  else if(gameMode==='t'){if([0,1,2,3,4].every(i=>grid[i])&&[2,7,12,17,22].every(i=>grid[i])){won=true;winCells.push(0,1,2,3,4,7,12,17,22);}}
+
+  if(won){
+    hasWon=true;
+    highlightWinCells(winCells);
+    document.getElementById('win-banner').classList.add('show');
+    ch.publish('player-won',{username,mode:gameMode});
+  }
+}
+
+function highlightWinCells(cells){
+  const allCells=document.querySelectorAll('.bingo-cell');
+  cells.forEach(pos=>{if(allCells[pos])allCells[pos].classList.add('winning-cell');});
+}
+
+function showCalledFlash(text){
+  document.getElementById('cf-text').textContent=text;
+  const el=document.getElementById('called-flash');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2000);
+}
+
+let notifT;
+function showNotif(msg){
+  const el=document.getElementById('notif');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(notifT);notifT=setTimeout(()=>el.classList.remove('show'),3000);
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+</script>
+</body>
+</html>
