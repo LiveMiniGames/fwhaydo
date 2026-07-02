@@ -175,40 +175,60 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
 
 <script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
 <script>
-const params  = new URLSearchParams(location.search);
-const KEY     = params.get('key') || '';
-const CHANNEL = params.get('ch')  || 'fwhaydo';
+// ── STARTUP: handle OAuth callback or restore params ─────────────────────────
+// When returning from Twitch OAuth, URL looks like: bingo-play.html#access_token=xxx
+// We need to restore the key/ch params from localStorage first
+(async function init(){
+  // Check if we're returning from Twitch OAuth (hash has access_token)
+  if(location.hash.includes('access_token')){
+    const saved = localStorage.getItem('bingo-params');
+    if(saved){
+      // Rebuild the proper URL with params + hash
+      history.replaceState(null,'', location.pathname + saved + location.hash);
+    }
+  }
 
+  const urlParams = new URLSearchParams(location.search);
+  const KEY     = urlParams.get('key') || '';
+  const CHANNEL = urlParams.get('ch')  || 'fwhaydo';
+
+  // Make KEY and CHANNEL available globally
+  window._BINGO_KEY = KEY;
+  window._BINGO_CH  = CHANNEL;
+
+  if(!KEY){
+    document.getElementById('waiting').style.display='flex';
+    document.getElementById('status-msg').textContent='Missing key in URL — use the link from the host';
+    document.getElementById('status-msg').className='err';
+    return;
+  }
+
+  // Handle OAuth callback if present
+  if(location.hash.includes('access_token')){
+    const loggedIn = await handleOAuthCallback(KEY, CHANNEL);
+    if(!loggedIn){
+      document.getElementById('waiting').style.display='flex';
+    }
+    return; // Ably connects after login confirmed
+  }
+
+  // Normal load — show login button
+  document.getElementById('waiting').style.display='flex';
+})();
+
+// These will be set properly after init
+let KEY_VAL = '', CH_VAL = '';
 let ably, ch;
-let myCard    = null;  // Array of 24 square indices (positions 0-11, 13-24 = my card layout)
-let mySquares = [];    // The actual square texts
+let myCard    = null;
+let mySquares = [];
 let calledSet = new Set();
-let markedSet = new Set();  // indices I manually marked
+let markedSet = new Set();
 let username  = '';
 let gameMode  = 'bingo';
 let hasWon    = false;
 let gameActive = false;
 
-// ── CONNECT ──────────────────────────────────────────────────────────────────
-if(!KEY){
-  // Check if returning from OAuth with key in session
-  const saved = sessionStorage.getItem('bingo-params');
-  if(saved && saved.includes('key=')){
-    location.href = location.pathname + saved + location.hash;
-  } else {
-    document.getElementById('waiting').style.display='flex';
-    document.getElementById('status-msg').textContent='Missing key in URL — use the link from the host';
-    document.getElementById('status-msg').className='err';
-  }
-} else {
-  // Check for OAuth callback first
-  handleOAuthCallback().then(loggedIn => {
-    if(!loggedIn){
-      // Not returning from OAuth — show login button
-      document.getElementById('waiting').style.display='flex';
-    }
-  });
-
+function startAbly(KEY, CHANNEL){
   ably = new Ably.Realtime({key:KEY});
   ably.connection.on('connected',()=>{
     ch = ably.channels.get('bingo-game');
@@ -270,27 +290,20 @@ const REDIRECT_URI = location.origin + location.pathname;
 
 function twitchLogin(){
   // Store current params so we can restore after redirect
-  sessionStorage.setItem('bingo-params', location.search);
+  localStorage.setItem('bingo-params', location.search);
   const authUrl = `https://id.twitch.tv/oauth2/authorize?client_id=${TWITCH_CLIENT_ID}&redirect_uri=${encodeURIComponent(REDIRECT_URI)}&response_type=token&scope=user:read:email`;
   location.href = authUrl;
 }
 
-async function handleOAuthCallback(){
+async function handleOAuthCallback(KEY, CHANNEL){
   const hash = location.hash;
   if(!hash.includes('access_token')) return false;
-  const params = new URLSearchParams(hash.slice(1));
-  const token = params.get('access_token');
+  const hashParams = new URLSearchParams(hash.slice(1));
+  const token = hashParams.get('access_token');
   if(!token) return false;
 
-  // Restore original query params
-  const savedParams = sessionStorage.getItem('bingo-params');
-  if(savedParams) {
-    // Update URL to restore key and ch params without the hash
-    const newUrl = location.pathname + savedParams;
-    history.replaceState(null,'',newUrl);
-  } else {
-    history.replaceState(null,'',location.pathname + location.search);
-  }
+  // Clean hash from URL
+  history.replaceState(null,'', location.pathname + location.search);
 
   // Fetch Twitch username
   try{
@@ -301,13 +314,14 @@ async function handleOAuthCallback(){
     const user = data.data && data.data[0];
     if(user){
       username = user.display_name;
-      // Show logged in state
       document.getElementById('waiting').style.display='none';
       document.getElementById('logged-in-wait').style.display='flex';
       document.getElementById('user-name').textContent = username;
       if(user.profile_image_url){
         document.getElementById('user-avatar').innerHTML = `<img src="${user.profile_image_url}" style="width:100%;height:100%;object-fit:cover"/>`;
       }
+      // Now start Ably with the restored KEY
+      startAbly(KEY, CHANNEL);
       return true;
     }
   }catch(e){console.error('Twitch user fetch failed',e);}
@@ -317,7 +331,21 @@ async function handleOAuthCallback(){
 // ── JOIN ──────────────────────────────────────────────────────────────────────
 function joinGame(){
   if(!username){ twitchLogin(); return; }
+  // Start Ably if not already started (e.g. user just logged in)
+  if(!ably && window._BINGO_KEY){
+    startAbly(window._BINGO_KEY, window._BINGO_CH);
+    setStatus2('Connecting...','');
+    setTimeout(()=>{
+      if(ch) doPublishJoin();
+      else setStatus2('Still connecting — try again in a moment','');
+    },2000);
+    return;
+  }
   if(!ch){ setStatus2('Not connected yet — wait a moment','err'); return; }
+  doPublishJoin();
+}
+
+function doPublishJoin(){
   setStatus2('Joining...','');
   ch.publish('player-join',{username, cardSeed: Math.floor(Math.random()*999999)});
   setTimeout(()=>{
