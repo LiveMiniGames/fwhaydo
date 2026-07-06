@@ -143,7 +143,7 @@
   window.addEventListener('resize', resize);
 
   // ---------- Arena grid ----------
-  const COLS = 7, ROWS = 5;
+  const COLS = 13, ROWS = 9;
   let cellSize = 60, offX = 0, offY = 0;
 
   function computeLayout(){
@@ -254,30 +254,39 @@
   }
 
   // ---------- Difficulty scaling ----------
-  function getDifficulty(elapsed){
-    const spawnInterval = Math.max(0.65, 3.0 - elapsed*0.022);
-    const ballSpeed = Math.min(10, 3.0 + elapsed*0.055);
-    const telegraphTime = Math.max(0.75, 1.7 - elapsed*0.010);
-    return {spawnInterval, ballSpeed, telegraphTime};
+  // Per design: the warning time and ball speed NEVER change -- the only thing
+  // that ramps up over time is how many balls get thrown at once, from more angles.
+  const TELEGRAPH_TIME = 5.0; // fixed 5s warning, always
+  const BALL_SPEED = 3.5; // fixed speed, always
+  const SPAWN_INTERVAL = 4.0; // fixed time between volleys, always
+
+  function ballsPerVolley(elapsed){
+    // 1 ball for the first 25s, then +1 every 25s, capped at 6 simultaneous balls
+    return Math.min(6, 1 + Math.floor(elapsed/25));
   }
   function currentWave(elapsed){
-    return 1 + Math.floor(elapsed/15);
+    return ballsPerVolley(elapsed);
   }
 
-  function spawnBall(){
+  function spawnVolley(){
     const elapsed = (performance.now()-roundStartTime)/1000;
-    const diff = getDifficulty(elapsed);
-    const axis = Math.random()<0.5 ? 'row' : 'col';
-    const dir = Math.random()<0.5 ? 1 : -1;
-    let ball;
-    if(axis==='row'){
-      const index = Math.floor(Math.random()*ROWS);
-      ball = { axis, index, dir, pos: dir===1 ? -1 : COLS, state:'telegraph', telegraphElapsed:0, telegraphTime: diff.telegraphTime, speed: diff.ballSpeed };
-    } else {
-      const index = Math.floor(Math.random()*COLS);
-      ball = { axis, index, dir, pos: dir===1 ? -1 : ROWS, state:'telegraph', telegraphElapsed:0, telegraphTime: diff.telegraphTime, speed: diff.ballSpeed };
+    const count = ballsPerVolley(elapsed);
+    const used = new Set();
+    for(let i=0;i<count;i++){
+      // guarantee at least one row-mover and one col-mover when there's room for
+      // both, so a multi-ball volley actually comes from multiple angles
+      let axis = i===0 ? 'row' : (i===1 ? 'col' : (Math.random()<0.5?'row':'col'));
+      let dir, index, key, attempts=0;
+      do {
+        dir = Math.random()<0.5 ? 1 : -1;
+        index = axis==='row' ? Math.floor(Math.random()*ROWS) : Math.floor(Math.random()*COLS);
+        key = axis+':'+index+':'+dir;
+        attempts++;
+      } while(used.has(key) && attempts<10);
+      used.add(key);
+      const pos = axis==='row' ? (dir===1 ? -1 : COLS) : (dir===1 ? -1 : ROWS);
+      balls.push({ axis, index, dir, pos, state:'telegraph', telegraphElapsed:0, telegraphTime: TELEGRAPH_TIME, speed: BALL_SPEED });
     }
-    balls.push(ball);
   }
 
   function updateBalls(dt){
@@ -551,8 +560,8 @@
         const elapsed = (performance.now()-roundStartTime)/1000;
         spawnTimer -= dt;
         if(spawnTimer <= 0){
-          spawnBall();
-          spawnTimer = getDifficulty(elapsed).spawnInterval;
+          spawnVolley();
+          spawnTimer = SPAWN_INTERVAL;
         }
         updateBalls(dt);
         document.getElementById('waveNum').textContent = currentWave(elapsed);
