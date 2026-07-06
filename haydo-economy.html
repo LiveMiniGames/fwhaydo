@@ -466,11 +466,13 @@
           });
         } catch(e){
           console.error('LiveObjects setup failed', e);
-          document.getElementById('connectMsg').textContent = 'Could not load the economy database — reload to retry.';
+          const detail = (e && (e.message || e.reason || e.toString())) || 'unknown error';
+          document.getElementById('connectMsg').textContent = 'Could not load the economy database: ' + detail;
         }
       });
-      ably.connection.on('failed', ()=>{
-        document.getElementById('connectMsg').textContent = 'Ably connection failed — check your network and reload.';
+      ably.connection.on('failed', (stateChange)=>{
+        const reason = stateChange && stateChange.reason && stateChange.reason.message;
+        document.getElementById('connectMsg').textContent = 'Ably connection failed' + (reason ? ': ' + reason : ' — check your network and reload.');
       });
     } catch(e){
       document.getElementById('connectMsg').textContent = 'Error starting connection: ' + (e && e.message ? e.message : e);
