@@ -43,7 +43,8 @@
   #playScreen.show { display:flex; }
   #topRow { width:100%; display:flex; justify-content:center; align-items:flex-start; padding:0 10px; }
   #wrongLbl { font-weight:800; font-size:13px; background:#f0f0f0; border:1.5px solid #000; border-radius:12px; padding:6px 14px; margin-bottom:4px; color:#000; }
-  #cycleTimerBox { color:#000; font-weight:900; font-size:22px; background:#f0f0f0; border:2px solid #000; border-radius:14px; padding:6px 20px; }
+  #cycleTimerBox { color:#000; font-weight:900; font-size:22px; background:#f0f0f0; border:2px solid #000; border-radius:14px; padding:8px 20px 6px; text-align:center; }
+  #cycleTimerLabel { font-size:9px; font-weight:800; letter-spacing:1.2px; color:#555; text-transform:uppercase; margin-bottom:2px; }
 
   #hangmanSvgWrap { margin:6px 0; }
 
@@ -61,10 +62,10 @@
 
   #keyboardRow { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; max-width:600px; margin-bottom:8px; }
   .kbTile { width:26px; height:26px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:#f0f0f0; color:#aaa; border:1px solid #ccc; }
-  .kbTile.correct { background:#000; color:#fff; border-color:#000; }
-  .kbTile.wrong { background:#fff; color:#bbb; border-color:#bbb; text-decoration:line-through; }
+  .kbTile.correct { background:#1e7a3a; color:#fff; border-color:#155c2b; }
+  .kbTile.wrong { background:#a12020; color:#fff; border-color:#7a1818; text-decoration:line-through; }
 
-  #resultFlash { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); font-size:clamp(28px,6vw,54px); font-weight:900; text-align:center; z-index:30; pointer-events:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); color:#000; text-shadow:0 0 20px rgba(255,255,255,.9), 0 0 4px rgba(255,255,255,1); }
+  #resultFlash { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); font-size:clamp(24px,5vw,42px); font-weight:900; text-align:center; z-index:30; pointer-events:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); background:#fff; border:4px solid #000; border-radius:20px; padding:20px 40px; box-shadow:0 10px 40px rgba(0,0,0,.3); }
   #resultFlash.show { transform:translate(-50%,-50%) scale(1); }
 
   #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:280px; }
@@ -124,7 +125,7 @@
 
   <div id="playScreen">
     <div id="topRow">
-      <div id="cycleTimerBox"><span id="cycleTimerVal">20</span>s</div>
+      <div id="cycleTimerBox"><div id="cycleTimerLabel">Next letter locks in...</div><span id="cycleTimerVal">20</span>s</div>
     </div>
 
     <div id="wrongLbl">💀 <span id="wrongCount">0</span> / 6 wrong</div>
@@ -171,7 +172,7 @@
   let cycleSeconds = 20;
   let cycleRemaining = 0;
   let cycleActive = false;
-  let currentVotes = new Map(); // letter -> Set of logins
+  let userVotes = new Map(); // login -> the single letter they most recently voted for this cycle
 
   function addFeedItem(text){
     const feed = document.getElementById('feed');
@@ -263,10 +264,22 @@
   }
 
   // ---------- Live vote tally ----------
+  function computeTally(){
+    // rebuilt fresh from userVotes every time -- since userVotes only ever
+    // stores each person's SINGLE most recent vote, this can never double-count
+    // someone who changed their mind mid-cycle
+    const tally = new Map();
+    userVotes.forEach((letter)=>{
+      if(guessedLetters.has(letter)) return;
+      tally.set(letter, (tally.get(letter)||0)+1);
+    });
+    return tally;
+  }
+
   function refreshVoteTally(){
     const list = document.getElementById('voteTallyList');
-    const entries = [];
-    currentVotes.forEach((set,letter)=>{ if(!guessedLetters.has(letter)) entries.push([letter,set.size]); });
+    const tally = computeTally();
+    const entries = [...tally.entries()];
     entries.sort((a,b)=>b[1]-a[1]);
     const maxCount = entries.length ? entries[0][1] : 1;
     list.innerHTML = '';
@@ -286,7 +299,7 @@
 
   // ---------- Round cycle logic ----------
   function startCycle(){
-    currentVotes = new Map();
+    userVotes = new Map();
     cycleRemaining = cycleSeconds;
     cycleActive = true;
     document.getElementById('cycleTimerVal').textContent = cycleRemaining;
@@ -295,16 +308,17 @@
 
   function resolveCycle(){
     cycleActive = false;
+    const tally = computeTally();
     let maxCount = 0;
-    currentVotes.forEach(set=>{ if(set.size > maxCount) maxCount = set.size; });
+    tally.forEach(count=>{ if(count > maxCount) maxCount = count; });
     if(maxCount === 0){
-      showResultFlash('NO VOTES!', '#999');
+      showResultFlash('NO VOTES', '#666');
       addFeedItem('⌛ No letters guessed that round.');
       setTimeout(startCycle, 2200);
       return;
     }
     const candidates = [];
-    currentVotes.forEach((set,letter)=>{ if(set.size === maxCount) candidates.push(letter); });
+    tally.forEach((count,letter)=>{ if(count === maxCount) candidates.push(letter); });
     const chosen = candidates[Math.floor(Math.random()*candidates.length)];
     applyGuess(chosen, maxCount);
   }
@@ -316,14 +330,14 @@
       correctLetters.add(letter);
       refreshWordBlanks();
       addFeedItem(`✅ "${letter}" is in the word! (${voteCount} votes)`);
-      showResultFlash(letter+' ✓', '#000');
+      showResultFlash(letter+' — CORRECT!', '#1a8a3a');
       if(checkWin()) return;
     } else {
       wrongCount++;
       document.getElementById('wrongCount').textContent = wrongCount;
       updateHangmanSVG();
       addFeedItem(`❌ "${letter}" is not in the word. (${voteCount} votes)`);
-      showResultFlash(letter+' ✗', '#000');
+      showResultFlash(letter+' — WRONG!', '#c0392b');
       if(wrongCount >= MAX_WRONG){ setTimeout(()=>triggerEnd(false), 2200); return; }
     }
     setTimeout(startCycle, 2200);
@@ -341,6 +355,7 @@
     const el = document.getElementById('resultFlash');
     el.textContent = text;
     el.style.color = color;
+    el.style.borderColor = color;
     el.classList.remove('show');
     void el.offsetWidth;
     el.classList.add('show');
@@ -432,11 +447,12 @@
   function handleChatMessage(parsed){
     if(state !== 'playing' || !cycleActive) return;
     const msg = parsed.message.trim();
-    if(!/^[a-zA-Z]$/.test(msg)) return; // must be exactly one letter
-    const letter = msg.toUpperCase();
+    if(!/^[a-zA-Z]$/.test(msg)) return; // must be exactly one letter, either case
+    const letter = msg.toUpperCase(); // "u" and "U" both count as the same vote
     if(guessedLetters.has(letter)) return; // already resolved in a previous cycle
-    if(!currentVotes.has(letter)) currentVotes.set(letter, new Set());
-    currentVotes.get(letter).add(parsed.login);
+    // this REPLACES the user's previous vote this cycle rather than adding to both --
+    // if they typed T then changed their mind to U, only U counts, not both
+    userVotes.set(parsed.login, letter);
   }
 
   // ---------- Timer loop ----------
