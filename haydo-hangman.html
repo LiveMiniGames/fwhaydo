@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S HANGMAN</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#ffffff; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#ffffff; overflow:hidden; }
+
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#ffffff; color:#000; text-align:center; padding:20px; z-index:20; overflow-y:auto; }
+  .hidden { display:none !important; }
+
+  .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #000; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  h1.title { font-size:clamp(26px,6vw,46px); font-weight:900; letter-spacing:1px; color:#000; margin-bottom:2px; }
+  .subtitle { font-size:13px; letter-spacing:3px; color:#444; font-weight:700; margin-bottom:20px; text-transform:uppercase; }
+
+  #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:12px; color:#333; }
+  #channelRow input { background:#fff; border:1.5px solid #000; color:#000; border-radius:8px; padding:7px 10px; font-size:13px; width:140px; }
+  #chatStatus { font-size:11px; font-weight:700; }
+
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:15px 40px; font-size:17px; color:#fff; background:#000; box-shadow:0 6px 0 #555, 0 8px 22px rgba(0,0,0,.25); transition: transform .05s ease; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #555; }
+  .btn.secondary { background:#fff; color:#000; border:2px solid #000; box-shadow:0 6px 0 #999; margin-top:12px; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  .howto { margin-top:20px; font-size:12.5px; color:#333; line-height:1.8; max-width:420px; }
+  .howto b { color:#000; }
+
+  .setupBox { max-width:420px; width:100%; margin:10px 0; text-align:left; }
+  .setupBox label { font-size:12px; color:#000; font-weight:800; letter-spacing:1px; text-transform:uppercase; display:block; margin-bottom:6px; }
+  .wordInputRow { display:flex; gap:8px; margin-bottom:18px; }
+  .wordInputRow input { flex:1; background:#fff; border:1.5px solid #000; color:#000; border-radius:10px; padding:12px 14px; font-size:16px; letter-spacing:2px; }
+  .peekBtn { background:#fff; border:1.5px solid #000; border-radius:10px; padding:0 16px; color:#000; cursor:pointer; font-size:16px; }
+  .timerInputRow { display:flex; align-items:center; gap:10px; margin-bottom:20px; }
+  .timerInputRow input { width:90px; background:#fff; border:1.5px solid #000; color:#000; border-radius:10px; padding:10px 12px; font-size:15px; text-align:center; }
+  .timerInputRow span { font-size:13px; color:#555; }
+  .setupWarning { font-size:12px; color:#000; background:#f0f0f0; border:1.5px solid #000; border-radius:10px; padding:10px 14px; margin-bottom:16px; }
+
+  /* ---- Playing screen ---- */
+  #playScreen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; padding:20px; overflow:hidden; }
+  #playScreen.show { display:flex; }
+  #topRow { width:100%; display:flex; justify-content:center; align-items:flex-start; padding:0 10px; }
+  #wrongLbl { font-weight:800; font-size:13px; background:#f0f0f0; border:1.5px solid #000; border-radius:12px; padding:6px 14px; margin-bottom:4px; color:#000; }
+  #cycleTimerBox { color:#000; font-weight:900; font-size:22px; background:#f0f0f0; border:2px solid #000; border-radius:14px; padding:6px 20px; }
+
+  #hangmanSvgWrap { margin:6px 0; }
+
+  #wordBlanks { display:flex; flex-wrap:wrap; justify-content:center; gap:8px; margin:10px 0 16px; max-width:900px; }
+  .letterTile { width:38px; height:48px; border-bottom:4px solid #000; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:#000; }
+  .letterTile.space { border-bottom:none; width:20px; }
+
+  #voteTallyBox { width:100%; max-width:560px; background:#f7f7f7; border:1.5px solid #000; border-radius:14px; padding:12px 16px; margin-bottom:10px; }
+  #voteTallyTitle { font-size:11px; color:#333; letter-spacing:2px; text-transform:uppercase; margin-bottom:8px; text-align:center; }
+  .voteBarRow { display:flex; align-items:center; gap:8px; margin-bottom:5px; }
+  .voteBarLetter { width:22px; font-weight:900; color:#000; font-size:14px; }
+  .voteBarTrack { flex:1; height:14px; background:#e2e2e2; border-radius:7px; overflow:hidden; }
+  .voteBarFill { height:100%; background:#000; border-radius:7px; transition:width .2s ease; }
+  .voteBarCount { width:26px; text-align:right; font-size:12px; color:#333; font-weight:700; }
+
+  #keyboardRow { display:flex; flex-wrap:wrap; justify-content:center; gap:5px; max-width:600px; margin-bottom:8px; }
+  .kbTile { width:26px; height:26px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; background:#f0f0f0; color:#aaa; border:1px solid #ccc; }
+  .kbTile.correct { background:#000; color:#fff; border-color:#000; }
+  .kbTile.wrong { background:#fff; color:#bbb; border-color:#bbb; text-decoration:line-through; }
+
+  #resultFlash { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); font-size:clamp(28px,6vw,54px); font-weight:900; text-align:center; z-index:30; pointer-events:none; transition:transform .25s cubic-bezier(.34,1.56,.64,1); color:#000; text-shadow:0 0 20px rgba(255,255,255,.9), 0 0 4px rgba(255,255,255,1); }
+  #resultFlash.show { transform:translate(-50%,-50%) scale(1); }
+
+  #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:280px; }
+  .feedItem { font-size:12px; font-weight:700; color:#000; background:#fff; border:1px solid #000; border-radius:8px; padding:3px 10px; opacity:0; animation: feedFade 4s ease forwards; }
+  @keyframes feedFade { 0%{opacity:0; transform:translateY(6px);} 10%{opacity:1; transform:translateY(0);} 80%{opacity:1;} 100%{opacity:0;} }
+
+  .statsRow { display:flex; gap:22px; margin:16px 0; }
+  .statBox { background:#f7f7f7; border:1.5px solid #000; border-radius:12px; padding:10px 20px; }
+  .statBox .num { font-size:22px; font-weight:900; color:#000; }
+  .statBox .lbl { font-size:10px; letter-spacing:2px; color:#555; text-transform:uppercase; margin-top:2px; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#000;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1.5px solid #000;border-radius:6px;padding:5px 11px;background:#fff}
+  .back-home:hover{color:#fff;background:#000}
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="gameContainer">
+
+  <div class="overlay" id="startScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title">HAYDO'S HANGMAN</h1>
+    <div class="subtitle">Chat Guesses. You Judge.</div>
+    <div id="channelRow">
+      <label for="channelInput">Twitch channel:</label>
+      <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
+      <div id="chatStatus"></div>
+    </div>
+    <button class="btn" id="connectBtn">CONNECT</button>
+    <div class="howto">
+      You'll privately type in a secret word next — it's <b>never shown on screen</b>, not even to you, once the
+      round starts. Chat guesses by typing a single letter. Every few seconds, whichever unguessed letter was typed
+      by the most <b>different people</b> becomes the next guess — not just whoever spammed it the most.
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="setupScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:32px;">SET THE WORD</h1>
+    <div class="subtitle">This Stays Private</div>
+    <div class="setupWarning">⚠️ This field is masked and clears itself the instant you submit — it will not appear anywhere on screen once the round begins.</div>
+    <div class="setupBox">
+      <label for="wordInput">Secret word or phrase</label>
+      <div class="wordInputRow">
+        <input type="password" id="wordInput" autocomplete="off" spellcheck="false" placeholder="Type it here...">
+        <div class="peekBtn" id="peekBtn" title="Show/hide while typing">👁️</div>
+      </div>
+      <label for="timerInput">Seconds per guess round</label>
+      <div class="timerInputRow">
+        <input type="number" id="timerInput" value="20" min="5" max="120">
+        <span>Recommended: 15–30s depending on chat size</span>
+      </div>
+    </div>
+    <button class="btn" id="startRoundBtn">START ROUND</button>
+  </div>
+
+  <div id="playScreen">
+    <div id="topRow">
+      <div id="cycleTimerBox"><span id="cycleTimerVal">20</span>s</div>
+    </div>
+
+    <div id="wrongLbl">💀 <span id="wrongCount">0</span> / 6 wrong</div>
+    <div id="hangmanSvgWrap"></div>
+    <div id="wordBlanks"></div>
+
+    <div id="voteTallyBox">
+      <div id="voteTallyTitle">LIVE CHAT VOTES</div>
+      <div id="voteTallyList"></div>
+    </div>
+
+    <div id="keyboardRow"></div>
+  </div>
+
+  <div id="resultFlash"></div>
+  <div id="feed"></div>
+
+  <div class="overlay hidden" id="endScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:34px;" id="endTitle">CHAT WINS!</h1>
+    <div class="subtitle" id="endSubtitle">The word was...</div>
+    <div class="title" style="font-size:40px;color:#000;-webkit-text-fill-color:#000;margin:8px 0 4px;" id="revealedWord"></div>
+    <div class="statsRow">
+      <div class="statBox"><div class="num" id="endWrong">0</div><div class="lbl">Wrong Guesses</div></div>
+      <div class="statBox"><div class="num" id="endLetters">0</div><div class="lbl">Letters Solved</div></div>
+    </div>
+    <button class="btn" id="newRoundBtn">NEW ROUND</button>
+    <button class="btn secondary" id="menuBtnEnd">END SESSION / MAIN MENU</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const container = document.getElementById('gameContainer');
+
+  // ---------- Game state ----------
+  const MAX_WRONG = 6;
+  let state = 'menu'; // menu, setup, playing, ended
+  let secretWord = '';
+  let guessedLetters = new Set();
+  let correctLetters = new Set();
+  let wrongCount = 0;
+  let cycleSeconds = 20;
+  let cycleRemaining = 0;
+  let cycleActive = false;
+  let currentVotes = new Map(); // letter -> Set of logins
+
+  function addFeedItem(text){
+    const feed = document.getElementById('feed');
+    const el = document.createElement('div');
+    el.className = 'feedItem';
+    el.textContent = text;
+    feed.appendChild(el);
+    setTimeout(()=>el.remove(), 4000);
+    while(feed.children.length > 6) feed.removeChild(feed.firstChild);
+  }
+
+  // ---------- Hangman SVG (progressive reveal) ----------
+  function buildHangmanSVG(){
+    const wrap = document.getElementById('hangmanSvgWrap');
+    wrap.innerHTML = `
+      <svg width="220" height="220" viewBox="0 0 220 220">
+        <line x1="20" y1="210" x2="140" y2="210" stroke="#000" stroke-width="6"/>
+        <line x1="50" y1="210" x2="50" y2="20" stroke="#000" stroke-width="6"/>
+        <line x1="50" y1="20" x2="140" y2="20" stroke="#000" stroke-width="6"/>
+        <line x1="140" y1="20" x2="140" y2="50" stroke="#000" stroke-width="6"/>
+        <circle id="hm-head" cx="140" cy="70" r="20" stroke="#000" stroke-width="4" fill="none" style="display:none"/>
+        <line id="hm-body" x1="140" y1="90" x2="140" y2="140" stroke="#000" stroke-width="4" style="display:none"/>
+        <line id="hm-armL" x1="140" y1="100" x2="115" y2="125" stroke="#000" stroke-width="4" style="display:none"/>
+        <line id="hm-armR" x1="140" y1="100" x2="165" y2="125" stroke="#000" stroke-width="4" style="display:none"/>
+        <line id="hm-legL" x1="140" y1="140" x2="118" y2="175" stroke="#000" stroke-width="4" style="display:none"/>
+        <line id="hm-legR" x1="140" y1="140" x2="162" y2="175" stroke="#000" stroke-width="4" style="display:none"/>
+      </svg>`;
+  }
+  function updateHangmanSVG(){
+    const parts = ['hm-head','hm-body','hm-armL','hm-armR','hm-legL','hm-legR'];
+    parts.forEach((id,i)=>{
+      const el = document.getElementById(id);
+      if(el) el.style.display = (i < wrongCount) ? '' : 'none';
+    });
+  }
+
+  // ---------- Word display ----------
+  function buildWordBlanks(){
+    const box = document.getElementById('wordBlanks');
+    box.innerHTML = '';
+    for(const ch of secretWord){
+      if(ch === ' '){
+        const sp = document.createElement('div');
+        sp.className = 'letterTile space';
+        box.appendChild(sp);
+        continue;
+      }
+      const tile = document.createElement('div');
+      tile.className = 'letterTile';
+      tile.dataset.letter = ch.toUpperCase();
+      box.appendChild(tile);
+    }
+    refreshWordBlanks();
+  }
+  function refreshWordBlanks(){
+    document.querySelectorAll('#wordBlanks .letterTile:not(.space)').forEach(tile=>{
+      const L = tile.dataset.letter;
+      tile.textContent = correctLetters.has(L) ? L : '';
+    });
+  }
+
+  function distinctLettersInWord(){
+    const set = new Set();
+    for(const ch of secretWord){
+      if(/[A-Z]/i.test(ch)) set.add(ch.toUpperCase());
+    }
+    return set;
+  }
+
+  // ---------- Keyboard row ----------
+  function buildKeyboard(){
+    const row = document.getElementById('keyboardRow');
+    row.innerHTML = '';
+    for(let i=0;i<26;i++){
+      const L = String.fromCharCode(65+i);
+      const tile = document.createElement('div');
+      tile.className = 'kbTile';
+      tile.id = 'kb-'+L;
+      tile.textContent = L;
+      row.appendChild(tile);
+    }
+  }
+  function updateKeyboard(){
+    guessedLetters.forEach(L=>{
+      const tile = document.getElementById('kb-'+L);
+      if(!tile) return;
+      tile.className = 'kbTile ' + (correctLetters.has(L) ? 'correct' : 'wrong');
+    });
+  }
+
+  // ---------- Live vote tally ----------
+  function refreshVoteTally(){
+    const list = document.getElementById('voteTallyList');
+    const entries = [];
+    currentVotes.forEach((set,letter)=>{ if(!guessedLetters.has(letter)) entries.push([letter,set.size]); });
+    entries.sort((a,b)=>b[1]-a[1]);
+    const maxCount = entries.length ? entries[0][1] : 1;
+    list.innerHTML = '';
+    if(entries.length === 0){
+      list.innerHTML = '<div style="text-align:center;color:#666;font-size:12px;">No votes yet this round...</div>';
+      return;
+    }
+    entries.slice(0,8).forEach(([letter,count])=>{
+      const row = document.createElement('div');
+      row.className = 'voteBarRow';
+      row.innerHTML = `<div class="voteBarLetter">${letter}</div>
+        <div class="voteBarTrack"><div class="voteBarFill" style="width:${Math.max(4,(count/maxCount)*100)}%"></div></div>
+        <div class="voteBarCount">${count}</div>`;
+      list.appendChild(row);
+    });
+  }
+
+  // ---------- Round cycle logic ----------
+  function startCycle(){
+    currentVotes = new Map();
+    cycleRemaining = cycleSeconds;
+    cycleActive = true;
+    document.getElementById('cycleTimerVal').textContent = cycleRemaining;
+    refreshVoteTally();
+  }
+
+  function resolveCycle(){
+    cycleActive = false;
+    let maxCount = 0;
+    currentVotes.forEach(set=>{ if(set.size > maxCount) maxCount = set.size; });
+    if(maxCount === 0){
+      showResultFlash('NO VOTES!', '#999');
+      addFeedItem('⌛ No letters guessed that round.');
+      setTimeout(startCycle, 2200);
+      return;
+    }
+    const candidates = [];
+    currentVotes.forEach((set,letter)=>{ if(set.size === maxCount) candidates.push(letter); });
+    const chosen = candidates[Math.floor(Math.random()*candidates.length)];
+    applyGuess(chosen, maxCount);
+  }
+
+  function applyGuess(letter, voteCount){
+    guessedLetters.add(letter);
+    updateKeyboard();
+    if(distinctLettersInWord().has(letter)){
+      correctLetters.add(letter);
+      refreshWordBlanks();
+      addFeedItem(`✅ "${letter}" is in the word! (${voteCount} votes)`);
+      showResultFlash(letter+' ✓', '#000');
+      if(checkWin()) return;
+    } else {
+      wrongCount++;
+      document.getElementById('wrongCount').textContent = wrongCount;
+      updateHangmanSVG();
+      addFeedItem(`❌ "${letter}" is not in the word. (${voteCount} votes)`);
+      showResultFlash(letter+' ✗', '#000');
+      if(wrongCount >= MAX_WRONG){ setTimeout(()=>triggerEnd(false), 2200); return; }
+    }
+    setTimeout(startCycle, 2200);
+  }
+
+  function checkWin(){
+    const needed = distinctLettersInWord();
+    let allFound = true;
+    needed.forEach(L=>{ if(!correctLetters.has(L)) allFound = false; });
+    if(allFound){ setTimeout(()=>triggerEnd(true), 2200); return true; }
+    return false;
+  }
+
+  function showResultFlash(text, color){
+    const el = document.getElementById('resultFlash');
+    el.textContent = text;
+    el.style.color = color;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 1800);
+  }
+
+  function triggerEnd(won){
+    state = 'ended';
+    document.getElementById('playScreen').classList.remove('show');
+    document.getElementById('endTitle').textContent = won ? 'CHAT WINS!' : 'HAYDO IS HANGED!';
+    document.getElementById('endSubtitle').textContent = 'The word was...';
+    document.getElementById('revealedWord').textContent = secretWord;
+    document.getElementById('endWrong').textContent = wrongCount;
+    document.getElementById('endLetters').textContent = correctLetters.size;
+    document.getElementById('endScreen').classList.remove('hidden');
+  }
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectChat(channel){
+    disconnectChat();
+    const statusEl = document.getElementById('chatStatus');
+    statusEl.textContent = 'Connecting...';
+    statusEl.style.color = '#555';
+    try {
+      chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      chatSocket.onopen = () => {
+        chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+        chatSocket.send('PASS SCHMOOPIE');
+        chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+        chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
+      };
+      let ircBuffer = '';
+      chatSocket.onmessage = (e) => {
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop();
+        lines.forEach(line=>{
+          if(!line) return;
+          if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+          if(line.includes(' 366 ')){
+            statusEl.textContent = 'Connected ✓';
+            statusEl.style.color = '#000';
+          }
+          const parsed = parseIRCLine(line);
+          if(parsed) handleChatMessage(parsed);
+        });
+      };
+      chatSocket.onerror = () => {
+        statusEl.textContent = 'Connection failed (check network)';
+        statusEl.style.color = '#000';
+      };
+      chatSocket.onclose = () => {
+        if(statusEl.textContent.indexOf('failed')===-1){
+          statusEl.textContent = 'Disconnected';
+          statusEl.style.color = '#888';
+        }
+      };
+    } catch(e){
+      statusEl.textContent = 'Connection failed (check network)';
+      statusEl.style.color = '#000';
+    }
+  }
+  function disconnectChat(){
+    if(chatSocket){ try{ chatSocket.close(); }catch(e){} chatSocket=null; }
+  }
+
+  function parseIRCLine(line){
+    let tags = {};
+    let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{
+        const eq = kv.indexOf('=');
+        if(eq>=0) tags[kv.slice(0,eq)] = kv.slice(eq+1);
+      });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const prefix = m[1];
+    const message = m[3];
+    const nick = prefix.split('!')[0];
+    const displayName = tags['display-name'] || nick;
+    return { login: nick.toLowerCase(), displayName, message };
+  }
+
+  function handleChatMessage(parsed){
+    if(state !== 'playing' || !cycleActive) return;
+    const msg = parsed.message.trim();
+    if(!/^[a-zA-Z]$/.test(msg)) return; // must be exactly one letter
+    const letter = msg.toUpperCase();
+    if(guessedLetters.has(letter)) return; // already resolved in a previous cycle
+    if(!currentVotes.has(letter)) currentVotes.set(letter, new Set());
+    currentVotes.get(letter).add(parsed.login);
+  }
+
+  // ---------- Timer loop ----------
+  let lastTime = 0;
+  function loop(ts){
+    requestAnimationFrame(loop);
+    if(!lastTime) lastTime = ts;
+    const dt = (ts-lastTime)/1000;
+    lastTime = ts;
+
+    if(state==='playing' && cycleActive){
+      cycleRemaining -= dt;
+      refreshVoteTally();
+      if(cycleRemaining <= 0){
+        document.getElementById('cycleTimerVal').textContent = 0;
+        resolveCycle();
+      } else {
+        document.getElementById('cycleTimerVal').textContent = Math.ceil(cycleRemaining);
+      }
+    }
+  }
+
+  // ---------- UI wiring ----------
+  const startScreen = document.getElementById('startScreen');
+  const setupScreen = document.getElementById('setupScreen');
+  const playScreen = document.getElementById('playScreen');
+  const endScreen = document.getElementById('endScreen');
+
+  document.getElementById('connectBtn').addEventListener('click', ()=>{
+    const channel = document.getElementById('channelInput').value || 'fwhaydo';
+    connectChat(channel);
+    startScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    state = 'setup';
+    document.getElementById('wordInput').value = '';
+    document.getElementById('wordInput').focus();
+  });
+
+  document.getElementById('peekBtn').addEventListener('click', ()=>{
+    const inp = document.getElementById('wordInput');
+    inp.type = (inp.type === 'password') ? 'text' : 'password';
+  });
+
+  document.getElementById('startRoundBtn').addEventListener('click', ()=>{
+    const wordInput = document.getElementById('wordInput');
+    const raw = wordInput.value.trim();
+    if(!raw || !/[a-zA-Z]/.test(raw)){
+      alert('Type a word or phrase with at least one letter.');
+      return;
+    }
+    secretWord = raw.toUpperCase();
+    // clear immediately -- never let the typed value linger in the DOM
+    wordInput.value = '';
+    wordInput.type = 'password';
+
+    cycleSeconds = Math.max(5, Math.min(120, parseInt(document.getElementById('timerInput').value)||20));
+
+    guessedLetters = new Set();
+    correctLetters = new Set();
+    wrongCount = 0;
+    document.getElementById('wrongCount').textContent = 0;
+
+    buildHangmanSVG();
+    updateHangmanSVG();
+    buildWordBlanks();
+    buildKeyboard();
+    updateKeyboard();
+
+    setupScreen.classList.add('hidden');
+    playScreen.classList.add('show');
+    state = 'playing';
+    startCycle();
+  });
+
+  document.getElementById('newRoundBtn').addEventListener('click', ()=>{
+    endScreen.classList.add('hidden');
+    setupScreen.classList.remove('hidden');
+    state = 'setup';
+    document.getElementById('wordInput').value = '';
+    document.getElementById('wordInput').type = 'password';
+    document.getElementById('wordInput').focus();
+  });
+
+  document.getElementById('menuBtnEnd').addEventListener('click', ()=>{
+    endScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    disconnectChat();
+    state = 'menu';
+  });
+
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

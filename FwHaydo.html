@@ -290,7 +290,7 @@ footer a{color:var(--purple);text-decoration:none}
   <div class="section" id="sec-tools">
     <div class="sec-header">
       <h2>🛠 Stream Tools</h2>
-      <span class="sec-count">16 tools</span>
+      <span class="sec-count">17 tools</span>
     </div>
     <div class="game-grid">
 
@@ -519,6 +519,19 @@ footer a{color:var(--purple);text-decoration:none}
           <div class="card-desc">Chat types !join during the lobby — one random player starts infected. Move with up/down/left/right (or !up/u/!u, etc) across a huge shared grid. Land on an infected player's square and you turn too, and can spread it further. Survivors win if anyone's left uninfected when the 5-minute timer runs out; if everyone turns first, the infection wins outright.</div>
           <div class="card-action">
             <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-infection.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card" onclick="window.location.href='haydo-hangman.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">💀</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S HANGMAN</div>
+          <div class="card-desc">You privately set a secret word (masked entry, never shown on screen) and a timer. Chat guesses by typing single letters — every cycle, whichever unguessed letter was typed by the most different people gets locked in, not just whoever spammed it most. Classic hangman rules: 6 wrong guesses and it's over. Word only reveals when the round ends.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hangman.html'">Open Tool →</button>
             <span class="card-players">👥 Entire chat plays</span>
           </div>
         </div>
