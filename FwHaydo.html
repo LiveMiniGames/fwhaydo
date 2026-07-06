@@ -55,9 +55,12 @@ nav{position:sticky;top:0;z-index:50;background:rgba(14,14,22,0.95);backdrop-fil
   border:1px solid var(--border);border-radius:10px;padding:2px 8px}
 .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
 .game-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
-  display:flex;flex-direction:column;transition:border-color .18s,transform .18s,box-shadow .18s;cursor:pointer}
+  display:flex;flex-direction:column;transition:border-color .18s,transform .18s,box-shadow .18s;cursor:pointer;position:relative}
 .game-card:hover{border-color:var(--purple);transform:translateY(-3px);box-shadow:0 8px 32px rgba(145,71,255,.18)}
 .game-card.soon{opacity:.45;cursor:default}
+.not-finished-ribbon{position:absolute;top:16px;right:-34px;width:140px;background:#d81f1f;color:#fff;
+  font-size:.66rem;font-weight:900;letter-spacing:.5px;text-align:center;padding:4px 0;
+  transform:rotate(45deg);box-shadow:0 2px 8px rgba(0,0,0,.4);z-index:5;pointer-events:none}
 .game-card.soon:hover{transform:none;box-shadow:none;border-color:var(--border)}
 .card-thumb{height:120px;display:flex;align-items:center;justify-content:center;font-size:3.2rem;position:relative}
 .card-thumb::after{content:'';position:absolute;inset:0;background:linear-gradient(to bottom,transparent 50%,var(--card) 100%)}
@@ -287,7 +290,7 @@ footer a{color:var(--purple);text-decoration:none}
   <div class="section" id="sec-tools">
     <div class="sec-header">
       <h2>🛠 Stream Tools</h2>
-      <span class="sec-count">15 tools</span>
+      <span class="sec-count">14 tools</span>
     </div>
     <div class="game-grid">
 
@@ -415,19 +418,6 @@ footer a{color:var(--purple);text-decoration:none}
         </div>
       </div>
 
-      <div class="game-card" onclick="window.location.href='roulette.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0505,#3a0a0a)">🔫</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">RUSSIAN ROULETTE</div>
-          <div class="card-desc">Host secretly picks Load or Safe each round. Chat reads your body language and types !pull or !pass. If you loaded and they pulled — eliminated. If you went safe and they passed — lose a life. Everyone plays at once. Last one standing wins.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='roulette.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
       <div class="game-card" onclick="window.location.href='familyfeud.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🎮</div>
         <div class="card-body">
@@ -455,6 +445,7 @@ footer a{color:var(--purple);text-decoration:none}
       </div>
 
       <div class="game-card" onclick="window.location.href='bingo-host.html'">
+        <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🎱</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
@@ -468,6 +459,7 @@ footer a{color:var(--purple);text-decoration:none}
       </div>
 
       <div class="game-card" onclick="window.location.href='haydolife.html'">
+        <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a2a,#1a1060)">🎮</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
