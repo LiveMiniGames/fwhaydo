@@ -117,6 +117,7 @@
 </div>
 
 <script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script src="https://cdn.ably.com/lib/objects.umd.min-2.js" onerror="window.__ablyObjectsLoadFailed=true"></script>
 <script>
 (function(){
   // baked in permanently -- reuses the same Ably account already set up for Bingo,
@@ -421,22 +422,23 @@
   // ---------- Ably LiveObjects connection ----------
   function waitForAbly(){
     return new Promise(resolve=>{
-      if(typeof Ably !== 'undefined'){ resolve(); return; }
-      if(window.__ablyLoadFailed){ resolve(); return; }
+      function ready(){ return typeof Ably !== 'undefined' && typeof window.AblyObjectsPlugin !== 'undefined'; }
+      function failed(){ return window.__ablyLoadFailed || window.__ablyObjectsLoadFailed; }
+      if(ready() || failed()){ resolve(); return; }
       const check = setInterval(()=>{
-        if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ clearInterval(check); resolve(); }
+        if(ready() || failed()){ clearInterval(check); resolve(); }
       }, 200);
     });
   }
 
   async function init(){
     await waitForAbly();
-    if(typeof Ably === 'undefined'){
-      document.getElementById('connectMsg').textContent = 'Failed to load the connection library — check your network and reload.';
+    if(typeof Ably === 'undefined' || typeof window.AblyObjectsPlugin === 'undefined'){
+      document.getElementById('connectMsg').textContent = 'Failed to load the connection library (base library or LiveObjects plugin) — check your network and reload.';
       return;
     }
     try{
-      ably = new Ably.Realtime({ key: ABLY_KEY });
+      ably = new Ably.Realtime({ key: ABLY_KEY, plugins: { Objects: window.AblyObjectsPlugin } });
       ably.connection.on('connected', async ()=>{
         setStatus('Loading saved economy data...');
         ch = ably.channels.get(ECONOMY_CHANNEL, { modes: ['OBJECT_SUBSCRIBE','OBJECT_PUBLISH'] });
