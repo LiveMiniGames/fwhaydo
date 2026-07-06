@@ -36,26 +36,27 @@
   .hidden { display:none !important; }
 
   .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #fff; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
-  h1.title { font-size:clamp(32px,8vw,56px); font-weight:900; letter-spacing:2px; background:linear-gradient(180deg,#fff, #b8b8b8); -webkit-background-clip:text; background-clip:text; color:transparent; text-shadow: 0 4px 0 rgba(0,0,0,.4); margin-bottom:2px; }
+  h1.title { font-size:clamp(32px,8vw,56px); font-weight:900; letter-spacing:2px; background:linear-gradient(90deg,#3fe6ff, #d264ff); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:2px; }
   .subtitle { font-size:14px; letter-spacing:3px; color:#e0b400; font-weight:700; margin-bottom:22px; text-transform:uppercase; }
 
   .charPreview { width:150px; height:auto; filter: drop-shadow(0 10px 18px rgba(0,0,0,.6)); margin-bottom:18px; animation: floaty 2.4s ease-in-out infinite; }
   @keyframes floaty { 0%,100%{ transform:translateY(0);} 50%{ transform:translateY(-10px);} }
 
-  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:16px 42px; font-size:18px; color:#111; background:linear-gradient(180deg,#ffe14d,#e0b400); box-shadow:0 6px 0 #8a6d00, 0 8px 18px rgba(0,0,0,.4); transition: transform .05s ease; }
-  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #8a6d00; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:16px 42px; font-size:18px; color:#fff; background:linear-gradient(90deg,#3fe6ff, #b84dff); box-shadow:0 6px 0 #6a1fa8, 0 8px 22px rgba(184,77,255,.35); transition: transform .05s ease; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #6a1fa8; }
   .btn.secondary { background:linear-gradient(180deg,#3a3a3a,#1c1c1c); color:#fff; box-shadow:0 6px 0 #000, 0 8px 18px rgba(0,0,0,.4); margin-top:12px; }
 
   .howto { margin-top:22px; font-size:13px; color:#aaa; line-height:1.7; max-width:320px; }
   .howto b { color:#fff; }
 
   .modeToggle { display:flex; gap:8px; margin-bottom:14px; }
-  .modeBtn { border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.06); color:#ccc; font-weight:800; font-size:12px; letter-spacing:1px; padding:9px 16px; border-radius:20px; cursor:pointer; }
-  .modeBtn.active { background:#ffd83d; color:#111; border-color:#ffd83d; }
+  .modeBtn { border:1px solid rgba(255,255,255,.3); background:rgba(255,255,255,.06); color:#ccc; font-weight:800; font-size:12px; letter-spacing:1px; padding:9px 16px; border-radius:20px; cursor:pointer; transition: all .15s ease; }
+  .modeBtn.active { background:rgba(184,77,255,.12); color:#fff; border-color:#b84dff; box-shadow:0 0 14px rgba(184,77,255,.5); }
   #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:14px; font-size:12px; color:#ccc; }
   #channelRow input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:6px 10px; font-size:13px; width:120px; }
   #chatStatus { font-size:11px; font-weight:700; }
-  .bestRow { font-size:13px; color:#ffd83d; font-weight:800; letter-spacing:1px; margin-bottom:14px; }
+  .bestRow { font-size:13px; color:#fff; font-weight:800; letter-spacing:1px; margin-bottom:14px; }
+  .bestRow b { color:#d264ff; }
 
   .statsRow { display:flex; gap:26px; margin:18px 0; }
   .statBox { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:10px 22px; }
@@ -119,7 +120,7 @@
       <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
       <div id="chatStatus"></div>
     </div>
-    <div class="bestRow" id="startBestRow">BEST: <span id="startBestVal">0</span></div>
+    <div class="bestRow" id="startBestRow">BEST: <b><span id="startBestVal">0</span></b></div>
 
     <button class="btn" id="playBtn">PLAY</button>
     <div class="howto" id="howtoNormal">
@@ -189,11 +190,11 @@
   const TRACK_NEAR = 24;
 
   // ---------- Lighting ----------
-  scene.add(new THREE.HemisphereLight(0x8a5cff, 0x1a0f12, 0.45));
-  const dirLight = new THREE.DirectionalLight(0xffe6b0, 0.3);
+  scene.add(new THREE.HemisphereLight(0x9a7cff, 0x2a1f22, 0.75));
+  const dirLight = new THREE.DirectionalLight(0xffe6b0, 0.5);
   dirLight.position.set(3, 8, 6);
   scene.add(dirLight);
-  scene.add(new THREE.AmbientLight(0x3a2050, 0.3));
+  scene.add(new THREE.AmbientLight(0x4a3060, 0.5));
 
   // moving neon point lights that travel down the tunnel with the world, giving
   // real dynamic purple/gold light on the trains and track as they pass
@@ -227,6 +228,22 @@
     { name:'Cyan Surge',   sky:0x061826, neonA:'#3fe6ff', neonAHex:0x3fe6ff, neonB:'#ff5fae', neonBHex:0xff5fae, wallBase:'#0c1c26', wallBase2:'#071219', roadBase:'#16232a', trim:0x3fe6ff },
     { name:'Inferno Mode', sky:0x230b06, neonA:'#ff6a3d', neonAHex:0xff6a3d, neonB:'#ffd23d', neonBHex:0xffd23d, wallBase:'#241009', wallBase2:'#150a05', roadBase:'#2b1712', trim:0xff6a3d },
     { name:'Toxic Rush',   sky:0x08220e, neonA:'#7dff45', neonAHex:0x7dff45, neonB:'#39f0ff', neonBHex:0x39f0ff, wallBase:'#0b1f10', wallBase2:'#06120a', roadBase:'#152819', trim:0x7dff45 },
+    { name:'Blood Moon',   sky:0x1a0508, neonA:'#ff2d4d', neonAHex:0xff2d4d, neonB:'#e8e8e8', neonBHex:0xe8e8e8, wallBase:'#1f0a0d', wallBase2:'#120508', roadBase:'#210a0e', trim:0xff2d4d },
+    { name:'Deep Space',   sky:0x05081f, neonA:'#4d6bff', neonAHex:0x4d6bff, neonB:'#a24dff', neonBHex:0xa24dff, wallBase:'#0a0e26', wallBase2:'#05071a', roadBase:'#0a0f24', trim:0x4d6bff },
+    { name:'Sunset Blvd',  sky:0x1f0a12, neonA:'#ff5fae', neonAHex:0xff5fae, neonB:'#ff9a3d', neonBHex:0xff9a3d, wallBase:'#241016', wallBase2:'#1a0a0d', roadBase:'#241118', trim:0xff9a3d },
+    { name:'Electric Lime',sky:0x0a1f08, neonA:'#a8ff3d', neonAHex:0xa8ff3d, neonB:'#ff3dc6', neonBHex:0xff3dc6, wallBase:'#0e2410', wallBase2:'#0a1408', roadBase:'#0f2612', trim:0xa8ff3d },
+    { name:'Ice Cold',     sky:0x081a1f, neonA:'#8ff0ff', neonAHex:0x8ff0ff, neonB:'#ffffff', neonBHex:0xffffff, wallBase:'#0c2024', wallBase2:'#08161a', roadBase:'#0d2226', trim:0x8ff0ff },
+    { name:'Neon Dreams',  sky:0x150a1f, neonA:'#ff3dd8', neonAHex:0xff3dd8, neonB:'#3dffe6', neonBHex:0x3dffe6, wallBase:'#1a0e24', wallBase2:'#12081a', roadBase:'#1c0f26', trim:0xff3dd8 },
+    { name:'Golden Hour',  sky:0x1f1305, neonA:'#ffcc33', neonAHex:0xffcc33, neonB:'#ff3d3d', neonBHex:0xff3d3d, wallBase:'#241809', wallBase2:'#1a1005', roadBase:'#26190a', trim:0xffcc33 },
+    { name:'Vaporwave',    sky:0x0a1520, neonA:'#ff8ac2', neonAHex:0xff8ac2, neonB:'#5ce1ff', neonBHex:0x5ce1ff, wallBase:'#0e1a26', wallBase2:'#0a121a', roadBase:'#0f1b28', trim:0x5ce1ff },
+    { name:'Royal Blue',   sky:0x050a1f, neonA:'#3d5cff', neonAHex:0x3d5cff, neonB:'#ffffff', neonBHex:0xffffff, wallBase:'#0a0f26', wallBase2:'#05081a', roadBase:'#0a1028', trim:0x3d5cff },
+    { name:'Acid Wash',    sky:0x0f1f05, neonA:'#c6ff3d', neonAHex:0xc6ff3d, neonB:'#3dffb8', neonBHex:0x3dffb8, wallBase:'#132408', wallBase2:'#0d1a05', roadBase:'#142608', trim:0xc6ff3d },
+    { name:'Cherry Bomb',  sky:0x1f050c, neonA:'#ff3d6a', neonAHex:0xff3d6a, neonB:'#3dfff0', neonBHex:0x3dfff0, wallBase:'#240a12', wallBase2:'#1a050c', roadBase:'#260a14', trim:0xff3d6a },
+    { name:'Solar Flare',  sky:0x1f1005, neonA:'#ffae3d', neonAHex:0xffae3d, neonB:'#ff3d9e', neonBHex:0xff3d9e, wallBase:'#241408', wallBase2:'#1a0d05', roadBase:'#261508', trim:0xffae3d },
+    { name:'Arctic Night', sky:0x050f1f, neonA:'#3dd9ff', neonAHex:0x3dd9ff, neonB:'#8a3dff', neonBHex:0x8a3dff, wallBase:'#0a1626', wallBase2:'#050d1a', roadBase:'#0a1728', trim:0x3dd9ff },
+    { name:'Rose Gold',    sky:0x1f0a12, neonA:'#ff9ec6', neonAHex:0xff9ec6, neonB:'#ffd93d', neonBHex:0xffd93d, wallBase:'#241018', wallBase2:'#1a0a12', roadBase:'#26111a', trim:0xffd93d },
+    { name:'Matrix Mode',  sky:0x051f0a, neonA:'#39ff6a', neonAHex:0x39ff6a, neonB:'#ff3d3d', neonBHex:0xff3d3d, wallBase:'#0a2410', wallBase2:'#051a08', roadBase:'#0a2611', trim:0x39ff6a },
+    { name:'Cotton Candy', sky:0x120a1f, neonA:'#ff9ef0', neonAHex:0xff9ef0, neonB:'#9ef0ff', neonBHex:0x9ef0ff, wallBase:'#1a1026', wallBase2:'#12081a', roadBase:'#1b1128', trim:0x9ef0ff },
   ];
 
   // ---------- Perk system: unlocked every 100 coins, cycling through this list,
@@ -244,153 +261,48 @@
   function drawRoad(theme){
     const g = roadTex.ctx, c = roadTex.c;
     g.clearRect(0,0,c.width,c.height);
-    // base with a soft vertical vignette (darker toward the edges) instead of flat fill
-    const base = g.createLinearGradient(0,0,c.width,0);
-    base.addColorStop(0,'#050506');
-    base.addColorStop(0.5, theme.roadBase);
-    base.addColorStop(1,'#050506');
-    g.fillStyle = base;
+    g.fillStyle = '#0a0a0c';
     g.fillRect(0,0,256,512);
-    // fine, sparse grain -- much subtler than before, reads as texture not mud
-    for(let i=0;i<160;i++){
-      g.fillStyle = `rgba(0,0,0,${Math.random()*0.22})`;
-      g.fillRect(Math.random()*256, Math.random()*512, 1+Math.random()*1.5, 1+Math.random()*1.5);
-    }
-    // wooden crossties with a highlight/shadow bevel so they read as 3D planks, not flat bars
-    for(let ty=0; ty<512; ty+=34){
-      const tieGrad = g.createLinearGradient(0,ty,0,ty+14);
-      tieGrad.addColorStop(0,'#4a3826');
-      tieGrad.addColorStop(0.4,'#3a2c1c');
-      tieGrad.addColorStop(1,'#241a10');
-      g.fillStyle = tieGrad;
-      g.fillRect(4, ty, 248, 14);
-      g.fillStyle = 'rgba(255,255,255,0.06)';
-      g.fillRect(4, ty, 248, 2);
-      g.fillStyle = 'rgba(0,0,0,0.35)';
-      g.fillRect(4, ty+12, 248, 2);
-    }
-    // three rail-pairs with a proper layered glow: soft wide halo, mid glow, bright core
-    const railXs = [40, 128, 216];
-    const railColors = [theme.neonA, '#ffffff', theme.neonB];
-    railXs.forEach((rx,i)=>{
-      const glowColor = railColors[i%railColors.length];
-      [-11,11].forEach(off=>{
-        const wide = g.createLinearGradient(rx+off-16,0,rx+off+16,0);
-        wide.addColorStop(0,'rgba(0,0,0,0)');
-        wide.addColorStop(0.5, glowColor);
-        wide.addColorStop(1,'rgba(0,0,0,0)');
-        g.globalAlpha = 0.35;
-        g.fillStyle = wide;
-        g.fillRect(rx+off-16,0,32,512);
-        g.globalAlpha = 1;
-        const mid = g.createLinearGradient(rx+off-7,0,rx+off+7,0);
-        mid.addColorStop(0,'rgba(0,0,0,0)');
-        mid.addColorStop(0.5, glowColor);
-        mid.addColorStop(1,'rgba(0,0,0,0)');
-        g.fillStyle = mid;
-        g.fillRect(rx+off-7,0,14,512);
-        g.fillStyle = '#ffffff';
-        g.fillRect(rx+off-1.2,0,2.4,512);
-      });
-    });
     roadTex.t.needsUpdate = true;
   }
-  const roadMat = new THREE.MeshStandardMaterial({ map: roadTex.t, emissiveMap: roadTex.t, emissive:0xffffff, emissiveIntensity:0.5, roughness:0.9 });
+  const roadMat = new THREE.MeshStandardMaterial({ map: roadTex.t, roughness:0.95 });
   const roadGeo = new THREE.PlaneGeometry(LANE_W*3+1.4, TRACK_NEAR-TRACK_FAR);
   const road = new THREE.Mesh(roadGeo, roadMat);
   road.rotation.x = -Math.PI/2;
   road.position.set(0, 0, (TRACK_FAR+TRACK_NEAR)/2);
   scene.add(road);
 
-  // ---------- Graffiti + neon-strip wall texture (clean composition, layered glow) ----------
+  // ---------- Floor guide lines: real 3D geometry, not a texture -- a repeated bitmap
+  // line viewed at this grazing angle toward the horizon aliases/shimmers ("grainy");
+  // actual geometry (like the wall trims) stays crisp at any distance.
+  const floorLineMats = [];
+  function makeFloorLine(x, colorRole){
+    const mat = new THREE.MeshStandardMaterial({ color:0xffffff, emissive:0xffffff, emissiveIntensity:0.9, roughness:0.4 });
+    const geo = new THREE.BoxGeometry(0.09, 0.03, TRACK_NEAR-TRACK_FAR);
+    const line = new THREE.Mesh(geo, mat);
+    line.position.set(x, 0.02, (TRACK_FAR+TRACK_NEAR)/2);
+    scene.add(line);
+    floorLineMats.push({ mat, role: colorRole });
+    return line;
+  }
+  makeFloorLine(-LANE_W*1.24, 'a');
+  makeFloorLine(0, 'w');
+  makeFloorLine(LANE_W*1.24, 'b');
+
+  // ---------- Wall texture: flat black, no graffiti/grain -- matches the clean wireframe-tunnel look ----------
   function drawWallText(obj, tagList, theme){
     const g = obj.ctx, c = obj.c;
     g.clearRect(0,0,c.width,c.height);
-    // smooth vertical gradient base with a horizontal vignette for depth
     const base = g.createLinearGradient(0,0,0,c.height);
-    base.addColorStop(0, theme.wallBase);
-    base.addColorStop(0.5, theme.wallBase2);
-    base.addColorStop(1, theme.wallBase);
+    base.addColorStop(0,'#0d0d10');
+    base.addColorStop(0.5,'#08080a');
+    base.addColorStop(1,'#0d0d10');
     g.fillStyle = base;
     g.fillRect(0,0,c.width,c.height);
-    const vign = g.createLinearGradient(0,0,c.width,0);
-    vign.addColorStop(0,'rgba(0,0,0,0.35)');
-    vign.addColorStop(0.5,'rgba(0,0,0,0)');
-    vign.addColorStop(1,'rgba(0,0,0,0.35)');
-    g.fillStyle = vign;
-    g.fillRect(0,0,c.width,c.height);
-    // sparse fine grain, much subtler than before
-    for(let i=0;i<140;i++){
-      g.fillStyle = `rgba(255,255,255,${Math.random()*0.025})`;
-      g.fillRect(Math.random()*c.width, Math.random()*c.height, 1+Math.random()*1.5, 1+Math.random()*1.5);
-    }
-    // dark grounding gradient where the wall meets the floor, for visual weight
-    const ground = g.createLinearGradient(0,c.height-140,0,c.height);
-    ground.addColorStop(0,'rgba(0,0,0,0)');
-    ground.addColorStop(1,'rgba(0,0,0,0.5)');
-    g.fillStyle = ground;
-    g.fillRect(0,c.height-140,c.width,140);
-
-    // neon horizontal tube strips -- layered glow (soft wide halo + tight bright core)
-    function neonStrip(y, color){
-      const wide = g.createLinearGradient(0,y-26,0,y+26);
-      wide.addColorStop(0,'rgba(0,0,0,0)');
-      wide.addColorStop(0.5,color);
-      wide.addColorStop(1,'rgba(0,0,0,0)');
-      g.globalAlpha = 0.3;
-      g.fillStyle = wide;
-      g.fillRect(6,y-26,c.width-12,52);
-      g.globalAlpha = 1;
-      const tight = g.createLinearGradient(0,y-9,0,y+9);
-      tight.addColorStop(0,'rgba(0,0,0,0)');
-      tight.addColorStop(0.5,color);
-      tight.addColorStop(1,'rgba(0,0,0,0)');
-      g.fillStyle = tight;
-      g.fillRect(6,y-9,c.width-12,18);
-      g.fillStyle = '#ffffff';
-      g.fillRect(6,y-2,c.width-12,4);
-    }
-    neonStrip(150, theme.neonA);
-    neonStrip(870, theme.neonB);
-
-    // graffiti tags: soft glow halo behind each for a poster-like pop, then the text itself
-    tagList.forEach(t=>{
-      g.save();
-      g.translate(c.width/2, t.y);
-      g.rotate(t.rot||0);
-      // halo
-      const haloR = t.size*1.9;
-      const halo = g.createRadialGradient(0,0,0,0,0,haloR);
-      halo.addColorStop(0, t.color+'33');
-      halo.addColorStop(1, 'rgba(0,0,0,0)');
-      g.fillStyle = halo;
-      g.fillRect(-haloR, -haloR*0.7, haloR*2, haloR*1.4);
-      // text
-      g.font = `900 ${t.size}px Arial`;
-      g.textAlign='center';
-      g.shadowColor = t.color; g.shadowBlur = 18;
-      g.fillStyle = t.color;
-      t.text.split('\n').forEach((line,i)=>g.fillText(line, 0, i*(t.size*0.95)));
-      g.restore();
-    });
     obj.t.needsUpdate = true;
   }
-  function leftTags(theme){
-    return [
-      { text:'HAYDO', y:300, size:40, color:theme.neonA, rot:-0.04 },
-      { text:'ON TOP', y:362, size:24, color:'#ffffff', rot:-0.04 },
-      { text:'FW', y:600, size:50, color:theme.neonB, rot:0.03 },
-      { text:'CLIP IT', y:900, size:26, color:theme.neonA, rot:-0.02 },
-    ];
-  }
-  function rightTags(theme){
-    return [
-      { text:'GOOD LUCK', y:300, size:30, color:'#ffffff', rot:0.03 },
-      { text:'FW HAYDO', y:364, size:36, color:theme.neonB, rot:0.03 },
-      { text:'CHAT UP \u2191', y:600, size:28, color:'#ffffff', rot:-0.03 },
-      { text:'NO SCOPE', y:900, size:24, color:theme.neonA, rot:-0.02 },
-    ];
-  }
+  function leftTags(theme){ return []; }
+  function rightTags(theme){ return []; }
   const wallTexL = makeCanvasTex(256, 1280);
   const wallTexR = makeCanvasTex(256, 1280);
   wallTexL.t.repeat.set(1, (TRACK_NEAR-TRACK_FAR)/32);
@@ -418,6 +330,14 @@
     trim.position.set(sign*(LANE_W*1.5+1.1-0.75), 4.6, (TRACK_FAR+TRACK_NEAR)/2);
     group.add(trim);
     wallTrims.push(trimMat);
+    // matching trim at the base of the wall (near floor level) -- together with the
+    // top trim, this reads as the converging fan-of-lines look from the reference
+    const baseTrimMat = new THREE.MeshStandardMaterial({ color:0xe0b400, roughness:0.4, metalness:0.4, emissive:0x553300, emissiveIntensity:0.4 });
+    const baseTrimGeo = new THREE.BoxGeometry(0.15, 0.3, TRACK_NEAR-TRACK_FAR);
+    const baseTrim = new THREE.Mesh(baseTrimGeo, baseTrimMat);
+    baseTrim.position.set(sign*(LANE_W*1.5+1.1-0.75), 0.2, (TRACK_FAR+TRACK_NEAR)/2);
+    group.add(baseTrim);
+    wallTrims.push(baseTrimMat);
     return group;
   }
   scene.add(buildWall(-1, wallTexL));
@@ -505,6 +425,11 @@
     glowA.material.color.set(theme.neonAHex);
     glowB.material.color.set(theme.neonBHex);
     wallTrims.forEach(m=>{ m.color.set(theme.trim); m.emissive.set(theme.trim); });
+    floorLineMats.forEach(fl=>{
+      const hex = fl.role === 'a' ? theme.neonAHex : fl.role === 'b' ? theme.neonBHex : 0xffffff;
+      fl.mat.color.set(hex);
+      fl.mat.emissive.set(hex);
+    });
     return theme;
   }
 
@@ -578,6 +503,7 @@
       score: 0,
       coins: 0,
       spawnTimer: 0.9,
+      justHadDoubleBlock: false,
       objects: [],
       shakeT: 0,
       level: 0,
@@ -664,8 +590,17 @@
   function spawnWave(){
     const pattern = Math.random();
     const lanesArr = [0,1,2];
+    // after a double-train wave (2 lanes blocked, 1 safe), the very next single
+    // obstacle must not land in the middle lane -- at high speed there isn't enough
+    // reaction time to recover from that combo
+    const avoidMiddle = world.justHadDoubleBlock;
+    world.justHadDoubleBlock = false;
+    function pickLane(){
+      if(avoidMiddle) return Math.random()<0.5 ? 0 : 2;
+      return lanesArr[Math.floor(Math.random()*3)];
+    }
     if(pattern < 0.35){
-      const lane = lanesArr[Math.floor(Math.random()*3)];
+      const lane = pickLane();
       const type = pickObstacleType();
       addObject(type, lane);
       maybeCoinTrail();
@@ -673,13 +608,14 @@
       const openLane = lanesArr[Math.floor(Math.random()*3)];
       lanesArr.forEach(l=>{ if(l!==openLane) addObject('train', l); });
       for(let i=0;i<3;i++) addObject('coin', openLane, i*1.4);
+      world.justHadDoubleBlock = true;
     } else if(pattern < 0.8){
-      const lane = lanesArr[Math.floor(Math.random()*3)];
+      const lane = pickLane();
       addObject('lowbar', lane);
       const coinLane = (lane+1)%3;
       for(let i=0;i<3;i++) addObject('coin', coinLane, i*1.3);
     } else {
-      const lane = lanesArr[Math.floor(Math.random()*3)];
+      const lane = pickLane();
       addObject('overhead', lane);
       maybeCoinTrail();
     }
@@ -855,6 +791,15 @@
     world.magnetActive = true;
     world.magnetTimer = 8;
     showFlash('MAGNET ON!', '#ffd83d');
+    // instantly vacuum up every coin already on screen, not just ones that
+    // happen to reach the player before the timer runs out
+    world.objects.forEach(o=>{
+      if(o.isCoin && !o.resolved){
+        o.resolved = true;
+        o.mesh.visible = false;
+        collectCoin();
+      }
+    });
   }
   function activateMultiplier(){
     world.multiplierActive = true;
@@ -1070,7 +1015,13 @@
     for(let i=world.objects.length-1;i>=0;i--){
       const o = world.objects[i];
       o.prevZ = o.z;
-      o.z += moveSpeed*dt;
+      // magnet: visibly yank every live coin toward the player's lane and rush it in
+      if(world.magnetActive && o.isCoin && !o.resolved){
+        o.mesh.position.x = lerp(o.mesh.position.x, player.curX, 1-Math.pow(0.001, dt));
+        o.z += moveSpeed*dt*2.2;
+      } else {
+        o.z += moveSpeed*dt;
+      }
       o.mesh.position.z = o.z;
       if(o.isCoin){
         o.mesh.rotation.y += dt*5;
