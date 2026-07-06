@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S DODGEBALL</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a0a; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#0a0a0a; overflow:hidden; }
+  canvas { display:block; }
+
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(10,10,10,.94), rgba(0,0,0,.98)); color:#fff; text-align:center; padding:20px; z-index:20; overflow-y:auto; }
+  .hidden { display:none !important; }
+
+  .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #fff; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  h1.title { font-size:clamp(26px,6vw,46px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#ff5b3d,#ffcc33); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:2px; }
+  .subtitle { font-size:13px; letter-spacing:3px; color:#3fe6ff; font-weight:700; margin-bottom:20px; text-transform:uppercase; }
+
+  #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:12px; color:#ccc; }
+  #channelRow input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:7px 10px; font-size:13px; width:140px; }
+  #chatStatus { font-size:11px; font-weight:700; }
+
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:15px 40px; font-size:17px; color:#111; background:linear-gradient(90deg,#ff5b3d,#ffcc33); box-shadow:0 6px 0 #8a3a1a, 0 8px 22px rgba(255,91,61,.3); transition: transform .05s ease; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #8a3a1a; }
+  .btn.secondary { background:linear-gradient(180deg,#3a3a3a,#1c1c1c); color:#fff; box-shadow:0 6px 0 #000, 0 8px 18px rgba(0,0,0,.4); margin-top:12px; }
+
+  .howto { margin-top:20px; font-size:12.5px; color:#aaa; line-height:1.8; max-width:400px; }
+  .howto b { color:#ffcc33; }
+
+  .bigWarning { margin-top:16px; max-width:420px; background:rgba(255,91,61,0.12); border:2px solid #ff5b3d; border-radius:14px; padding:14px 18px; }
+  .bigWarning .warnTitle { font-size:15px; font-weight:900; color:#ff8a6b; letter-spacing:.5px; margin-bottom:6px; }
+  .bigWarning .warnBody { font-size:13px; color:#ffd6c8; line-height:1.6; font-weight:600; }
+  .bigWarning .warnBody b { color:#fff; }
+
+  #lobbyPlayerBox { margin:16px 0; max-width:460px; }
+  #lobbyCount { font-size:15px; color:#ffcc33; font-weight:800; margin-bottom:8px; }
+  #lobbyNames { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:120px; overflow-y:auto; }
+  .lobbyChip { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:4px 10px; font-size:12px; font-weight:700; }
+
+  .statsRow { display:flex; gap:22px; margin:16px 0; }
+  .statBox { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:10px 20px; }
+  .statBox .num { font-size:22px; font-weight:900; color:#ffcc33; }
+  .statBox .lbl { font-size:10px; letter-spacing:2px; color:#999; text-transform:uppercase; margin-top:2px; }
+
+  #hud { position:absolute; top:0; left:0; width:100%; padding:14px 18px; display:flex; justify-content:space-between; align-items:flex-start; pointer-events:none; z-index:10; }
+  #hudLeft { color:#fff; font-weight:800; background:rgba(8,4,14,0.72); border:1px solid rgba(255,140,60,.4); border-radius:14px; padding:8px 16px; }
+  #hudLeft .waveLbl { font-size:10px; opacity:.75; letter-spacing:1.5px; color:#ff8a5b; }
+  #hudLeft .aliveCount { font-size:20px; line-height:1.3; }
+  #joinHint { color:#ffcc33; font-weight:800; font-size:13px; background:rgba(8,4,14,0.72); border:1px solid rgba(255,204,51,.4); border-radius:14px; padding:8px 16px; }
+
+  #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:280px; }
+  .feedItem { font-size:12px; font-weight:700; color:#fff; background:rgba(10,4,20,.55); border-radius:8px; padding:3px 10px; opacity:0; animation: feedFade 4s ease forwards; }
+  @keyframes feedFade { 0%{opacity:0; transform:translateY(6px);} 10%{opacity:1; transform:translateY(0);} 80%{opacity:1;} 100%{opacity:0;} }
+</style>
+</head>
+<body>
+<div id="gameContainer">
+  <canvas id="gameCanvas"></canvas>
+
+  <div id="hud" class="hidden">
+    <div id="hudLeft">
+      <div class="waveLbl">WAVE <span id="waveNum">1</span></div>
+      <div class="aliveCount"><span id="aliveCountVal">0</span> alive</div>
+    </div>
+    <div id="joinHint"></div>
+  </div>
+  <div id="feed"></div>
+
+  <div class="overlay" id="startScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title">HAYDO'S DODGEBALL</h1>
+    <div class="subtitle">Dodge Or Get Dropped</div>
+    <div id="channelRow">
+      <label for="channelInput">Twitch channel:</label>
+      <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
+      <div id="chatStatus"></div>
+    </div>
+    <button class="btn" id="connectBtn">CONNECT & OPEN LOBBY</button>
+    <div class="bigWarning">
+      <div class="warnTitle">⚠️ HEADS UP, CHAT</div>
+      <div class="warnBody">Never send the <b>exact same message twice in a row</b> — Twitch blocks the repeat.
+      Rotate through the options instead (e.g. <b>right → !right → r → right</b>).</div>
+    </div>
+    <div class="howto">
+      Chat joins with <b>!join</b> during the lobby only — once a round starts, joining is locked until the next one.
+      Dodge with <b>up/down/left/right</b>, <b>!up/!down/!left/!right</b>, or the short versions <b>u/d/l/r</b> and
+      <b>!u/!d/!l/!r</b> — capitalization never matters.<br>
+      Balls telegraph before they launch, so watch the flashing row/column and step out of the way. Last one standing wins.
+      It starts slow and gets faster the longer the round goes.
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="lobbyScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:32px;">THE LOBBY IS OPEN</h1>
+    <div class="subtitle">Warming Up The Throwing Arm</div>
+    <div class="bigWarning">
+      <div class="warnTitle">⚠️ HEADS UP, CHAT</div>
+      <div class="warnBody">Never send the <b>exact same message twice in a row</b> — Twitch blocks the repeat.
+      Rotate through the options instead (e.g. <b>right → !right → r → right</b>).</div>
+    </div>
+    <div id="lobbyPlayerBox">
+      <div id="lobbyCount">0 players joined</div>
+      <div id="lobbyNames"></div>
+    </div>
+    <button class="btn" id="startGameBtn">START GAME</button>
+    <div class="howto">Chat types <b>!join</b> to get in before you hit start — once the round begins, the door's locked until the next one.</div>
+  </div>
+
+  <div class="overlay hidden" id="winScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:34px;" id="winTitle">WE HAVE A SURVIVOR!</h1>
+    <div class="subtitle" id="winSubtitle">LAST ONE STANDING</div>
+    <div class="statsRow">
+      <div class="statBox"><div class="num" id="winTime">0:00</div><div class="lbl">Survived</div></div>
+      <div class="statBox"><div class="num" id="winPlayers">0</div><div class="lbl">Players</div></div>
+      <div class="statBox"><div class="num" id="winWave">1</div><div class="lbl">Wave Reached</div></div>
+    </div>
+    <button class="btn" id="nextRoundBtn">NEXT ROUND</button>
+    <button class="btn secondary" id="menuBtnWin">END SESSION / MAIN MENU</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const canvas = document.getElementById('gameCanvas');
+  const ctx = canvas.getContext('2d');
+  const container = document.getElementById('gameContainer');
+
+  function resize(){
+    const rect = container.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = rect.width*dpr;
+    canvas.height = rect.height*dpr;
+    canvas.style.width = rect.width+'px';
+    canvas.style.height = rect.height+'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    W = rect.width; H = rect.height;
+  }
+  let W=0, H=0;
+  window.addEventListener('resize', resize);
+
+  // ---------- Arena grid ----------
+  const COLS = 7, ROWS = 5;
+  let cellSize = 60, offX = 0, offY = 0;
+
+  function computeLayout(){
+    const marginTop = 80, marginBottom = 30, marginSide = 30;
+    const availW = W - marginSide*2;
+    const availH = H - marginTop - marginBottom;
+    cellSize = Math.floor(Math.min(availW/COLS, availH/ROWS));
+    const gridW = cellSize*COLS, gridH = cellSize*ROWS;
+    offX = (W-gridW)/2;
+    offY = marginTop + (availH-gridH)/2;
+  }
+
+  const COLORS = ['#ff5b3d','#3fe6ff','#ffd83d','#39ff6a','#ff3dd8','#b84dff','#ff9a3d','#5ce1ff','#ffffff','#ff8ac2'];
+  let colorIdx = 0;
+  function nextColor(){ const c = COLORS[colorIdx % COLORS.length]; colorIdx++; return c; }
+
+  function seededJitter(name){
+    let h = 0;
+    for(let i=0;i<name.length;i++) h = (h*31 + name.charCodeAt(i)) & 0xffff;
+    const a = (h % 1000)/1000 * Math.PI*2;
+    const r = 0.12 + (h % 7)/7*0.13;
+    return { x: Math.cos(a)*r, y: Math.sin(a)*r };
+  }
+
+  // ---------- Game state ----------
+  let state = 'menu'; // menu, lobby, playing, won
+  let players = new Map(); // login -> {displayName,color,row,col,alive,renderX,renderY,jitter}
+  let round = 1;
+  let roundStartTime = 0;
+  let balls = [];
+  let spawnTimer = 0;
+  let joinOrder = 0;
+  let winnerName = null;
+  let noSurvivors = false;
+
+  function addFeedItem(text){
+    const feed = document.getElementById('feed');
+    const el = document.createElement('div');
+    el.className = 'feedItem';
+    el.textContent = text;
+    feed.appendChild(el);
+    setTimeout(()=>el.remove(), 4000);
+    while(feed.children.length > 6) feed.removeChild(feed.firstChild);
+  }
+
+  function updateLobbyUI(){
+    document.getElementById('lobbyCount').textContent = players.size + ' player' + (players.size===1?'':'s') + ' joined';
+    const namesEl = document.getElementById('lobbyNames');
+    namesEl.innerHTML = '';
+    players.forEach(p=>{
+      const chip = document.createElement('div');
+      chip.className = 'lobbyChip';
+      chip.style.borderColor = p.color;
+      chip.textContent = p.displayName;
+      namesEl.appendChild(chip);
+    });
+  }
+
+  function joinPlayer(login, displayName){
+    if(state !== 'lobby') return; // locked once round starts
+    if(players.has(login)) return;
+    const jitter = seededJitter(login);
+    const startCol = joinOrder % COLS;
+    joinOrder++;
+    players.set(login, {
+      displayName, color: nextColor(),
+      row: Math.floor(ROWS/2), col: startCol,
+      alive: true,
+      renderX: null, renderY: null,
+      jitter
+    });
+    addFeedItem('🏐 ' + displayName + ' joined!');
+    updateLobbyUI();
+  }
+
+  function movePlayer(login, dir){
+    if(state !== 'playing') return;
+    const p = players.get(login);
+    if(!p || !p.alive) return;
+    if(dir==='up') p.row = Math.max(0, p.row-1);
+    else if(dir==='down') p.row = Math.min(ROWS-1, p.row+1);
+    else if(dir==='left') p.col = Math.max(0, p.col-1);
+    else if(dir==='right') p.col = Math.min(COLS-1, p.col+1);
+  }
+
+  function aliveCount(){
+    let n=0;
+    players.forEach(p=>{ if(p.alive) n++; });
+    return n;
+  }
+
+  function checkWinCondition(){
+    if(state !== 'playing') return;
+    const alive = aliveCount();
+    if(alive <= 1){
+      let winner = null;
+      players.forEach(p=>{ if(p.alive) winner = p; });
+      triggerWin(winner);
+    }
+  }
+
+  function eliminatePlayer(login){
+    const p = players.get(login);
+    if(!p || !p.alive) return;
+    p.alive = false;
+    addFeedItem('💥 ' + p.displayName + ' was eliminated!');
+    checkWinCondition();
+  }
+
+  // ---------- Difficulty scaling ----------
+  function getDifficulty(elapsed){
+    const spawnInterval = Math.max(0.65, 3.0 - elapsed*0.022);
+    const ballSpeed = Math.min(10, 3.0 + elapsed*0.055);
+    const telegraphTime = Math.max(0.75, 1.7 - elapsed*0.010);
+    return {spawnInterval, ballSpeed, telegraphTime};
+  }
+  function currentWave(elapsed){
+    return 1 + Math.floor(elapsed/15);
+  }
+
+  function spawnBall(){
+    const elapsed = (performance.now()-roundStartTime)/1000;
+    const diff = getDifficulty(elapsed);
+    const axis = Math.random()<0.5 ? 'row' : 'col';
+    const dir = Math.random()<0.5 ? 1 : -1;
+    let ball;
+    if(axis==='row'){
+      const index = Math.floor(Math.random()*ROWS);
+      ball = { axis, index, dir, pos: dir===1 ? -1 : COLS, state:'telegraph', telegraphElapsed:0, telegraphTime: diff.telegraphTime, speed: diff.ballSpeed };
+    } else {
+      const index = Math.floor(Math.random()*COLS);
+      ball = { axis, index, dir, pos: dir===1 ? -1 : ROWS, state:'telegraph', telegraphElapsed:0, telegraphTime: diff.telegraphTime, speed: diff.ballSpeed };
+    }
+    balls.push(ball);
+  }
+
+  function updateBalls(dt){
+    for(let i=balls.length-1;i>=0;i--){
+      const b = balls[i];
+      if(b.state==='telegraph'){
+        b.telegraphElapsed += dt;
+        if(b.telegraphElapsed >= b.telegraphTime) b.state='moving';
+        continue;
+      }
+      b.pos += b.dir*b.speed*dt;
+      const cell = Math.round(b.pos);
+      players.forEach((p,login)=>{
+        if(!p.alive) return;
+        if(b.axis==='row' && p.row===b.index && p.col===cell) eliminatePlayer(login);
+        else if(b.axis==='col' && p.col===b.index && p.row===cell) eliminatePlayer(login);
+      });
+      const limit = b.axis==='row' ? COLS : ROWS;
+      if(b.pos < -1.5 || b.pos > limit+1.5) balls.splice(i,1);
+    }
+  }
+
+  function triggerWin(winner){
+    state = 'won';
+    const elapsed = (performance.now()-roundStartTime)/1000;
+    const m = Math.floor(elapsed/60), s = Math.floor(elapsed%60);
+    if(winner){
+      winnerName = winner.displayName;
+      noSurvivors = false;
+      document.getElementById('winTitle').textContent = winner.displayName.toUpperCase() + ' WINS!';
+      document.getElementById('winSubtitle').textContent = 'LAST ONE STANDING';
+    } else {
+      winnerName = null;
+      noSurvivors = true;
+      document.getElementById('winTitle').textContent = 'NO SURVIVORS!';
+      document.getElementById('winSubtitle').textContent = 'THE DODGEBALLS WON THIS ROUND';
+    }
+    document.getElementById('winTime').textContent = m+':'+(s<10?'0':'')+s;
+    document.getElementById('winPlayers').textContent = players.size;
+    document.getElementById('winWave').textContent = currentWave(elapsed);
+    setTimeout(()=>{
+      document.getElementById('hud').classList.add('hidden');
+      document.getElementById('winScreen').classList.remove('hidden');
+    }, 400);
+  }
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectChat(channel){
+    disconnectChat();
+    const statusEl = document.getElementById('chatStatus');
+    statusEl.textContent = 'Connecting...';
+    statusEl.style.color = '#ffd83d';
+    try {
+      chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      chatSocket.onopen = () => {
+        chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+        chatSocket.send('PASS SCHMOOPIE');
+        chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+        chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
+      };
+      let ircBuffer = '';
+      chatSocket.onmessage = (e) => {
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop();
+        lines.forEach(line=>{
+          if(!line) return;
+          if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+          if(line.includes(' 366 ')){
+            statusEl.textContent = 'Connected ✓';
+            statusEl.style.color = '#7dff45';
+          }
+          const parsed = parseIRCLine(line);
+          if(parsed) handleChatMessage(parsed);
+        });
+      };
+      chatSocket.onerror = () => {
+        statusEl.textContent = 'Connection failed (check network)';
+        statusEl.style.color = '#ff5b3d';
+      };
+      chatSocket.onclose = () => {
+        if(statusEl.textContent.indexOf('failed')===-1){
+          statusEl.textContent = 'Disconnected';
+          statusEl.style.color = '#999';
+        }
+      };
+    } catch(e){
+      statusEl.textContent = 'Connection failed (check network)';
+      statusEl.style.color = '#ff5b3d';
+    }
+  }
+  function disconnectChat(){
+    if(chatSocket){ try{ chatSocket.close(); }catch(e){} chatSocket=null; }
+  }
+
+  function parseIRCLine(line){
+    let tags = {};
+    let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{
+        const eq = kv.indexOf('=');
+        if(eq>=0) tags[kv.slice(0,eq)] = kv.slice(eq+1);
+      });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const prefix = m[1];
+    const message = m[3];
+    const nick = prefix.split('!')[0];
+    const displayName = tags['display-name'] || nick;
+    return { login: nick.toLowerCase(), displayName, message };
+  }
+
+  function handleChatMessage(parsed){
+    const cmd = parsed.message.trim().toLowerCase();
+    if(cmd === '!join'){
+      joinPlayer(parsed.login, parsed.displayName);
+      return;
+    }
+    if(state !== 'playing') return;
+    // each direction has 4 valid synonyms (word / !word / first letter / !first letter),
+    // all matched case-insensitively, giving chat real variety to rotate through so
+    // they're never forced to send the exact same literal text twice in a row
+    if(cmd==='up'||cmd==='!up'||cmd==='u'||cmd==='!u') movePlayer(parsed.login,'up');
+    else if(cmd==='down'||cmd==='!down'||cmd==='d'||cmd==='!d') movePlayer(parsed.login,'down');
+    else if(cmd==='left'||cmd==='!left'||cmd==='l'||cmd==='!l') movePlayer(parsed.login,'left');
+    else if(cmd==='right'||cmd==='!right'||cmd==='r'||cmd==='!r') movePlayer(parsed.login,'right');
+  }
+
+  // ---------- Rendering ----------
+  function drawBackground(){
+    const g = ctx.createRadialGradient(W/2,H*0.4,40, W/2,H*0.4,Math.max(W,H)*0.8);
+    g.addColorStop(0,'#1a0f08');
+    g.addColorStop(1,'#050505');
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+  }
+
+  function drawArena(){
+    const gridW = cellSize*COLS, gridH = cellSize*ROWS;
+    // court floor
+    ctx.fillStyle = '#1c1420';
+    ctx.fillRect(offX, offY, gridW, gridH);
+    // checkerboard shading
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        if((r+c)%2===0){
+          ctx.fillStyle = 'rgba(255,255,255,0.03)';
+          ctx.fillRect(offX+c*cellSize, offY+r*cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    // grid lines
+    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+    ctx.lineWidth = 1;
+    for(let c=0;c<=COLS;c++){
+      ctx.beginPath(); ctx.moveTo(offX+c*cellSize, offY); ctx.lineTo(offX+c*cellSize, offY+gridH); ctx.stroke();
+    }
+    for(let r=0;r<=ROWS;r++){
+      ctx.beginPath(); ctx.moveTo(offX, offY+r*cellSize); ctx.lineTo(offX+gridW, offY+r*cellSize); ctx.stroke();
+    }
+    // court border glow
+    ctx.strokeStyle = '#ff5b3d';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(offX, offY, gridW, gridH);
+  }
+
+  function drawBalls(){
+    const gridW = cellSize*COLS, gridH = cellSize*ROWS;
+    balls.forEach(b=>{
+      if(b.state==='telegraph'){
+        const pulse = 0.35+0.35*Math.sin(performance.now()/120);
+        ctx.fillStyle = `rgba(255,60,40,${pulse})`;
+        if(b.axis==='row'){
+          ctx.fillRect(offX, offY+b.index*cellSize, gridW, cellSize);
+        } else {
+          ctx.fillRect(offX+b.index*cellSize, offY, cellSize, gridH);
+        }
+        return;
+      }
+      // moving ball
+      let bx, by;
+      if(b.axis==='row'){
+        bx = offX + (b.pos+0.5)*cellSize;
+        by = offY + (b.index+0.5)*cellSize;
+      } else {
+        bx = offX + (b.index+0.5)*cellSize;
+        by = offY + (b.pos+0.5)*cellSize;
+      }
+      const r = cellSize*0.28;
+      // motion trail
+      const trailX = b.axis==='row' ? bx - b.dir*r*2.2 : bx;
+      const trailY = b.axis==='col' ? by - b.dir*r*2.2 : by;
+      const trailGrad = ctx.createRadialGradient(trailX,trailY,0,trailX,trailY,r*1.4);
+      trailGrad.addColorStop(0,'rgba(255,120,40,0.35)');
+      trailGrad.addColorStop(1,'rgba(255,120,40,0)');
+      ctx.fillStyle = trailGrad;
+      ctx.beginPath(); ctx.arc(trailX,trailY,r*1.4,0,Math.PI*2); ctx.fill();
+
+      const ballGrad = ctx.createRadialGradient(bx-r*0.3,by-r*0.3,r*0.1, bx,by,r);
+      ballGrad.addColorStop(0,'#ffcf6b');
+      ballGrad.addColorStop(0.5,'#ff8a2e');
+      ballGrad.addColorStop(1,'#c94a0f');
+      ctx.fillStyle = ballGrad;
+      ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2); ctx.fill();
+      ctx.strokeStyle = '#7a2c08'; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.arc(bx,by,r,0,Math.PI*2); ctx.stroke();
+    });
+  }
+
+  function drawPlayers(dt){
+    players.forEach(p=>{
+      const targetX = offX + (p.col+0.5+p.jitter.x)*cellSize;
+      const targetY = offY + (p.row+0.5+p.jitter.y)*cellSize;
+      if(p.renderX===null){ p.renderX=targetX; p.renderY=targetY; }
+      p.renderX += (targetX-p.renderX)*Math.min(1, dt*16);
+      p.renderY += (targetY-p.renderY)*Math.min(1, dt*16);
+
+      const r = Math.max(6, cellSize*0.24);
+      ctx.globalAlpha = p.alive ? 1 : 0.25;
+
+      ctx.beginPath();
+      ctx.ellipse(p.renderX, p.renderY+r*0.7, r*0.9, r*0.35, 0, 0, Math.PI*2);
+      ctx.fillStyle = 'rgba(0,0,0,0.35)';
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.arc(p.renderX, p.renderY, r, 0, Math.PI*2);
+      ctx.fillStyle = p.color;
+      ctx.fill();
+      ctx.strokeStyle = '#111';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      if(cellSize > 30){
+        ctx.font = '700 10px Arial';
+        const label = p.alive ? p.displayName : (p.displayName+' ✗');
+        const textW = ctx.measureText(label).width;
+        const labelY = p.renderY - r - 6;
+        ctx.fillStyle = 'rgba(5,5,10,0.6)';
+        const rx=p.renderX-textW/2-4, ry=labelY-10, rw=textW+8, rh=13;
+        if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(rx,ry,rw,rh,5); ctx.fill(); }
+        else ctx.fillRect(rx,ry,rw,rh);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText(label, p.renderX, labelY);
+      }
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  let lastTime = 0;
+  function loop(ts){
+    requestAnimationFrame(loop);
+    if(!lastTime) lastTime = ts;
+    let dt = (ts-lastTime)/1000;
+    lastTime = ts;
+    dt = Math.min(dt, 0.05);
+
+    drawBackground();
+
+    if(state==='playing' || state==='won'){
+      computeLayout();
+      drawArena();
+
+      if(state==='playing'){
+        const elapsed = (performance.now()-roundStartTime)/1000;
+        spawnTimer -= dt;
+        if(spawnTimer <= 0){
+          spawnBall();
+          spawnTimer = getDifficulty(elapsed).spawnInterval;
+        }
+        updateBalls(dt);
+        document.getElementById('waveNum').textContent = currentWave(elapsed);
+        document.getElementById('aliveCountVal').textContent = aliveCount();
+      }
+
+      drawBalls();
+      drawPlayers(dt);
+    }
+  }
+
+  // ---------- UI wiring ----------
+  const startScreen = document.getElementById('startScreen');
+  const lobbyScreen = document.getElementById('lobbyScreen');
+  const winScreen = document.getElementById('winScreen');
+  const hud = document.getElementById('hud');
+
+  document.getElementById('connectBtn').addEventListener('click', ()=>{
+    const channel = document.getElementById('channelInput').value || 'fwhaydo';
+    connectChat(channel);
+    startScreen.classList.add('hidden');
+    lobbyScreen.classList.remove('hidden');
+    state = 'lobby';
+    updateLobbyUI();
+  });
+
+  document.getElementById('startGameBtn').addEventListener('click', ()=>{
+    if(players.size === 0){
+      alert('No one has joined yet — wait for at least one !join before starting.');
+      return;
+    }
+    lobbyScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    document.getElementById('joinHint').textContent = 'Joining locked until next round';
+    document.getElementById('waveNum').textContent = 1;
+    balls = [];
+    spawnTimer = 2.0; // brief calm moment before the first ball
+    roundStartTime = performance.now();
+    state = 'playing';
+
+    // if only one player ever joined, they're already the last one standing
+    if(players.size === 1){
+      let onlyPlayer = null;
+      players.forEach(p=>{ onlyPlayer = p; });
+      setTimeout(()=>triggerWin(onlyPlayer), 300);
+    }
+  });
+
+  document.getElementById('nextRoundBtn').addEventListener('click', ()=>{
+    round++;
+    winScreen.classList.add('hidden');
+    players = new Map();
+    joinOrder = 0;
+    balls = [];
+    document.getElementById('lobbyCount').textContent = '0 players joined';
+    document.getElementById('lobbyNames').innerHTML = '';
+    lobbyScreen.classList.remove('hidden');
+    state = 'lobby';
+  });
+
+  document.getElementById('menuBtnWin').addEventListener('click', ()=>{
+    winScreen.classList.add('hidden');
+    startScreen.classList.remove('hidden');
+    disconnectChat();
+    players = new Map();
+    joinOrder = 0;
+    balls = [];
+    round = 1;
+    state = 'menu';
+  });
+
+  resize();
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
