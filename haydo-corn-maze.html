@@ -100,7 +100,7 @@
       <div class="statBox"><div class="num" id="winPlayers">0</div><div class="lbl">Racers</div></div>
       <div class="statBox"><div class="num" id="winRound">1</div><div class="lbl">Round</div></div>
     </div>
-    <div class="subtitle" id="autoNextLabel" style="margin-top:6px;">NEW MAZE IN <span id="autoNextCount">6</span>...</div>
+    <button class="btn" id="nextRoundBtn">START NEXT ROUND</button>
     <button class="btn secondary" id="menuBtnWin">END SESSION / MAIN MENU</button>
   </div>
 
@@ -349,9 +349,6 @@
     document.getElementById('playerCountVal').textContent = players.size;
   }
 
-  const AUTO_NEXT_SECONDS = 6;
-  let autoNextTimer = null;
-
   function triggerWin(name){
     if(state!=='playing') return;
     state = 'won';
@@ -367,27 +364,10 @@
     setTimeout(()=>{
       document.getElementById('hud').classList.add('hidden');
       document.getElementById('winScreen').classList.remove('hidden');
-      startAutoNextCountdown();
     }, 500);
   }
 
-  function startAutoNextCountdown(){
-    let remaining = AUTO_NEXT_SECONDS;
-    document.getElementById('autoNextCount').textContent = remaining;
-    if(autoNextTimer) clearInterval(autoNextTimer);
-    autoNextTimer = setInterval(()=>{
-      remaining--;
-      if(remaining <= 0){
-        clearInterval(autoNextTimer);
-        autoNextTimer = null;
-        startNextRoundAutomatically();
-      } else {
-        document.getElementById('autoNextCount').textContent = remaining;
-      }
-    }, 1000);
-  }
-
-  function startNextRoundAutomatically(){
+  function startNextRound(){
     round++;
     document.getElementById('winScreen').classList.add('hidden');
     generateMaze();
@@ -414,8 +394,16 @@
         chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
         chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
       };
+      let ircBuffer = '';
       chatSocket.onmessage = (e) => {
-        const lines = e.data.split('\r\n');
+        // buffer across frames -- a WebSocket frame is not guaranteed to end exactly
+        // on an IRC line boundary, especially under heavy chat traffic. Splitting
+        // per-frame without buffering can silently drop or mangle a message that
+        // gets split across two frames. Keep any incomplete trailing fragment and
+        // prepend it to the next frame instead.
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop(); // last entry may be an incomplete line -- hold onto it
         lines.forEach(line=>{
           if(!line) return;
           if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
@@ -653,8 +641,8 @@
       const targetX = offX + p.cellX*cellSize + cellSize/2 + p.jitter.x*cellSize;
       const targetY = offY + p.cellY*cellSize + cellSize/2 + p.jitter.y*cellSize;
       if(p.renderX===null){ p.renderX=targetX; p.renderY=targetY; }
-      p.renderX += (targetX-p.renderX)*Math.min(1, dt*10);
-      p.renderY += (targetY-p.renderY)*Math.min(1, dt*10);
+      p.renderX += (targetX-p.renderX)*Math.min(1, dt*16);
+      p.renderY += (targetY-p.renderY)*Math.min(1, dt*16);
 
       const r = Math.max(5, cellSize*0.22);
       ctx.beginPath();
@@ -729,8 +717,11 @@
     state = 'playing';
   });
 
+  document.getElementById('nextRoundBtn').addEventListener('click', ()=>{
+    startNextRound();
+  });
+
   document.getElementById('menuBtnWin').addEventListener('click', ()=>{
-    if(autoNextTimer){ clearInterval(autoNextTimer); autoNextTimer=null; }
     winScreen.classList.add('hidden');
     startScreen.classList.remove('hidden');
     disconnectChat();
