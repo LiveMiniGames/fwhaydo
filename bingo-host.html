@@ -236,8 +236,24 @@ function doConnect(){
   localStorage.setItem('bingo-ch',twChannel);
   err.textContent='Connecting...';
 
-  ably = new Ably.Realtime({key:ablyKey});
+  // a malformed key can throw synchronously when constructing the client -- without
+  // this try/catch, that exception silently halts everything and the UI is stuck on
+  // "Connecting..." forever with no visible error at all
+  try {
+    ably = new Ably.Realtime({key:ablyKey});
+  } catch(e){
+    err.textContent = 'Invalid Ably API key format (expected appId.keyId:keySecret)';
+    return;
+  }
+
+  // failsafe: if neither connected nor failed fires within 10s (bad key that doesn't
+  // throw synchronously, network block, etc.), stop hanging silently and say so
+  const connectTimeout = setTimeout(()=>{
+    err.textContent = 'Still not connecting after 10s — double check your Ably API key and network connection';
+  }, 10000);
+
   ably.connection.on('connected',()=>{
+    clearTimeout(connectTimeout);
     ch = ably.channels.get('bingo-game');
     ch.subscribe('player-join', msg=>{
       const {username, cardSeed} = msg.data;
@@ -262,7 +278,17 @@ function doConnect(){
     buildGridEditor();
     if(twChannel) connectTwitch();
   });
-  ably.connection.on('failed',()=>err.textContent='Connection failed — check API key');
+  ably.connection.on('failed',(stateChange)=>{
+    clearTimeout(connectTimeout);
+    const reason = stateChange && stateChange.reason && stateChange.reason.message;
+    err.textContent = 'Connection failed — check API key' + (reason ? ' ('+reason+')' : '');
+  });
+  ably.connection.on('disconnected',()=>{
+    err.textContent = 'Disconnected from Ably — retrying...';
+  });
+  ably.connection.on('suspended',()=>{
+    err.textContent = 'Connection suspended — Ably will keep retrying automatically';
+  });
 }
 
 window.addEventListener('load',()=>{
@@ -286,14 +312,26 @@ function updateViewerUrl(){
 function connectTwitch(){
   tws = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
   tws.onopen=()=>{
-    tws.send('PASS oauth:x');
-    tws.send('NICK justinfan'+Math.floor(Math.random()*99999));
+    // this CAP REQ was missing entirely -- without it, Twitch never sends IRC v3
+    // tags (display-name, etc.) on messages, so the display-name regex below would
+    // never match anything and !join would silently never register a single player
+    tws.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+    tws.send('PASS SCHMOOPIE');
+    tws.send('NICK justinfan'+Math.floor(10000+Math.random()*89999));
     tws.send('JOIN #'+twChannel);
+    setTwitchConn('connecting');
   };
+  let ircBuffer = '';
   tws.onmessage=e=>{
-    e.data.split('\r\n').forEach(raw=>{
+    // buffer across frames so a message split across two WebSocket frames never
+    // gets silently dropped or corrupted
+    ircBuffer += e.data;
+    const lines = ircBuffer.split('\r\n');
+    ircBuffer = lines.pop();
+    lines.forEach(raw=>{
       if(!raw)return;
       if(raw.indexOf('PING')===0){tws.send('PONG :tmi.twitch.tv');return;}
+      if(raw.includes(' 366 ')){ setTwitchConn('connected'); return; }
       if(raw.indexOf('PRIVMSG')===-1)return;
       const um=raw.match(/display-name=([^;\s]+)/);
       const mm=raw.match(/PRIVMSG #[^\s]+ :(.+)/);
@@ -310,8 +348,16 @@ function connectTwitch(){
       }
     });
   };
-  tws.onclose=()=>setTimeout(connectTwitch,3000);
+  tws.onclose=()=>{ setTwitchConn('disconnected'); setTimeout(connectTwitch,3000); };
   tws.onerror=()=>tws.close();
+}
+
+function setTwitchConn(status){
+  const lbl = document.getElementById('conn-lbl');
+  if(!lbl) return;
+  if(status==='connected') lbl.textContent = 'Connected (Ably + Twitch #'+twChannel+')';
+  else if(status==='connecting') lbl.textContent = 'Connected to Ably — connecting to Twitch chat...';
+  else lbl.textContent = 'Ably connected, Twitch chat disconnected — retrying...';
 }
 
 // ── GRID EDITOR ───────────────────────────────────────────────────────────────
