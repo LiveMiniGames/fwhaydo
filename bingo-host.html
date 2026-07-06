@@ -258,10 +258,18 @@ function doConnect(){
     ch = ably.channels.get('bingo-game');
     ch.subscribe('player-join', msg=>{
       const {username, cardSeed} = msg.data;
+      // this handler was never replying at all -- web viewers (joining via the
+      // page, not Twitch chat) would publish player-join and then just wait
+      // forever, since nothing ever sent them the game-join-confirm they need
+      if(!gameActive) return; // no game running yet -- nothing to confirm
+      let finalSeed = cardSeed;
       if(!players[username]){
-        players[username] = {card: generateCard(cardSeed), marked: new Set(), hasBingo:false, hasWon:false};
-        renderPlayerList();
+        players[username] = {card: generateCard(cardSeed), cardSeed, marked: new Set(), hasBingo:false, hasWon:false};
+      } else {
+        finalSeed = players[username].cardSeed; // rejoin/refresh keeps their original card
       }
+      ch.publish('game-join-confirm',{username, cardSeed:finalSeed, squares, mode:gameMode});
+      renderPlayerList();
     });
     ch.subscribe('player-mark', msg=>{
       const {username, idx} = msg.data;
@@ -362,7 +370,7 @@ function connectTwitch(){
       if(msg==='!join'||msg==='join'){
         if(!players[user] && gameActive){
           const seed=Math.floor(Math.random()*999999);
-          players[user]={card:generateCard(seed),marked:new Set(),hasBingo:false,hasWon:false};
+          players[user]={card:generateCard(seed),cardSeed:seed,marked:new Set(),hasBingo:false,hasWon:false};
           ch.publish('game-join-confirm',{username:user, cardSeed:seed, squares, mode:gameMode});
           renderPlayerList();
         }

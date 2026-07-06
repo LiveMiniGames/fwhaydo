@@ -260,7 +260,9 @@ function startAbly(KEY, CHANNEL){
     // Host confirmed our join
     ch.subscribe('game-join-confirm', msg=>{
       if(msg.data.username !== username) return;
-      myCard    = msg.data.card;
+      // the host only ever sends cardSeed, not a pre-built card array -- rebuild
+      // it locally the same deterministic way the host did (same seed = same card)
+      myCard    = generateCard(msg.data.cardSeed);
       mySquares = msg.data.squares;
       gameMode  = msg.data.mode;
       gameActive = true;
