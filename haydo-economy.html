@@ -116,15 +116,11 @@
   <div id="popupFlash"><div class="pfName" id="pfName"></div><div class="pfMain" id="pfMain"></div><div class="pfSub" id="pfSub"></div></div>
 </div>
 
-<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
-<script src="https://cdn.ably.com/lib/objects.umd.min-2.js" onerror="window.__ablyObjectsLoadFailed=true"></script>
 <script>
+
 (function(){
-  // baked in permanently -- reuses the same Ably account already set up for Bingo,
-  // no new signup needed. Uses a separate channel so the data doesn't mix with bingo.
-  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
   const TWITCH_CHANNEL = 'fwhaydo';
-  const ECONOMY_CHANNEL = 'haydo-economy';
+  const STORAGE_KEY = 'haydo-economy-state';
 
   const STARTING_BALANCE = 1000;
   const COLLECT_COOLDOWN_MS = 24*60*60*1000; // 24 hours
@@ -150,9 +146,6 @@
   const WORK_JOBS = ['walked dogs','streamed for tips','sold memes','fixed a computer','delivered pizza','mowed a lawn','busked on the corner','flipped burgers','coded a bug fix','washed cars'];
 
   let economyState = { users: {} }; // login -> {displayName, balance, lastCollect, lastWork, houses:[], cars:[]}
-  let root = null;
-  let ably = null;
-  let ch = null;
   let dbReady = false;
 
   function getUser(login, displayName){
@@ -164,8 +157,24 @@
   }
 
   function persist(){
-    if(!root) return;
-    root.set('state', JSON.parse(JSON.stringify(economyState))).catch(e=>console.error('persist failed', e));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(economyState));
+    } catch(e){
+      console.error('localStorage save failed', e);
+      addFeedItem('⚠️ Could not save progress — your browser storage may be full or disabled.');
+    }
+  }
+
+  function loadPersisted(){
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if(saved){
+        const parsed = JSON.parse(saved);
+        if(parsed && parsed.users) economyState = parsed;
+      }
+    } catch(e){
+      console.error('localStorage load failed', e);
+    }
   }
 
   function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
@@ -419,64 +428,14 @@
     document.getElementById('statusPill').textContent = text;
   }
 
-  // ---------- Ably LiveObjects connection ----------
-  function waitForAbly(){
-    return new Promise(resolve=>{
-      function ready(){ return typeof Ably !== 'undefined' && typeof window.AblyObjectsPlugin !== 'undefined'; }
-      function failed(){ return window.__ablyLoadFailed || window.__ablyObjectsLoadFailed; }
-      if(ready() || failed()){ resolve(); return; }
-      const check = setInterval(()=>{
-        if(ready() || failed()){ clearInterval(check); resolve(); }
-      }, 200);
-    });
-  }
-
-  async function init(){
-    await waitForAbly();
-    if(typeof Ably === 'undefined' || typeof window.AblyObjectsPlugin === 'undefined'){
-      document.getElementById('connectMsg').textContent = 'Failed to load the connection library (base library or LiveObjects plugin) — check your network and reload.';
-      return;
-    }
-    try{
-      ably = new Ably.Realtime({ key: ABLY_KEY, plugins: { Objects: window.AblyObjectsPlugin } });
-      ably.connection.on('connected', async ()=>{
-        setStatus('Loading saved economy data...');
-        ch = ably.channels.get(ECONOMY_CHANNEL, { modes: ['OBJECT_SUBSCRIBE','OBJECT_PUBLISH'] });
-        try{
-          root = await ch.objects.getRoot();
-          const saved = root.get('state');
-          if(saved && saved.users){
-            economyState = saved;
-          } else {
-            await root.set('state', economyState);
-          }
-          dbReady = true;
-          renderAll();
-          document.getElementById('connectOverlay').style.display = 'none';
-          setStatus('Connecting to Twitch chat...');
-          connectTwitch();
-
-          // keep in sync if this tool is ever open in more than one tab
-          root.subscribe(()=>{
-            const latest = root.get('state');
-            if(latest && latest.users){
-              economyState = latest;
-              renderAll();
-            }
-          });
-        } catch(e){
-          console.error('LiveObjects setup failed', e);
-          const detail = (e && (e.message || e.reason || e.toString())) || 'unknown error';
-          document.getElementById('connectMsg').textContent = 'Could not load the economy database: ' + detail;
-        }
-      });
-      ably.connection.on('failed', (stateChange)=>{
-        const reason = stateChange && stateChange.reason && stateChange.reason.message;
-        document.getElementById('connectMsg').textContent = 'Ably connection failed' + (reason ? ': ' + reason : ' — check your network and reload.');
-      });
-    } catch(e){
-      document.getElementById('connectMsg').textContent = 'Error starting connection: ' + (e && e.message ? e.message : e);
-    }
+  // ---------- Startup ----------
+  function init(){
+    loadPersisted();
+    dbReady = true;
+    renderAll();
+    document.getElementById('connectOverlay').style.display = 'none';
+    setStatus('Connecting to Twitch chat...');
+    connectTwitch();
   }
 
   init();
