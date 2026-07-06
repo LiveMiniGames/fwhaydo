@@ -127,6 +127,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   <span id="tb-title">🎱 Bingo Host</span>
   <div class="dot" id="dot"></div>
   <span id="conn-lbl">Not connected</span>
+  <button class="btn btn-sm btn-grey" id="btn-changekey" onclick="changeKey()" style="display:none">Change Key/Channel</button>
 </div>
 
 <div id="login-view">
@@ -295,11 +296,31 @@ window.addEventListener('load',()=>{
   const k=localStorage.getItem('bingo-key'),c=localStorage.getItem('bingo-ch');
   if(k)document.getElementById('inp-key').value=k;
   if(c)document.getElementById('inp-ch').value=c;
+  // if both are already saved from last time, skip the manual click entirely
+  if(k && c){
+    document.getElementById('login-err').textContent='Reconnecting automatically...';
+    doConnect();
+  }
 });
+
+function changeKey(){
+  if(ably){ try{ ably.close(); }catch(e){} }
+  if(tws){ try{ tws.close(); }catch(e){} }
+  localStorage.removeItem('bingo-key');
+  localStorage.removeItem('bingo-ch');
+  document.getElementById('main-view').style.display='none';
+  document.getElementById('login-view').style.display='flex';
+  document.getElementById('inp-key').value='';
+  document.getElementById('inp-ch').value='';
+  document.getElementById('login-err').textContent='';
+  document.getElementById('btn-changekey').style.display='none';
+  setConn(false);
+}
 
 function setConn(ok){
   document.getElementById('dot').className='dot'+(ok?' ok':'');
   document.getElementById('conn-lbl').textContent=ok?'Connected':'Disconnected';
+  document.getElementById('btn-changekey').style.display=ok?'':'none';
 }
 
 function updateViewerUrl(){
