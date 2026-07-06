@@ -28,6 +28,11 @@
   .howto { margin-top:20px; font-size:12.5px; color:#aaa; line-height:1.8; max-width:380px; }
   .howto b { color:#ffcc33; }
 
+  .bigWarning { margin-top:16px; max-width:420px; background:rgba(255,91,61,0.12); border:2px solid #ff5b3d; border-radius:14px; padding:14px 18px; }
+  .bigWarning .warnTitle { font-size:15px; font-weight:900; color:#ff8a6b; letter-spacing:.5px; margin-bottom:6px; }
+  .bigWarning .warnBody { font-size:13px; color:#ffd6c8; line-height:1.6; font-weight:600; }
+  .bigWarning .warnBody b { color:#fff; }
+
   #lobbyPlayerBox { margin:16px 0; max-width:460px; }
   #lobbyCount { font-size:15px; color:#ffcc33; font-weight:800; margin-bottom:8px; }
   #lobbyNames { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:120px; overflow-y:auto; }
@@ -72,9 +77,14 @@
       <div id="chatStatus"></div>
     </div>
     <button class="btn" id="connectBtn">CONNECT & OPEN LOBBY</button>
+    <div class="bigWarning">
+      <div class="warnTitle">⚠️ HEADS UP, CHAT</div>
+      <div class="warnBody">Twitch won't let you send the <b>exact same message twice in a row</b> — mix it up!
+      Each move has multiple ways to say it, so just rotate through them (e.g. <b>up → !up → u → up</b>) and you'll never get stuck.</div>
+    </div>
     <div class="howto">
-      Chat joins with <b>!join</b>. Move with <b>up / down / left / right</b> or <b>!up / !down / !left / !right</b>
-      (both work so non-mods/VIPs can alternate past Twitch's repeat-message block).<br>
+      Chat joins with <b>!join</b> (works any time, even mid-round). Move with <b>up/down/left/right</b>,
+      <b>!up/!down/!left/!right</b>, or the short versions <b>u/d/l/r</b> and <b>!u/!d/!l/!r</b> — capitalization never matters.<br>
       Everyone starts in the same spot. First one out of the corn wins the round.
     </div>
   </div>
@@ -88,6 +98,11 @@
       <div id="lobbyNames"></div>
     </div>
     <button class="btn" id="startMazeBtn">START THE MAZE</button>
+    <div class="bigWarning">
+      <div class="warnTitle">⚠️ HEADS UP, CHAT</div>
+      <div class="warnBody">Never send the <b>exact same message twice in a row</b> — Twitch will block the repeat.
+      Rotate through the options instead (e.g. <b>right → !right → r → right</b>).</div>
+    </div>
     <div class="howto">Chat can keep typing <b>!join</b> any time — latecomers drop in at the start.</div>
   </div>
 
@@ -462,10 +477,14 @@
       return;
     }
     if(state !== 'playing') return;
-    if(cmd==='up'||cmd==='!up') movePlayer(parsed.login,'up');
-    else if(cmd==='down'||cmd==='!down') movePlayer(parsed.login,'down');
-    else if(cmd==='left'||cmd==='!left') movePlayer(parsed.login,'left');
-    else if(cmd==='right'||cmd==='!right') movePlayer(parsed.login,'right');
+    // each direction has 4 valid synonyms (word / !word / first letter / !first letter),
+    // all matched case-insensitively (UP, Up, !UP, etc. all work identically) --
+    // this gives chat real variety to rotate through so they're never forced to send
+    // the exact same literal text twice in a row
+    if(cmd==='up'||cmd==='!up'||cmd==='u'||cmd==='!u') movePlayer(parsed.login,'up');
+    else if(cmd==='down'||cmd==='!down'||cmd==='d'||cmd==='!d') movePlayer(parsed.login,'down');
+    else if(cmd==='left'||cmd==='!left'||cmd==='l'||cmd==='!l') movePlayer(parsed.login,'left');
+    else if(cmd==='right'||cmd==='!right'||cmd==='r'||cmd==='!r') movePlayer(parsed.login,'right');
   }
 
   // ---------- Background artwork (your real image, used as-is) ----------
