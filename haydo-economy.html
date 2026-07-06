@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S ECONOMY</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0f0a; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; background:#0a0f0a; overflow:hidden; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  #statusBar { position:absolute; top:14px; left:110px; right:14px; display:flex; justify-content:center; z-index:40; }
+  #statusPill { font-size:11px; font-weight:700; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:4px 14px; color:#999; }
+
+  #titleBar { text-align:center; padding:44px 0 10px; color:#fff; }
+  #titleBar .t1 { font-size:clamp(20px,3.5vw,32px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#2ecc71,#ffd83d); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #titleBar .t2 { font-size:11px; letter-spacing:2px; color:#7a9a7a; text-transform:uppercase; font-weight:700; margin-top:2px; }
+  #globalStats { display:flex; justify-content:center; gap:24px; margin-top:8px; }
+  .gStat { font-size:12px; color:#ccc; font-weight:700; }
+  .gStat b { color:#ffd83d; }
+
+  #mainGrid { position:absolute; top:120px; bottom:14px; left:14px; right:14px; display:flex; gap:14px; }
+  .panel { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px; overflow-y:auto; }
+  .panelTitle { font-size:12px; font-weight:900; letter-spacing:1.5px; color:#2ecc71; text-transform:uppercase; margin-bottom:10px; text-align:center; }
+
+  #leaderboardPanel { width:26%; }
+  .lbRow { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,.03); }
+  .lbRank { width:20px; font-weight:900; color:#ffd83d; font-size:13px; }
+  .lbName { flex:1; font-size:12.5px; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lbBal { font-size:12px; font-weight:800; color:#2ecc71; }
+  .lbIcons { font-size:11px; }
+
+  #townPanel { flex:1; display:flex; flex-direction:column; }
+  #townShowcase { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; }
+  #townShowcase .crownName { font-size:16px; font-weight:900; color:#ffd83d; }
+  #townShowcase .crownSub { font-size:11px; color:#999; margin-bottom:6px; }
+  #townShowcase .crownIcons { font-size:64px; display:flex; gap:14px; }
+  #recentGrid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
+  .ownedIcon { font-size:28px; opacity:.9; }
+
+  #shopPanel { width:26%; }
+  .shopSection { margin-bottom:10px; }
+  .shopSectionTitle { font-size:10px; color:#888; letter-spacing:1px; text-transform:uppercase; margin:8px 0 4px; }
+  .shopItem { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,.03); }
+  .shopItem .emoji { font-size:20px; }
+  .shopItem .info { flex:1; }
+  .shopItem .name { font-size:12px; font-weight:700; color:#fff; }
+  .shopItem .price { font-size:11px; color:#ffd83d; font-weight:700; }
+  .shopItem .cmd { font-size:10px; color:#666; font-family:monospace; }
+
+  #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:340px; }
+  .feedItem { font-size:12px; font-weight:700; color:#fff; background:rgba(10,20,10,.7); border:1px solid rgba(46,204,113,.3); border-radius:8px; padding:4px 10px; opacity:0; animation: feedFade 5s ease forwards; }
+  @keyframes feedFade { 0%{opacity:0; transform:translateY(6px);} 8%{opacity:1; transform:translateY(0);} 82%{opacity:1;} 100%{opacity:0;} }
+
+  #popupFlash { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); text-align:center; z-index:60; pointer-events:none;
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1); background:#0e1a0e; border:3px solid #2ecc71; border-radius:20px; padding:22px 40px; box-shadow:0 10px 50px rgba(0,0,0,.6); }
+  #popupFlash.show { transform:translate(-50%,-50%) scale(1); }
+  #popupFlash .pfName { font-size:14px; color:#999; font-weight:700; margin-bottom:4px; }
+  #popupFlash .pfMain { font-size:clamp(22px,4vw,36px); font-weight:900; }
+  #popupFlash .pfSub { font-size:12px; color:#aaa; margin-top:4px; }
+
+  #connectOverlay { position:absolute; inset:0; background:#0a0f0a; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; z-index:100; text-align:center; }
+  #connectOverlay .spin { width:36px; height:36px; border:4px solid rgba(46,204,113,.2); border-top-color:#2ecc71; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px; }
+  @keyframes spin { to{ transform:rotate(360deg); } }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+
+<div id="gameContainer">
+  <div id="connectOverlay">
+    <div class="spin"></div>
+    <div id="connectMsg">Connecting to the economy database...</div>
+  </div>
+
+  <div id="statusBar"><div id="statusPill">Connecting...</div></div>
+
+  <div id="titleBar">
+    <div class="t1">💰 HAYDO'S ECONOMY</div>
+    <div class="t2">!balance · !collect · !work · !gamble &lt;amt&gt; · !buy &lt;item&gt; · !inventory</div>
+    <div id="globalStats">
+      <div class="gStat">👥 <b id="totalUsers">0</b> players</div>
+      <div class="gStat">🏦 <b id="totalWealth">$0</b> total wealth</div>
+    </div>
+  </div>
+
+  <div id="mainGrid">
+    <div class="panel" id="leaderboardPanel">
+      <div class="panelTitle">🏆 Leaderboard</div>
+      <div id="lbList"></div>
+    </div>
+
+    <div class="panel" id="townPanel">
+      <div class="panelTitle">👑 Richest Player</div>
+      <div id="townShowcase"></div>
+    </div>
+
+    <div class="panel" id="shopPanel">
+      <div class="panelTitle">🏘️ Shop</div>
+      <div class="shopSection">
+        <div class="shopSectionTitle">Houses</div>
+        <div id="houseShopList"></div>
+      </div>
+      <div class="shopSection">
+        <div class="shopSectionTitle">Cars</div>
+        <div id="carShopList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="feed"></div>
+  <div id="popupFlash"><div class="pfName" id="pfName"></div><div class="pfMain" id="pfMain"></div><div class="pfSub" id="pfSub"></div></div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  // baked in permanently -- reuses the same Ably account already set up for Bingo,
+  // no new signup needed. Uses a separate channel so the data doesn't mix with bingo.
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const TWITCH_CHANNEL = 'fwhaydo';
+  const ECONOMY_CHANNEL = 'haydo-economy';
+
+  const STARTING_BALANCE = 1000;
+  const COLLECT_COOLDOWN_MS = 24*60*60*1000; // 24 hours
+  const WORK_COOLDOWN_MS = 30*60*1000; // 30 minutes
+  const COLLECT_MIN = 200, COLLECT_MAX = 500;
+  const WORK_MIN = 50, WORK_MAX = 150;
+  const GAMBLE_WIN_CHANCE = 0.48;
+
+  const HOUSES = [
+    {id:'shack', name:'Shack', price:500, emoji:'🛖'},
+    {id:'cottage', name:'Cottage', price:1500, emoji:'🏡'},
+    {id:'house', name:'House', price:4000, emoji:'🏠'},
+    {id:'mansion', name:'Mansion', price:15000, emoji:'🏰'},
+    {id:'estate', name:'Private Estate', price:50000, emoji:'🏯'}
+  ];
+  const CARS = [
+    {id:'bike', name:'Bicycle', price:200, emoji:'🚲'},
+    {id:'sedan', name:'Sedan', price:1200, emoji:'🚗'},
+    {id:'sports', name:'Sports Car', price:6000, emoji:'🏎️'},
+    {id:'truck', name:'Monster Truck', price:12000, emoji:'🚙'},
+    {id:'jet', name:'Private Jet', price:75000, emoji:'✈️'}
+  ];
+  const WORK_JOBS = ['walked dogs','streamed for tips','sold memes','fixed a computer','delivered pizza','mowed a lawn','busked on the corner','flipped burgers','coded a bug fix','washed cars'];
+
+  let economyState = { users: {} }; // login -> {displayName, balance, lastCollect, lastWork, houses:[], cars:[]}
+  let root = null;
+  let ably = null;
+  let ch = null;
+  let dbReady = false;
+
+  function getUser(login, displayName){
+    if(!economyState.users[login]){
+      economyState.users[login] = { displayName, balance: STARTING_BALANCE, lastCollect: 0, lastWork: 0, houses: [], cars: [] };
+    }
+    economyState.users[login].displayName = displayName; // keep display name fresh
+    return economyState.users[login];
+  }
+
+  function persist(){
+    if(!root) return;
+    root.set('state', JSON.parse(JSON.stringify(economyState))).catch(e=>console.error('persist failed', e));
+  }
+
+  function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
+
+  function addFeedItem(text){
+    const feed = document.getElementById('feed');
+    const el = document.createElement('div');
+    el.className = 'feedItem';
+    el.textContent = text;
+    feed.appendChild(el);
+    setTimeout(()=>el.remove(), 5000);
+    while(feed.children.length > 7) feed.removeChild(feed.firstChild);
+  }
+
+  function showPopup(name, main, sub, color){
+    document.getElementById('pfName').textContent = name;
+    document.getElementById('pfMain').textContent = main;
+    document.getElementById('pfMain').style.color = color;
+    document.getElementById('pfSub').textContent = sub;
+    const el = document.getElementById('popupFlash');
+    el.style.borderColor = color;
+    el.classList.remove('show');
+    void el.offsetWidth;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 2600);
+  }
+
+  // ---------- Rendering ----------
+  function renderAll(){
+    const users = Object.entries(economyState.users);
+    document.getElementById('totalUsers').textContent = users.length;
+    const totalWealth = users.reduce((s,[,u])=>s+u.balance,0);
+    document.getElementById('totalWealth').textContent = fmt(totalWealth);
+
+    // leaderboard
+    const sorted = users.slice().sort((a,b)=>b[1].balance-a[1].balance).slice(0,10);
+    const lbList = document.getElementById('lbList');
+    lbList.innerHTML = '';
+    sorted.forEach(([login,u],i)=>{
+      const row = document.createElement('div');
+      row.className = 'lbRow';
+      const icons = (u.houses.map(id=>HOUSES.find(h=>h.id===id)?.emoji||'').join('')) + (u.cars.map(id=>CARS.find(c=>c.id===id)?.emoji||'').join(''));
+      row.innerHTML = `<div class="lbRank">#${i+1}</div><div class="lbName">${u.displayName}</div><div class="lbIcons">${icons}</div><div class="lbBal">${fmt(u.balance)}</div>`;
+      lbList.appendChild(row);
+    });
+    if(sorted.length===0) lbList.innerHTML = '<div style="text-align:center;color:#666;font-size:12px;">No players yet — chat needs to use a command!</div>';
+
+    // richest player showcase
+    const showcase = document.getElementById('townShowcase');
+    if(sorted.length===0){
+      showcase.innerHTML = '<div style="color:#666;font-size:13px;">Nobody has played yet</div>';
+    } else {
+      const [topLogin, topU] = sorted[0];
+      const houseIcons = topU.houses.map(id=>HOUSES.find(h=>h.id===id)?.emoji).filter(Boolean).join(' ') || '🏕️';
+      const carIcons = topU.cars.map(id=>CARS.find(c=>c.id===id)?.emoji).filter(Boolean).join(' ');
+      showcase.innerHTML = `
+        <div class="crownName">👑 ${topU.displayName}</div>
+        <div class="crownSub">${fmt(topU.balance)}</div>
+        <div class="crownIcons">${houseIcons} ${carIcons}</div>
+      `;
+    }
+
+    // shop lists (show affordability at a glance for whoever is currently "in the lead" -- purely cosmetic reference)
+    const houseList = document.getElementById('houseShopList');
+    houseList.innerHTML = '';
+    HOUSES.forEach(h=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = `<div class="emoji">${h.emoji}</div><div class="info"><div class="name">${h.name}</div><div class="price">${fmt(h.price)}</div></div><div class="cmd">!buy ${h.id}</div>`;
+      houseList.appendChild(div);
+    });
+    const carList = document.getElementById('carShopList');
+    carList.innerHTML = '';
+    CARS.forEach(c=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = `<div class="emoji">${c.emoji}</div><div class="info"><div class="name">${c.name}</div><div class="price">${fmt(c.price)}</div></div><div class="cmd">!buy ${c.id}</div>`;
+      carList.appendChild(div);
+    });
+  }
+
+  // ---------- Command handlers ----------
+  function cmdBalance(login, u){
+    showPopup(u.displayName, fmt(u.balance), 'Current Balance', '#2ecc71');
+  }
+
+  function cmdCollect(login, u){
+    const now = Date.now();
+    const elapsed = now - u.lastCollect;
+    if(u.lastCollect && elapsed < COLLECT_COOLDOWN_MS){
+      const hoursLeft = Math.ceil((COLLECT_COOLDOWN_MS-elapsed)/3600000);
+      showPopup(u.displayName, 'ON COOLDOWN', `Come back in ~${hoursLeft}h for your next collect`, '#c0392b');
+      return;
+    }
+    const amount = Math.floor(COLLECT_MIN + Math.random()*(COLLECT_MAX-COLLECT_MIN));
+    u.balance += amount;
+    u.lastCollect = now;
+    showPopup(u.displayName, '+' + fmt(amount), 'Daily Collect!', '#2ecc71');
+    addFeedItem(`💵 ${u.displayName} collected ${fmt(amount)}!`);
+    persist();
+    renderAll();
+  }
+
+  function cmdWork(login, u){
+    const now = Date.now();
+    const elapsed = now - u.lastWork;
+    if(u.lastWork && elapsed < WORK_COOLDOWN_MS){
+      const minsLeft = Math.ceil((WORK_COOLDOWN_MS-elapsed)/60000);
+      showPopup(u.displayName, 'ON COOLDOWN', `Rest up — back to work in ~${minsLeft}m`, '#c0392b');
+      return;
+    }
+    const amount = Math.floor(WORK_MIN + Math.random()*(WORK_MAX-WORK_MIN));
+    const job = WORK_JOBS[Math.floor(Math.random()*WORK_JOBS.length)];
+    u.balance += amount;
+    u.lastWork = now;
+    showPopup(u.displayName, '+' + fmt(amount), `Worked: ${job}`, '#2ecc71');
+    addFeedItem(`🛠️ ${u.displayName} ${job} and earned ${fmt(amount)}!`);
+    persist();
+    renderAll();
+  }
+
+  function cmdGamble(login, u, args){
+    const amount = parseInt(args[0], 10);
+    if(!amount || amount <= 0){
+      showPopup(u.displayName, 'INVALID BET', 'Use: !gamble <amount>', '#c0392b');
+      return;
+    }
+    if(amount > u.balance){
+      showPopup(u.displayName, 'TOO POOR', `You only have ${fmt(u.balance)}`, '#c0392b');
+      return;
+    }
+    const won = Math.random() < GAMBLE_WIN_CHANCE;
+    if(won){
+      u.balance += amount;
+      showPopup(u.displayName, '+' + fmt(amount), 'WON THE GAMBLE!', '#2ecc71');
+      addFeedItem(`🎰 ${u.displayName} gambled ${fmt(amount)} and WON ${fmt(amount)}!`);
+    } else {
+      u.balance -= amount;
+      showPopup(u.displayName, '-' + fmt(amount), 'Lost the gamble', '#c0392b');
+      addFeedItem(`🎰 ${u.displayName} gambled ${fmt(amount)} and lost it all.`);
+    }
+    persist();
+    renderAll();
+  }
+
+  function cmdBuy(login, u, args){
+    const itemId = (args[0]||'').toLowerCase();
+    const house = HOUSES.find(h=>h.id===itemId);
+    const car = CARS.find(c=>c.id===itemId);
+    const item = house || car;
+    if(!item){
+      showPopup(u.displayName, 'UNKNOWN ITEM', 'Check the shop list for valid item names', '#c0392b');
+      return;
+    }
+    const owned = house ? u.houses : u.cars;
+    if(owned.includes(itemId)){
+      showPopup(u.displayName, 'ALREADY OWNED', `You already have a ${item.name}`, '#c0392b');
+      return;
+    }
+    if(u.balance < item.price){
+      showPopup(u.displayName, 'CAN\'T AFFORD', `${item.name} costs ${fmt(item.price)}`, '#c0392b');
+      return;
+    }
+    u.balance -= item.price;
+    owned.push(itemId);
+    showPopup(u.displayName, item.emoji + ' ' + item.name, `Purchased for ${fmt(item.price)}!`, '#2ecc71');
+    addFeedItem(`${item.emoji} ${u.displayName} bought a ${item.name}!`);
+    persist();
+    renderAll();
+  }
+
+  function cmdInventory(login, u){
+    const houseNames = u.houses.map(id=>HOUSES.find(h=>h.id===id)).filter(Boolean);
+    const carNames = u.cars.map(id=>CARS.find(c=>c.id===id)).filter(Boolean);
+    if(houseNames.length===0 && carNames.length===0){
+      showPopup(u.displayName, 'EMPTY', 'No houses or cars owned yet — !buy something!', '#999');
+      return;
+    }
+    const all = [...houseNames, ...carNames].map(i=>i.emoji+' '+i.name).join('  ');
+    showPopup(u.displayName, all, 'Your Property', '#ffd83d');
+  }
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectTwitch(){
+    chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    chatSocket.onopen = () => {
+      chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      chatSocket.send('PASS SCHMOOPIE');
+      chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+      chatSocket.send('JOIN #' + TWITCH_CHANNEL);
+    };
+    let ircBuffer = '';
+    chatSocket.onmessage = (e) => {
+      ircBuffer += e.data;
+      const lines = ircBuffer.split('\r\n');
+      ircBuffer = lines.pop();
+      lines.forEach(line=>{
+        if(!line) return;
+        if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+        if(line.includes(' 366 ')){ setStatus('Connected — chat is live'); }
+        const parsed = parseIRCLine(line);
+        if(parsed) handleChatMessage(parsed);
+      });
+    };
+    chatSocket.onclose = () => { setStatus('Twitch disconnected — retrying...'); setTimeout(connectTwitch, 3000); };
+    chatSocket.onerror = () => { chatSocket.close(); };
+  }
+
+  function parseIRCLine(line){
+    let tags = {};
+    let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{
+        const eq = kv.indexOf('=');
+        if(eq>=0) tags[kv.slice(0,eq)] = kv.slice(eq+1);
+      });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const prefix = m[1];
+    const message = m[3];
+    const nick = prefix.split('!')[0];
+    const displayName = tags['display-name'] || nick;
+    return { login: nick.toLowerCase(), displayName, message };
+  }
+
+  function handleChatMessage(parsed){
+    if(!dbReady) return; // don't process commands until we've loaded persisted state
+    const raw = parsed.message.trim();
+    if(!raw.startsWith('!')) return;
+    const parts = raw.slice(1).split(/\s+/);
+    const cmd = parts[0].toLowerCase();
+    const args = parts.slice(1);
+    const commands = ['balance','bal','collect','work','gamble','bet','buy','inventory','inv'];
+    if(!commands.includes(cmd)) return;
+
+    const u = getUser(parsed.login, parsed.displayName);
+    if(cmd==='balance'||cmd==='bal') cmdBalance(parsed.login, u);
+    else if(cmd==='collect') cmdCollect(parsed.login, u);
+    else if(cmd==='work') cmdWork(parsed.login, u);
+    else if(cmd==='gamble'||cmd==='bet') cmdGamble(parsed.login, u, args);
+    else if(cmd==='buy') cmdBuy(parsed.login, u, args);
+    else if(cmd==='inventory'||cmd==='inv') cmdInventory(parsed.login, u);
+  }
+
+  function setStatus(text){
+    document.getElementById('statusPill').textContent = text;
+  }
+
+  // ---------- Ably LiveObjects connection ----------
+  function waitForAbly(){
+    return new Promise(resolve=>{
+      if(typeof Ably !== 'undefined'){ resolve(); return; }
+      if(window.__ablyLoadFailed){ resolve(); return; }
+      const check = setInterval(()=>{
+        if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ clearInterval(check); resolve(); }
+      }, 200);
+    });
+  }
+
+  async function init(){
+    await waitForAbly();
+    if(typeof Ably === 'undefined'){
+      document.getElementById('connectMsg').textContent = 'Failed to load the connection library — check your network and reload.';
+      return;
+    }
+    try{
+      ably = new Ably.Realtime({ key: ABLY_KEY });
+      ably.connection.on('connected', async ()=>{
+        setStatus('Loading saved economy data...');
+        ch = ably.channels.get(ECONOMY_CHANNEL, { modes: ['OBJECT_SUBSCRIBE','OBJECT_PUBLISH'] });
+        try{
+          root = await ch.objects.getRoot();
+          const saved = root.get('state');
+          if(saved && saved.users){
+            economyState = saved;
+          } else {
+            await root.set('state', economyState);
+          }
+          dbReady = true;
+          renderAll();
+          document.getElementById('connectOverlay').style.display = 'none';
+          setStatus('Connecting to Twitch chat...');
+          connectTwitch();
+
+          // keep in sync if this tool is ever open in more than one tab
+          root.subscribe(()=>{
+            const latest = root.get('state');
+            if(latest && latest.users){
+              economyState = latest;
+              renderAll();
+            }
+          });
+        } catch(e){
+          console.error('LiveObjects setup failed', e);
+          document.getElementById('connectMsg').textContent = 'Could not load the economy database — reload to retry.';
+        }
+      });
+      ably.connection.on('failed', ()=>{
+        document.getElementById('connectMsg').textContent = 'Ably connection failed — check your network and reload.';
+      });
+    } catch(e){
+      document.getElementById('connectMsg').textContent = 'Error starting connection: ' + (e && e.message ? e.message : e);
+    }
+  }
+
+  init();
+  renderAll();
+
+})();
+</script>
+</body>
+</html>
