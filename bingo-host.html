@@ -17,6 +17,9 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 #topbar{background:#0e0e18;border-bottom:1px solid var(--border);padding:0 16px;height:48px;
   display:flex;align-items:center;gap:10px}
 #tb-title{font-weight:900;font-size:.95rem;color:var(--purple);flex:1}
+.back-home{color:var(--muted);text-decoration:none;font-size:.78rem;font-weight:600;
+  border:1px solid var(--border);border-radius:6px;padding:5px 11px}
+.back-home:hover{color:#fff;border-color:var(--purple)}
 .dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
 .dot.ok{background:var(--green)}
 #conn-lbl{font-size:.72rem;color:var(--muted)}
@@ -124,18 +127,16 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
 </head>
 <body>
 <div id="topbar">
+  <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
   <span id="tb-title">🎱 Bingo Host</span>
   <div class="dot" id="dot"></div>
   <span id="conn-lbl">Not connected</span>
-  <button class="btn btn-sm btn-grey" id="btn-changekey" onclick="changeKey()" style="display:none">Change Key/Channel</button>
 </div>
 
 <div id="login-view">
   <div id="login-box">
     <div class="login-title">🎱 Bingo Host</div>
-    <div><div class="lbl">Ably API Key</div><input class="inp" id="inp-key" type="text" placeholder="xxxxxxxxxxx:xxxxxxxx..."/></div>
-    <div><div class="lbl">Twitch Channel</div><input class="inp" id="inp-ch" type="text" placeholder="fwhaydo"/></div>
-    <button class="btn btn-purple" onclick="doConnect()">CONNECT →</button>
+    <div style="text-align:center;color:var(--muted);font-size:.85rem">Connecting...</div>
     <div class="err" id="login-err"></div>
   </div>
 </div>
@@ -209,7 +210,33 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-h
   </div>
 </div>
 
-<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+// Try multiple CDNs across different infrastructure in sequence -- if one is
+// blocked by an ad-blocker/firewall/DNS filter, the others are very unlikely to
+// be blocked by the same rule since they're entirely different domains/providers
+(function loadAblyWithFallbacks(){
+  const sources = [
+    'https://cdn.ably.com/lib/ably.min-2.js',
+    'https://cdn.jsdelivr.net/npm/ably@2',
+    'https://unpkg.com/ably@2'
+  ];
+  let i = 0;
+  function tryNext(){
+    if(i >= sources.length){
+      window.__ablyLoadFailed = true;
+      window.dispatchEvent(new Event('ably-load-done'));
+      return;
+    }
+    const url = sources[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=>{ window.dispatchEvent(new Event('ably-load-done')); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
 <script>
 const EXAMPLES = {
   tiktok: ['Dance challenge','Cat video','Food review','Life hack','GRWM vlog','Drama story time','Prank video','Satisfying video','POV skit','Trending sound','Pet does something funny','Someone crying','Cringe comment pinned','Plot twist ending','Outfit check','Room tour','Day in my life','Cooking fail','Unexpected flex','Motivational speech','Hot take opinion','Random skill shown off','Viral product review','Celebrity impression'],
@@ -224,33 +251,38 @@ let players = {}; // username -> {card, marked, hasBingo}
 let calledSquares = new Set(); // indices 0-23 that have been called
 let gameActive = false;
 let calledHistory = [];
-let ablyKey = '', twChannel = '';
+
+// baked in permanently -- host never has to enter or see this again
+const ablyKey = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+const twChannel = 'fwhaydo';
 
 // ── CONNECT ──────────────────────────────────────────────────────────────────
 function doConnect(){
-  ablyKey = document.getElementById('inp-key').value.trim();
-  twChannel = document.getElementById('inp-ch').value.trim().toLowerCase();
   const err = document.getElementById('login-err');
-  if(!ablyKey){err.textContent='Enter your Ably API key';return;}
-  if(!twChannel){err.textContent='Enter your Twitch channel';return;}
-  localStorage.setItem('bingo-key',ablyKey);
-  localStorage.setItem('bingo-ch',twChannel);
   err.textContent='Connecting...';
 
-  // a malformed key can throw synchronously when constructing the client -- without
-  // this try/catch, that exception silently halts everything and the UI is stuck on
-  // "Connecting..." forever with no visible error at all
+  // show the real error instead of assuming what it is -- that assumption was
+  // itself misleading when the key format was actually fine
   try {
+    if(window.__ablyLoadFailed){
+      err.textContent = 'The Ably library failed to load from all 3 CDN sources tried — check for an ad-blocker/privacy extension, or a network/firewall restriction blocking these domains';
+      return;
+    }
+    if(typeof Ably === 'undefined'){
+      err.textContent = 'Ably script did not load correctly — check your internet connection and reload the page';
+      return;
+    }
     ably = new Ably.Realtime({key:ablyKey});
   } catch(e){
-    err.textContent = 'Invalid Ably API key format (expected appId.keyId:keySecret)';
+    console.error('Ably.Realtime construction failed:', e);
+    err.textContent = 'Ably error: ' + (e && e.message ? e.message : e);
     return;
   }
 
   // failsafe: if neither connected nor failed fires within 10s (bad key that doesn't
   // throw synchronously, network block, etc.), stop hanging silently and say so
   const connectTimeout = setTimeout(()=>{
-    err.textContent = 'Still not connecting after 10s — double check your Ably API key and network connection';
+    err.textContent = 'Still not connecting after 10s — check your network connection';
   }, 10000);
 
   ably.connection.on('connected',()=>{
@@ -285,12 +317,12 @@ function doConnect(){
     document.getElementById('main-view').style.display='block';
     updateViewerUrl();
     buildGridEditor();
-    if(twChannel) connectTwitch();
+    connectTwitch();
   });
   ably.connection.on('failed',(stateChange)=>{
     clearTimeout(connectTimeout);
     const reason = stateChange && stateChange.reason && stateChange.reason.message;
-    err.textContent = 'Connection failed — check API key' + (reason ? ' ('+reason+')' : '');
+    err.textContent = 'Connection failed' + (reason ? ' ('+reason+')' : '');
   });
   ably.connection.on('disconnected',()=>{
     err.textContent = 'Disconnected from Ably — retrying...';
@@ -300,40 +332,15 @@ function doConnect(){
   });
 }
 
-window.addEventListener('load',()=>{
-  const k=localStorage.getItem('bingo-key'),c=localStorage.getItem('bingo-ch');
-  if(k)document.getElementById('inp-key').value=k;
-  if(c)document.getElementById('inp-ch').value=c;
-  // if both are already saved from last time, skip the manual click entirely
-  if(k && c){
-    document.getElementById('login-err').textContent='Reconnecting automatically...';
-    doConnect();
-  }
-});
-
-function changeKey(){
-  if(ably){ try{ ably.close(); }catch(e){} }
-  if(tws){ try{ tws.close(); }catch(e){} }
-  localStorage.removeItem('bingo-key');
-  localStorage.removeItem('bingo-ch');
-  document.getElementById('main-view').style.display='none';
-  document.getElementById('login-view').style.display='flex';
-  document.getElementById('inp-key').value='';
-  document.getElementById('inp-ch').value='';
-  document.getElementById('login-err').textContent='';
-  document.getElementById('btn-changekey').style.display='none';
-  setConn(false);
-}
+window.addEventListener('ably-load-done',()=>{ doConnect(); });
 
 function setConn(ok){
   document.getElementById('dot').className='dot'+(ok?' ok':'');
   document.getElementById('conn-lbl').textContent=ok?'Connected':'Disconnected';
-  document.getElementById('btn-changekey').style.display=ok?'':'none';
 }
 
 function updateViewerUrl(){
-  const base = location.origin + location.pathname.replace('bingo-host','bingo-play');
-  const url = base + '?key=' + encodeURIComponent(ablyKey) + '&ch=' + encodeURIComponent(twChannel);
+  const url = location.origin + location.pathname.replace('bingo-host','bingo-play');
   document.getElementById('viewer-url').textContent = url;
 }
 

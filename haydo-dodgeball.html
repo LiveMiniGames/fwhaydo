@@ -52,9 +52,14 @@
   #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:280px; }
   .feedItem { font-size:12px; font-weight:700; color:#fff; background:rgba(10,4,20,.55); border-radius:8px; padding:3px 10px; opacity:0; animation: feedFade 4s ease forwards; }
   @keyframes feedFade { 0%{opacity:0; transform:translateY(6px);} 10%{opacity:1; transform:translateY(0);} 80%{opacity:1;} 100%{opacity:0;} }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
 </style>
 </head>
 <body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
 <div id="gameContainer">
   <canvas id="gameCanvas"></canvas>
 
