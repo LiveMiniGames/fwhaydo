@@ -171,7 +171,11 @@
     }
     const json = JSON.stringify(valid);
     const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
-    const link = location.origin + location.pathname.replace('realvsai-builder','realvsai-host') + '?data=' + encoded;
+    // hardcoded to your actual site instead of relying on location.origin, since
+    // that reports as "null" if you ever open this file locally instead of from
+    // the live site -- this way the generated link always works correctly
+    const SITE_BASE = 'https://liveminigames.github.io/fwhaydo/';
+    const link = SITE_BASE + 'realvsai-host.html' + '?data=' + encoded;
     const box = document.getElementById('generatedLink');
     box.value = link;
     box.style.display = 'block';
@@ -180,17 +184,24 @@
     let sizeWarning = '';
     if(sizeKB > 3000) sizeWarning = ' ⚠️ This link is very large (' + sizeKB + 'KB) — some apps may struggle to share it. Try splitting into two smaller sets.';
     else if(sizeKB > 800) sizeWarning = ' ⚠️ This is a big link (' + sizeKB + 'KB) from uploaded images — should still work, but test it once before going live.';
-    document.getElementById('countNote').textContent = valid.length + ' image(s) in this set. Link size: ~' + sizeKB + 'KB.' + sizeWarning;
+    document.getElementById('countNote').textContent = valid.length + ' image(s) in this set. Link size: ~' + sizeKB + 'KB. ' +
+      'This will look like one giant block of text — that\u2019s completely normal for uploaded photos, not an error. ' +
+      'Copy the WHOLE thing and send the whole thing.' + sizeWarning;
   });
 
-  document.getElementById('copyBtn').addEventListener('click', ()=>{
+  document.getElementById('copyBtn').addEventListener('click', async ()=>{
     const box = document.getElementById('generatedLink');
-    box.select();
-    document.execCommand('copy');
     const btn = document.getElementById('copyBtn');
     const orig = btn.textContent;
-    btn.textContent = '✓ Copied!';
-    setTimeout(()=>{ btn.textContent = orig; }, 1500);
+    try{
+      await navigator.clipboard.writeText(box.value);
+    } catch(e){
+      // fallback for older/restricted browser contexts
+      box.select();
+      document.execCommand('copy');
+    }
+    btn.textContent = '✓ Copied! Paste this whole thing to Haydo';
+    setTimeout(()=>{ btn.textContent = orig; }, 2000);
   });
 
   document.getElementById('loadBtn').addEventListener('click', ()=>{
