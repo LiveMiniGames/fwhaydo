@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>REAL vs AI</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a14; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#0a0a14; overflow:hidden; padding:20px; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  #titleBar { text-align:center; margin-bottom:10px; }
+  #titleBar .t1 { font-size:clamp(22px,4vw,34px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#3fe6ff,#b84dff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #titleBar .t2 { font-size:11px; letter-spacing:2px; color:#7a7a96; text-transform:uppercase; font-weight:700; margin-top:2px; }
+  #progressNote { font-size:12px; color:#666; margin-top:4px; }
+
+  #imageBox { width:min(560px, 70vw); height:min(360px, 40vh); border-radius:16px; overflow:hidden; background:#000; border:3px solid #252535; margin:14px 0; display:flex; align-items:center; justify-content:center; position:relative; }
+  #currentImage { max-width:100%; max-height:100%; object-fit:contain; }
+
+  #voteTallyBox { display:flex; gap:20px; margin-bottom:16px; }
+  .voteStat { text-align:center; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:12px; padding:10px 26px; }
+  .voteStat .lbl { font-size:11px; letter-spacing:1.5px; font-weight:800; text-transform:uppercase; margin-bottom:4px; }
+  .voteStat.real .lbl { color:#2ecc71; }
+  .voteStat.ai .lbl { color:#e056fd; }
+  .voteStat .val { font-size:26px; font-weight:900; color:#fff; }
+  .voteStat .pct { font-size:11px; color:#888; margin-top:2px; }
+
+  #guessRow { display:flex; gap:16px; margin-bottom:10px; }
+  .guessBtn { border:none; outline:none; cursor:pointer; font-weight:900; letter-spacing:1px; border-radius:14px; padding:16px 34px; font-size:17px; color:#fff; transition:transform .05s ease; }
+  .guessBtn:active { transform:translateY(4px); }
+  .guessBtn.real { background:linear-gradient(90deg,#1e7a3a,#2ecc71); box-shadow:0 6px 0 #0e4a1f; }
+  .guessBtn.ai { background:linear-gradient(90deg,#7a1e6a,#e056fd); box-shadow:0 6px 0 #4a0e40; }
+  .guessBtn:disabled { opacity:.35; cursor:not-allowed; }
+
+  #revealBox { display:none; text-align:center; margin:10px 0; padding:16px 30px; border-radius:16px; border:3px solid #2ecc71; background:rgba(10,30,15,.5); }
+  #revealBox.wrong { border-color:#e74c3c; background:rgba(30,10,10,.5); }
+  #revealTitle { font-size:24px; font-weight:900; }
+  #revealSub { font-size:13px; color:#ccc; margin-top:4px; }
+
+  #nextBtn { border:none; outline:none; cursor:pointer; font-weight:900; letter-spacing:1px; border-radius:14px; padding:14px 40px; font-size:16px; color:#0a0a14; background:linear-gradient(90deg,#ffd83d,#ff9a3d); display:none; margin-top:10px; }
+
+  #chatStatus { position:absolute; top:14px; right:14px; font-size:11px; color:#888; background:rgba(0,0,0,.4); border:1px solid rgba(255,255,255,.15); border-radius:10px; padding:5px 12px; }
+
+  .overlay { position:absolute; inset:0; background:#0a0a14; display:none; flex-direction:column; align-items:center; justify-content:center; color:#fff; text-align:center; padding:20px; z-index:60; }
+  .overlay.show { display:flex; }
+  .overlay h2 { font-size:26px; font-weight:900; margin-bottom:10px; }
+  .overlay p { font-size:14px; color:#aaa; max-width:400px; line-height:1.6; }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="chatStatus">Connecting...</div>
+
+<div id="gameContainer">
+  <div id="titleBar">
+    <div class="t1">🖼️ REAL vs AI</div>
+    <div class="t2">You Decide. Chat Decides. Who's Right?</div>
+    <div id="progressNote"></div>
+  </div>
+
+  <div id="imageBox"><img id="currentImage" src="" alt=""></div>
+
+  <div id="voteTallyBox">
+    <div class="voteStat real"><div class="lbl">Chat: Real</div><div class="val" id="realCount">0</div><div class="pct" id="realPct"></div></div>
+    <div class="voteStat ai"><div class="lbl">Chat: AI</div><div class="val" id="aiCount">0</div><div class="pct" id="aiPct"></div></div>
+  </div>
+
+  <div id="guessRow">
+    <button class="guessBtn real" id="guessRealBtn">I THINK: REAL</button>
+    <button class="guessBtn ai" id="guessAiBtn">I THINK: AI</button>
+  </div>
+
+  <div id="revealBox">
+    <div id="revealTitle"></div>
+    <div id="revealSub"></div>
+  </div>
+
+  <button id="nextBtn">NEXT IMAGE →</button>
+
+  <div class="overlay" id="noDataOverlay">
+    <h2>No quiz loaded</h2>
+    <p>This link is missing its image data. Ask your producer for the generated link from the REAL vs AI builder page — this page needs a full link with <code>?data=...</code> at the end, not just the bare filename.</p>
+  </div>
+
+  <div class="overlay" id="endOverlay">
+    <h2>🏁 That's Everything!</h2>
+    <p id="endStats"></p>
+  </div>
+</div>
+
+<script>
+(function(){
+  const TWITCH_CHANNEL = 'fwhaydo';
+
+  // ---------- Load quiz data from the URL ----------
+  let quiz = [];
+  try {
+    const params = new URLSearchParams(location.search);
+    const data = params.get('data');
+    if(data){
+      const json = decodeURIComponent(escape(atob(decodeURIComponent(data))));
+      quiz = JSON.parse(json);
+    }
+  } catch(e){
+    console.error('Failed to parse quiz data', e);
+    quiz = [];
+  }
+
+  if(!Array.isArray(quiz) || quiz.length === 0){
+    document.getElementById('noDataOverlay').classList.add('show');
+    return;
+  }
+
+  let currentIndex = 0;
+  let state = 'guessing'; // guessing, revealed
+  let userVotes = new Map(); // login -> 'REAL' | 'AI'
+  let haydoCorrectCount = 0;
+  let chatCorrectCount = 0; // times chat's majority vote was correct
+
+  function currentItem(){ return quiz[currentIndex]; }
+
+  function loadCurrentImage(){
+    document.getElementById('currentImage').src = currentItem().url;
+    document.getElementById('progressNote').textContent = 'Image ' + (currentIndex+1) + ' of ' + quiz.length;
+    userVotes = new Map();
+    state = 'guessing';
+    document.getElementById('revealBox').style.display = 'none';
+    document.getElementById('nextBtn').style.display = 'none';
+    document.getElementById('guessRealBtn').disabled = false;
+    document.getElementById('guessAiBtn').disabled = false;
+    refreshTally();
+  }
+
+  function computeTally(){
+    let real = 0, ai = 0;
+    userVotes.forEach(v=>{ if(v==='REAL') real++; else ai++; });
+    return { real, ai };
+  }
+
+  function refreshTally(){
+    const { real, ai } = computeTally();
+    const total = real + ai;
+    document.getElementById('realCount').textContent = real;
+    document.getElementById('aiCount').textContent = ai;
+    document.getElementById('realPct').textContent = total ? Math.round(real/total*100)+'%' : '';
+    document.getElementById('aiPct').textContent = total ? Math.round(ai/total*100)+'%' : '';
+  }
+
+  function makeGuess(guessIsReal){
+    if(state !== 'guessing') return;
+    state = 'revealed';
+    document.getElementById('guessRealBtn').disabled = true;
+    document.getElementById('guessAiBtn').disabled = true;
+
+    const truth = currentItem().isReal;
+    const correct = (guessIsReal === truth);
+    if(correct) haydoCorrectCount++;
+
+    const { real, ai } = computeTally();
+    const chatMajorityIsReal = real >= ai; // ties default to "real" for scoring purposes
+    if((chatMajorityIsReal && truth) || (!chatMajorityIsReal && !truth)) chatCorrectCount++;
+
+    const box = document.getElementById('revealBox');
+    box.style.display = 'block';
+    box.className = correct ? '' : 'wrong';
+    document.getElementById('revealTitle').textContent = (correct ? '✅ CORRECT!' : '❌ WRONG!') + ' It was ' + (truth ? 'REAL' : 'AI');
+    document.getElementById('revealSub').textContent = 'Chat voted ' + real + ' Real / ' + ai + ' AI this round.';
+
+    document.getElementById('nextBtn').style.display = 'inline-block';
+  }
+
+  document.getElementById('guessRealBtn').addEventListener('click', ()=>makeGuess(true));
+  document.getElementById('guessAiBtn').addEventListener('click', ()=>makeGuess(false));
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    currentIndex++;
+    if(currentIndex >= quiz.length){
+      document.getElementById('endStats').textContent =
+        'You got ' + haydoCorrectCount + ' / ' + quiz.length + ' correct. Chat majority vote got ' + chatCorrectCount + ' / ' + quiz.length + ' correct.';
+      document.getElementById('endOverlay').classList.add('show');
+      return;
+    }
+    loadCurrentImage();
+  });
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectTwitch(){
+    chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    chatSocket.onopen = () => {
+      chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      chatSocket.send('PASS SCHMOOPIE');
+      chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+      chatSocket.send('JOIN #' + TWITCH_CHANNEL);
+    };
+    let ircBuffer = '';
+    chatSocket.onmessage = (e) => {
+      ircBuffer += e.data;
+      const lines = ircBuffer.split('\r\n');
+      ircBuffer = lines.pop();
+      lines.forEach(line=>{
+        if(!line) return;
+        if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+        if(line.includes(' 366 ')){ document.getElementById('chatStatus').textContent = 'Connected ✓'; }
+        const parsed = parseIRCLine(line);
+        if(parsed) handleChatMessage(parsed);
+      });
+    };
+    chatSocket.onclose = () => { document.getElementById('chatStatus').textContent = 'Disconnected — retrying...'; setTimeout(connectTwitch, 3000); };
+    chatSocket.onerror = () => { chatSocket.close(); };
+  }
+
+  function parseIRCLine(line){
+    let tags = {};
+    let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{
+        const eq = kv.indexOf('=');
+        if(eq>=0) tags[kv.slice(0,eq)] = kv.slice(eq+1);
+      });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const prefix = m[1];
+    const message = m[3];
+    const nick = prefix.split('!')[0];
+    const displayName = tags['display-name'] || nick;
+    return { login: nick.toLowerCase(), displayName, message };
+  }
+
+  function handleChatMessage(parsed){
+    if(state !== 'guessing') return; // voting locks once Haydo has revealed, until Next is clicked
+    const msg = parsed.message.trim().toLowerCase();
+    if(msg !== 'real' && msg !== 'ai') return;
+    // last vote wins -- if they change their mind, only their latest message counts
+    userVotes.set(parsed.login, msg === 'real' ? 'REAL' : 'AI');
+    refreshTally();
+  }
+
+  loadCurrentImage();
+  connectTwitch();
+
+})();
+</script>
+</body>
+</html>

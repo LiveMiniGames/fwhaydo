@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REAL vs AI - Builder</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; }
+  body { background:#0a0a14; color:#efeff1; min-height:100vh; padding:24px; }
+  .wrap { max-width:900px; margin:0 auto; }
+  h1 { font-size:24px; font-weight:900; background:linear-gradient(90deg,#3fe6ff,#b84dff); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:4px; }
+  .sub { font-size:13px; color:#8888a0; margin-bottom:24px; }
+
+  .card { background:#13131f; border:1px solid #252535; border-radius:12px; padding:18px; margin-bottom:16px; }
+  .cardTitle { font-size:13px; font-weight:800; color:#3fe6ff; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+
+  .loadRow { display:flex; gap:8px; }
+  .loadRow input { flex:1; background:#1a1a2a; border:1px solid #252535; border-radius:8px; padding:9px 12px; color:#fff; font-size:13px; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:8px; padding:9px 18px; font-size:13px; color:#0a0a14; background:linear-gradient(90deg,#3fe6ff,#b84dff); }
+  .btn.small { padding:6px 12px; font-size:12px; }
+  .btn.grey { background:#2a2a3a; color:#fff; }
+  .btn.danger { background:#7a1e1e; color:#fff; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  #itemsList { display:flex; flex-direction:column; gap:10px; margin-bottom:14px; }
+  .itemRow { display:flex; align-items:center; gap:10px; background:#1a1a2a; border:1px solid #252535; border-radius:10px; padding:10px 12px; }
+  .itemNum { width:26px; text-align:center; font-weight:900; color:#666; font-size:13px; }
+  .itemThumb { width:50px; height:50px; border-radius:6px; object-fit:cover; background:#0a0a14; border:1px solid #252535; flex-shrink:0; }
+  .itemUrlInput { flex:1; background:#0f0f1a; border:1px solid #252535; border-radius:6px; padding:8px 10px; color:#fff; font-size:12px; }
+  .tagToggle { display:flex; border:1px solid #252535; border-radius:8px; overflow:hidden; flex-shrink:0; }
+  .tagBtn { padding:8px 14px; font-size:11px; font-weight:800; cursor:pointer; background:#1a1a2a; color:#888; border:none; }
+  .tagBtn.active.real { background:#1e7a3a; color:#fff; }
+  .tagBtn.active.ai { background:#7a1e6a; color:#fff; }
+  .itemActions { display:flex; gap:4px; flex-shrink:0; }
+  .iconBtn { width:28px; height:28px; border-radius:6px; border:1px solid #252535; background:#0f0f1a; color:#aaa; cursor:pointer; font-size:12px; display:flex; align-items:center; justify-content:center; }
+  .iconBtn:hover { background:#252535; color:#fff; }
+
+  #addRowBtn { width:100%; padding:12px; border:2px dashed #3a3a4a; border-radius:10px; background:transparent; color:#888; font-weight:800; cursor:pointer; font-size:13px; }
+  #addRowBtn:hover { border-color:#3fe6ff; color:#3fe6ff; }
+
+  #generateBox { margin-top:14px; }
+  #generatedLink { width:100%; background:#0f0f1a; border:1px solid #2ecc71; border-radius:8px; padding:12px; color:#7dffa0; font-size:12px; word-break:break-all; margin-top:10px; display:none; }
+  #copyBtn { margin-top:8px; display:none; }
+  #countNote { font-size:12px; color:#888; margin-top:6px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🖼️ REAL vs AI — Builder</h1>
+  <div class="sub">Build the image sequence here privately. When you're done, generate a link and send THAT link to Haydo — he'll never see this page.</div>
+
+  <div class="card">
+    <div class="cardTitle">Load a previous set (optional)</div>
+    <div class="loadRow">
+      <input type="text" id="loadInput" placeholder="Paste a previously generated realvsai-host.html link here to edit it...">
+      <button class="btn grey" id="loadBtn">Load</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Image Sequence (shown in this exact order)</div>
+    <div id="itemsList"></div>
+    <button id="addRowBtn">+ Add Image</button>
+  </div>
+
+  <div class="card" id="generateBox">
+    <div class="cardTitle">Generate Link For Haydo</div>
+    <button class="btn" id="generateBtn">Generate Link</button>
+    <div id="countNote"></div>
+    <textarea id="generatedLink" rows="4" readonly></textarea>
+    <button class="btn small" id="copyBtn">📋 Copy Link</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  let items = []; // {url, isReal}
+
+  function addItem(url, isReal){
+    items.push({ url: url||'', isReal: isReal!==undefined ? isReal : true });
+    render();
+  }
+
+  function render(){
+    const list = document.getElementById('itemsList');
+    list.innerHTML = '';
+    items.forEach((item, i)=>{
+      const row = document.createElement('div');
+      row.className = 'itemRow';
+      row.innerHTML = `
+        <div class="itemNum">${i+1}</div>
+        <img class="itemThumb" src="${item.url}" onerror="this.style.opacity=0.2">
+        <input class="itemUrlInput" type="text" placeholder="Image URL..." value="${item.url.replace(/"/g,'&quot;')}">
+        <div class="tagToggle">
+          <button class="tagBtn real ${item.isReal?'active':''}">REAL</button>
+          <button class="tagBtn ai ${!item.isReal?'active':''}">AI</button>
+        </div>
+        <div class="itemActions">
+          <button class="iconBtn upBtn" title="Move up">↑</button>
+          <button class="iconBtn downBtn" title="Move down">↓</button>
+          <button class="iconBtn removeBtn" title="Remove">✕</button>
+        </div>
+      `;
+      row.querySelector('.itemUrlInput').addEventListener('input', (e)=>{
+        items[i].url = e.target.value;
+        row.querySelector('.itemThumb').src = e.target.value;
+      });
+      row.querySelector('.tagBtn.real').addEventListener('click', ()=>{ items[i].isReal = true; render(); });
+      row.querySelector('.tagBtn.ai').addEventListener('click', ()=>{ items[i].isReal = false; render(); });
+      row.querySelector('.upBtn').addEventListener('click', ()=>{ if(i>0){ [items[i-1],items[i]]=[items[i],items[i-1]]; render(); } });
+      row.querySelector('.downBtn').addEventListener('click', ()=>{ if(i<items.length-1){ [items[i+1],items[i]]=[items[i],items[i+1]]; render(); } });
+      row.querySelector('.removeBtn').addEventListener('click', ()=>{ items.splice(i,1); render(); });
+      list.appendChild(row);
+    });
+    document.getElementById('generatedLink').style.display = 'none';
+    document.getElementById('copyBtn').style.display = 'none';
+  }
+
+  document.getElementById('addRowBtn').addEventListener('click', ()=> addItem('', true));
+
+  document.getElementById('generateBtn').addEventListener('click', ()=>{
+    const valid = items.filter(it => it.url.trim());
+    if(valid.length === 0){
+      alert('Add at least one image with a URL first.');
+      return;
+    }
+    const json = JSON.stringify(valid);
+    const encoded = encodeURIComponent(btoa(unescape(encodeURIComponent(json))));
+    const link = location.origin + location.pathname.replace('realvsai-builder','realvsai-host') + '?data=' + encoded;
+    const box = document.getElementById('generatedLink');
+    box.value = link;
+    box.style.display = 'block';
+    document.getElementById('copyBtn').style.display = 'inline-block';
+    document.getElementById('countNote').textContent = valid.length + ' image(s) in this set. Link length: ' + link.length + ' characters.' +
+      (link.length > 6000 ? ' ⚠️ This is a long link — if it ever gets cut off when sharing, split into two smaller sets.' : '');
+  });
+
+  document.getElementById('copyBtn').addEventListener('click', ()=>{
+    const box = document.getElementById('generatedLink');
+    box.select();
+    document.execCommand('copy');
+    const btn = document.getElementById('copyBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>{ btn.textContent = orig; }, 1500);
+  });
+
+  document.getElementById('loadBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('loadInput').value.trim();
+    if(!val) return;
+    try{
+      const url = new URL(val);
+      const data = url.searchParams.get('data');
+      if(!data){ alert('No data found in that link.'); return; }
+      const json = decodeURIComponent(escape(atob(decodeURIComponent(data))));
+      const parsed = JSON.parse(json);
+      if(!Array.isArray(parsed)) throw new Error('bad format');
+      items = parsed;
+      render();
+      alert('Loaded ' + items.length + ' image(s). You can now edit and re-generate.');
+    } catch(e){
+      alert('Could not read that link — make sure you pasted a full realvsai-host.html link.');
+    }
+  });
+
+  // start with one empty row
+  addItem('', true);
+})();
+</script>
+</body>
+</html>
