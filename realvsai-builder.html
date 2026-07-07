@@ -76,6 +76,32 @@
 (function(){
   let items = []; // {url, isReal}
 
+  const MAX_DIMENSION = 700; // longest side, in pixels, after compression
+  const JPEG_QUALITY = 0.65;
+
+  function compressImageFile(file){
+    return new Promise((resolve, reject)=>{
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error('Could not read that file.'));
+      reader.onload = () => {
+        const img = new Image();
+        img.onerror = () => reject(new Error('That file doesn\u2019t look like a valid image.'));
+        img.onload = () => {
+          let w = img.width, h = img.height;
+          if(w > h && w > MAX_DIMENSION){ h = Math.round(h * MAX_DIMENSION / w); w = MAX_DIMENSION; }
+          else if(h > MAX_DIMENSION){ w = Math.round(w * MAX_DIMENSION / h); h = MAX_DIMENSION; }
+          const canvas = document.createElement('canvas');
+          canvas.width = w; canvas.height = h;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, w, h);
+          resolve(canvas.toDataURL('image/jpeg', JPEG_QUALITY));
+        };
+        img.src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
   function addItem(url, isReal){
     items.push({ url: url||'', isReal: isReal!==undefined ? isReal : true });
     render();
@@ -90,7 +116,10 @@
       row.innerHTML = `
         <div class="itemNum">${i+1}</div>
         <img class="itemThumb" src="${item.url}" onerror="this.style.opacity=0.2">
-        <input class="itemUrlInput" type="text" placeholder="Image URL..." value="${item.url.replace(/"/g,'&quot;')}">
+        <input class="itemUrlInput" type="text" placeholder="Paste an image URL, or use Upload →" value="${item.url.replace(/"/g,'&quot;')}">
+        <label class="iconBtn uploadBtn" title="Upload from your PC or phone">
+          📁<input type="file" accept="image/*" class="fileInput" style="display:none">
+        </label>
         <div class="tagToggle">
           <button class="tagBtn real ${item.isReal?'active':''}">REAL</button>
           <button class="tagBtn ai ${!item.isReal?'active':''}">AI</button>
@@ -104,6 +133,22 @@
       row.querySelector('.itemUrlInput').addEventListener('input', (e)=>{
         items[i].url = e.target.value;
         row.querySelector('.itemThumb').src = e.target.value;
+      });
+      row.querySelector('.fileInput').addEventListener('change', async (e)=>{
+        const file = e.target.files[0];
+        if(!file) return;
+        const thumb = row.querySelector('.itemThumb');
+        thumb.style.opacity = 0.4;
+        try{
+          const compressed = await compressImageFile(file);
+          items[i].url = compressed;
+          thumb.src = compressed;
+          thumb.style.opacity = 1;
+          row.querySelector('.itemUrlInput').value = '(uploaded image: ' + Math.round(compressed.length/1024) + ' KB)';
+        } catch(err){
+          alert(err.message);
+          thumb.style.opacity = 0.2;
+        }
       });
       row.querySelector('.tagBtn.real').addEventListener('click', ()=>{ items[i].isReal = true; render(); });
       row.querySelector('.tagBtn.ai').addEventListener('click', ()=>{ items[i].isReal = false; render(); });
@@ -131,8 +176,11 @@
     box.value = link;
     box.style.display = 'block';
     document.getElementById('copyBtn').style.display = 'inline-block';
-    document.getElementById('countNote').textContent = valid.length + ' image(s) in this set. Link length: ' + link.length + ' characters.' +
-      (link.length > 6000 ? ' ⚠️ This is a long link — if it ever gets cut off when sharing, split into two smaller sets.' : '');
+    const sizeKB = Math.round(link.length/1024);
+    let sizeWarning = '';
+    if(sizeKB > 3000) sizeWarning = ' ⚠️ This link is very large (' + sizeKB + 'KB) — some apps may struggle to share it. Try splitting into two smaller sets.';
+    else if(sizeKB > 800) sizeWarning = ' ⚠️ This is a big link (' + sizeKB + 'KB) from uploaded images — should still work, but test it once before going live.';
+    document.getElementById('countNote').textContent = valid.length + ' image(s) in this set. Link size: ~' + sizeKB + 'KB.' + sizeWarning;
   });
 
   document.getElementById('copyBtn').addEventListener('click', ()=>{
