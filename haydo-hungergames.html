@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S HUNGER GAMES</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a0f; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; background:radial-gradient(ellipse at 50% 0%, #1a1220, #0a0a0f 70%); overflow:hidden; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(10,10,15,.96), rgba(0,0,0,.99)); color:#fff; text-align:center; padding:20px; z-index:20; overflow-y:auto; }
+  .hidden { display:none !important; }
+  .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #fff; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  h1.title { font-size:clamp(24px,5.5vw,42px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#ff5b3d,#ffd83d); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:2px; }
+  .subtitle { font-size:12px; letter-spacing:3px; color:#8899aa; font-weight:700; margin-bottom:18px; text-transform:uppercase; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:15px 40px; font-size:17px; color:#111; background:linear-gradient(90deg,#ff5b3d,#ffd83d); box-shadow:0 6px 0 #8a3a1a; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #8a3a1a; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .btn.secondary { background:linear-gradient(180deg,#3a3a3a,#1c1c1c); color:#fff; box-shadow:0 6px 0 #000; margin-top:12px; }
+
+  #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:12px; color:#ccc; }
+  #channelRow input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:7px 10px; font-size:13px; width:140px; }
+  #chatStatus { font-size:11px; font-weight:700; }
+
+  #lobbyPlayerBox { margin:14px 0; max-width:480px; }
+  #lobbyCount { font-size:15px; color:#ffd83d; font-weight:800; margin-bottom:8px; }
+  #lobbyNames { display:flex; flex-wrap:wrap; gap:6px; justify-content:center; max-height:140px; overflow-y:auto; }
+  .lobbyChip { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:4px 10px; font-size:12px; font-weight:700; }
+
+  /* ---- Simulation screen ---- */
+  #simScreen { position:absolute; inset:0; display:none; flex-direction:column; padding:16px; }
+  #simScreen.show { display:flex; }
+  #simTop { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  #dayBox { color:#ffd83d; font-weight:900; font-size:16px; background:rgba(0,0,0,.5); border:1px solid rgba(255,204,51,.4); border-radius:12px; padding:8px 18px; }
+  #aliveBox { color:#ff5b3d; font-weight:900; font-size:16px; background:rgba(0,0,0,.5); border:1px solid rgba(255,91,61,.4); border-radius:12px; padding:8px 18px; }
+  #sponsorHint { color:#3fe6ff; font-weight:700; font-size:11.5px; background:rgba(0,0,0,.5); border:1px solid rgba(63,230,255,.35); border-radius:12px; padding:8px 14px; }
+
+  #simBody { flex:1; display:flex; gap:14px; overflow:hidden; }
+  #rosterPanel { width:26%; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:12px; overflow-y:auto; }
+  #rosterTitle { font-size:11px; font-weight:900; color:#2ecc71; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; text-align:center; }
+  .rosterGrid { display:flex; flex-wrap:wrap; gap:5px; }
+  .rosterChip { font-size:10px; font-weight:700; padding:4px 8px; border-radius:8px; background:rgba(46,204,113,.12); border:1px solid rgba(46,204,113,.3); color:#dfd; }
+  .rosterChip.dead { background:rgba(255,255,255,.03); border-color:rgba(255,255,255,.08); color:#555; text-decoration:line-through; }
+  .rosterChip.shielded { border-color:rgba(63,230,255,.6); box-shadow:0 0 6px rgba(63,230,255,.4); }
+
+  #logPanel { flex:1; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px; overflow-y:auto; display:flex; flex-direction:column; gap:8px; }
+  .logLine { font-size:14px; font-weight:600; color:#eee; padding:8px 14px; border-radius:10px; background:rgba(255,255,255,.04); opacity:0; animation:logFadeIn .5s ease forwards; }
+  .logLine.elim { background:rgba(231,76,60,.12); border-left:3px solid #e74c3c; }
+  .logLine.safe { background:rgba(46,204,113,.08); border-left:3px solid #2ecc71; }
+  .logLine.alliance { background:rgba(63,230,255,.08); border-left:3px solid #3fe6ff; }
+  .logLine.sponsor { background:rgba(255,204,51,.1); border-left:3px solid #ffd83d; }
+  .logLine.day { font-weight:900; text-align:center; background:transparent; color:#ffd83d; font-size:16px; margin-top:6px; }
+  @keyframes logFadeIn { from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);} }
+
+  #endScreen .winnerName { font-size:clamp(22px,4vw,34px); font-weight:900; color:#ffd83d; margin:10px 0; }
+  #endStatsRow { display:flex; gap:20px; margin:14px 0; }
+  .endStat { background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.15); border-radius:12px; padding:10px 20px; }
+  .endStat .num { font-size:20px; font-weight:900; color:#3fe6ff; }
+  .endStat .lbl { font-size:9px; letter-spacing:1.5px; color:#999; text-transform:uppercase; margin-top:2px; }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="gameContainer">
+
+  <div class="overlay" id="startScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title">HAYDO'S HUNGER GAMES</h1>
+    <div class="subtitle">Only One Walks Out</div>
+    <div id="channelRow">
+      <label for="channelInput">Twitch channel:</label>
+      <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
+      <div id="chatStatus"></div>
+    </div>
+    <button class="btn" id="connectBtn">CONNECT & OPEN LOBBY</button>
+  </div>
+
+  <div class="overlay hidden" id="lobbyScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:30px;">THE ARENA IS OPEN</h1>
+    <div class="subtitle">Chat types !join to enter</div>
+    <div id="lobbyPlayerBox">
+      <div id="lobbyCount">0 entered</div>
+      <div id="lobbyNames"></div>
+    </div>
+    <button class="btn" id="startSimBtn">BEGIN THE GAMES</button>
+    <div style="font-size:12px;color:#999;margin-top:14px;max-width:420px;">Once it starts, chat can type <b style="color:#3fe6ff;">!sponsor username</b> anytime to send that player a protective care package.</div>
+  </div>
+
+  <div id="simScreen">
+    <div id="simTop">
+      <div id="dayBox">DAY <span id="dayVal">1</span></div>
+      <div id="sponsorHint">💙 Type !sponsor username to protect them!</div>
+      <div id="aliveBox">☠️ <span id="aliveVal">0</span> remaining</div>
+    </div>
+    <div id="simBody">
+      <div id="rosterPanel"><div id="rosterTitle">Survivors</div><div class="rosterGrid" id="rosterGrid"></div></div>
+      <div id="logPanel"></div>
+    </div>
+  </div>
+
+  <div class="overlay hidden" id="endScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" id="endTitle">WE HAVE A WINNER!</h1>
+    <div class="winnerName" id="winnerName"></div>
+    <div id="endStatsRow">
+      <div class="endStat"><div class="num" id="endEntrants">0</div><div class="lbl">Entrants</div></div>
+      <div class="endStat"><div class="num" id="endDays">0</div><div class="lbl">Days Survived</div></div>
+      <div class="endStat"><div class="num" id="endKills">0</div><div class="lbl">Eliminations</div></div>
+    </div>
+    <button class="btn" id="newGameBtn">NEW GAME</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- Narrator ----------
+  function narrate(text){
+    if(!window.speechSynthesis) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.rate = 1.05; utter.pitch = 0.9;
+    const voices = window.speechSynthesis.getVoices();
+    const preferred = voices.find(v=>/Google UK English Male|Microsoft David|Daniel/i.test(v.name)) || voices.find(v=>v.lang==='en-US');
+    if(preferred) utter.voice = preferred;
+    window.speechSynthesis.speak(utter);
+  }
+  if(window.speechSynthesis){ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged=()=>window.speechSynthesis.getVoices(); }
+
+  // ---------- Event flavor text (all original) ----------
+  const SAFE_LINES = [
+    "{p} found a stash of supplies hidden in the brush.",
+    "{p} rested quietly and regained their strength.",
+    "{p} built a small shelter for the night.",
+    "{p} gathered firewood and stayed warm.",
+    "{p} found a fresh water source.",
+    "{p} climbed a tree to scout the surroundings.",
+    "{p} laid low and avoided any trouble.",
+    "{p} patched up a minor injury and pressed on."
+  ];
+  const ALLIANCE_LINES = [
+    "{p1} and {p2} agreed to team up.",
+    "{p1} and {p2} decided to watch each other's backs.",
+    "{p1} and {p2} shared supplies and rested together.",
+    "{p1} and {p2} formed an uneasy alliance."
+  ];
+  const HAZARD_LINES = [
+    "{p} was caught in a sudden rockslide and didn't make it.",
+    "{p} ate something poisonous by mistake.",
+    "{p} fell into a hidden ravine.",
+    "A sudden storm swept through and {p} didn't survive.",
+    "{p} was caught in their own trap.",
+    "{p} wandered too close to the edge and didn't make it back."
+  ];
+  const FIGHT_LINES = [
+    "{winner} ambushed {loser} in the underbrush. Only {winner} walked away.",
+    "{winner} and {loser} fought over the last supply crate. {winner} won.",
+    "A trap set by {winner} caught {loser} off guard.",
+    "{winner} got the upper hand in a brutal fight with {loser}.",
+    "{winner} struck first, and {loser} didn't see it coming."
+  ];
+  const SHIELD_SAVE_LINES = [
+    "A care package saved {p} at the last second!",
+    "{p} was nearly caught out, but their sponsor's gift saved them!",
+    "Just in time \u2014 a sponsored package protected {p} from disaster!"
+  ];
+  const BLOODBATH_LINES = [
+    "The moment the games began, chaos erupted at the starting point.",
+    "The first moments were brutal \u2014 not everyone made it off the platform."
+  ];
+
+  function fill(template, map){ return template.replace(/\{(\w+)\}/g, (_,k)=>map[k]||''); }
+  function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+  function shuffle(arr){ for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; } return arr; }
+
+  // ---------- Game state ----------
+  let state = 'menu'; // menu, lobby, simming, ended
+  let players = new Map(); // login -> {displayName, alive, kills, shielded}
+  let eventQueue = [];
+  let day = 1;
+
+  function addPlayer(login, displayName){
+    if(state !== 'lobby') return;
+    if(players.has(login)) return;
+    players.set(login, { displayName, alive:true, kills:0, shielded:false });
+    updateLobbyUI();
+  }
+
+  function updateLobbyUI(){
+    document.getElementById('lobbyCount').textContent = players.size + ' entered';
+    const box = document.getElementById('lobbyNames');
+    box.innerHTML = '';
+    players.forEach(p=>{
+      const chip = document.createElement('div');
+      chip.className = 'lobbyChip';
+      chip.textContent = p.displayName;
+      box.appendChild(chip);
+    });
+  }
+
+  function aliveList(){ return [...players.values()].filter(p=>p.alive); }
+
+  function addLogLine(text, cls){
+    const panel = document.getElementById('logPanel');
+    const el = document.createElement('div');
+    el.className = 'logLine ' + (cls||'');
+    el.textContent = text;
+    panel.appendChild(el);
+    panel.scrollTop = panel.scrollHeight;
+    while(panel.children.length > 60) panel.removeChild(panel.firstChild);
+  }
+
+  function updateRoster(){
+    const grid = document.getElementById('rosterGrid');
+    grid.innerHTML = '';
+    players.forEach(p=>{
+      const chip = document.createElement('div');
+      chip.className = 'rosterChip' + (!p.alive?' dead':'') + (p.shielded?' shielded':'');
+      chip.textContent = p.displayName + (p.kills>0?' ('+p.kills+')':'');
+      grid.appendChild(chip);
+    });
+    document.getElementById('aliveVal').textContent = aliveList().length;
+  }
+
+  function generateRoundEvents(alive, targetEliminations){
+    let pool = shuffle([...alive]);
+    let events = [];
+    let elims = 0;
+    while(pool.length > 0 && elims < targetEliminations){
+      if(pool.length >= 2 && Math.random() < 0.5){
+        const a = pool.pop(), b = pool.pop();
+        let winner = Math.random()<0.5?a:b, loser = winner===a?b:a;
+        if(loser.shielded){ loser.shielded=false; events.push({type:'shield', p:loser}); continue; }
+        events.push({type:'fight', winner, loser});
+        loser.alive = false; winner.kills++;
+        elims++;
+      } else {
+        const p = pool.pop();
+        if(p.shielded){ p.shielded=false; events.push({type:'shield', p}); continue; }
+        events.push({type:'hazard', p});
+        p.alive = false;
+        elims++;
+      }
+    }
+    const safeBudget = Math.min(pool.length, 6);
+    for(let i=0;i<safeBudget;i++){
+      if(pool.length>=2 && Math.random()<0.3){
+        const a=pool.pop(), b=pool.pop();
+        events.push({type:'alliance', a, b});
+      } else if(pool.length>=1){
+        events.push({type:'safe', p:pool.pop()});
+      }
+    }
+    return events;
+  }
+
+  function eliminationTarget(aliveCount, isBloodbath){
+    const pct = isBloodbath ? 0.30 : 0.20;
+    return Math.max(1, Math.min(aliveCount-1, Math.round(aliveCount*pct)));
+  }
+
+  function processNextEvent(){
+    if(eventQueue.length === 0){
+      const remaining = aliveList().length;
+      if(remaining <= 1){ setTimeout(endGame, 1500); return; }
+      setTimeout(startDay, 2200);
+      return;
+    }
+    const ev = eventQueue.shift();
+    let text, cls;
+    if(ev.type==='fight'){ text = fill(pick(FIGHT_LINES), {winner:ev.winner.displayName, loser:ev.loser.displayName}); cls='elim'; }
+    else if(ev.type==='hazard'){ text = fill(pick(HAZARD_LINES), {p:ev.p.displayName}); cls='elim'; }
+    else if(ev.type==='alliance'){ text = fill(pick(ALLIANCE_LINES), {p1:ev.a.displayName, p2:ev.b.displayName}); cls='alliance'; }
+    else if(ev.type==='safe'){ text = fill(pick(SAFE_LINES), {p:ev.p.displayName}); cls='safe'; }
+    else if(ev.type==='shield'){ text = fill(pick(SHIELD_SAVE_LINES), {p:ev.p.displayName}); cls='sponsor'; }
+    addLogLine(text, cls);
+    narrate(text);
+    updateRoster();
+    if(aliveList().length <= 1){ eventQueue=[]; setTimeout(endGame, 1600); return; }
+    setTimeout(processNextEvent, 2600);
+  }
+
+  function startDay(){
+    const alive = aliveList();
+    if(alive.length <= 1){ endGame(); return; }
+    document.getElementById('dayVal').textContent = day;
+    addLogLine('\u2014 DAY ' + day + ' \u2014', 'day');
+    const isBloodbath = day===1;
+    if(isBloodbath) narrate(pick(BLOODBATH_LINES));
+    const target = eliminationTarget(alive.length, isBloodbath);
+    eventQueue = generateRoundEvents(alive, target);
+    day++;
+    setTimeout(processNextEvent, 1400);
+  }
+
+  function endGame(){
+    state = 'ended';
+    const survivors = aliveList();
+    const winner = survivors[0];
+    document.getElementById('simScreen').classList.remove('show');
+    const endScreen = document.getElementById('endScreen');
+    if(winner){
+      document.getElementById('winnerName').textContent = '\u{1F451} ' + winner.displayName;
+      narrate(winner.displayName + ' is the last one standing. They win it all.');
+    } else {
+      document.getElementById('winnerName').textContent = 'No survivors...';
+    }
+    document.getElementById('endEntrants').textContent = players.size;
+    document.getElementById('endDays').textContent = day-1;
+    document.getElementById('endKills').textContent = winner ? winner.kills : 0;
+    endScreen.classList.remove('hidden');
+  }
+
+  // ---------- Twitch chat connection ----------
+  let chatSocket = null;
+  function connectChat(channel){
+    disconnectChat();
+    const statusEl = document.getElementById('chatStatus');
+    statusEl.textContent = 'Connecting...'; statusEl.style.color = '#ffd83d';
+    try {
+      chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      chatSocket.onopen = () => {
+        chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+        chatSocket.send('PASS SCHMOOPIE');
+        chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+        chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
+      };
+      let ircBuffer = '';
+      chatSocket.onmessage = (e) => {
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop();
+        lines.forEach(line=>{
+          if(!line) return;
+          if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+          if(line.includes(' 366 ')){ statusEl.textContent='Connected \u2713'; statusEl.style.color='#7dff45'; }
+          const parsed = parseIRCLine(line);
+          if(parsed) handleChatMessage(parsed);
+        });
+      };
+      chatSocket.onerror = () => { statusEl.textContent='Connection failed'; statusEl.style.color='#ff5b3d'; };
+      chatSocket.onclose = () => { if(statusEl.textContent.indexOf('failed')===-1){ statusEl.textContent='Disconnected'; statusEl.style.color='#999'; } };
+    } catch(e){ document.getElementById('chatStatus').textContent = 'Connection failed'; }
+  }
+  function disconnectChat(){ if(chatSocket){ try{chatSocket.close();}catch(e){} chatSocket=null; } }
+
+  function parseIRCLine(line){
+    let tags = {}; let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{ const eq=kv.indexOf('='); if(eq>=0) tags[kv.slice(0,eq)]=kv.slice(eq+1); });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const nick = m[1].split('!')[0];
+    return { login: nick.toLowerCase(), displayName: tags['display-name']||nick, message: m[3] };
+  }
+
+  function handleChatMessage(parsed){
+    const raw = parsed.message.trim();
+    const lower = raw.toLowerCase();
+    if(lower === '!join'){ addPlayer(parsed.login, parsed.displayName); return; }
+    if(lower.startsWith('!sponsor ')){
+      if(state !== 'simming') return;
+      const targetName = lower.slice(9).trim().replace(/^@/,'');
+      const target = [...players.values()].find(p=>p.displayName.toLowerCase()===targetName) ||
+                     (players.has(targetName) ? players.get(targetName) : null);
+      if(target && target.alive && !target.shielded){
+        target.shielded = true;
+        addLogLine('\u{1F4E6} A sponsor sent ' + target.displayName + ' a protective care package!', 'sponsor');
+        updateRoster();
+      }
+    }
+  }
+
+  // ---------- UI wiring ----------
+  document.getElementById('connectBtn').addEventListener('click', ()=>{
+    const channel = document.getElementById('channelInput').value || 'fwhaydo';
+    connectChat(channel);
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('lobbyScreen').classList.remove('hidden');
+    state = 'lobby';
+    updateLobbyUI();
+  });
+
+  document.getElementById('startSimBtn').addEventListener('click', ()=>{
+    if(players.size === 0){ alert('No one has joined yet -- wait for at least one !join.'); return; }
+    if(players.size === 1){
+      const [only] = players.values();
+      state = 'ended';
+      document.getElementById('lobbyScreen').classList.add('hidden');
+      document.getElementById('winnerName').textContent = '\u{1F451} ' + only.displayName;
+      document.getElementById('endEntrants').textContent = 1;
+      document.getElementById('endDays').textContent = 0;
+      document.getElementById('endKills').textContent = 0;
+      document.getElementById('endScreen').classList.remove('hidden');
+      return;
+    }
+    document.getElementById('lobbyScreen').classList.add('hidden');
+    document.getElementById('simScreen').classList.add('show');
+    state = 'simming';
+    day = 1;
+    updateRoster();
+    narrate('The games are about to begin. ' + players.size + ' have entered the arena. Only one will leave.');
+    setTimeout(startDay, 2600);
+  });
+
+  document.getElementById('newGameBtn').addEventListener('click', ()=>{
+    document.getElementById('endScreen').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+    disconnectChat();
+    players = new Map();
+    state = 'menu';
+  });
+
+})();
+</script>
+</body>
+</html>
