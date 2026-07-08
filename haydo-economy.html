@@ -6,108 +6,146 @@
 <title>HAYDO'S ECONOMY</title>
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
-  html, body { width:100%; height:100%; overflow:hidden; background:#0a0f0a; font-family:'Segoe UI', Arial, sans-serif; }
-  #gameContainer { position:relative; width:100%; height:100%; background:#0a0f0a; overflow:hidden; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0b12; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; background:radial-gradient(ellipse at 50% 0%, #131628, #0a0b12 70%); overflow:hidden; }
 
   .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
     border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
   .back-home:hover{color:#fff;border-color:#9147ff}
 
-  #statusBar { position:absolute; top:14px; left:110px; right:14px; display:flex; justify-content:center; z-index:40; }
-  #statusPill { font-size:11px; font-weight:700; background:rgba(0,0,0,.5); border:1px solid rgba(255,255,255,.2); border-radius:12px; padding:4px 14px; color:#999; }
-
-  #titleBar { text-align:center; padding:44px 0 10px; color:#fff; }
-  #titleBar .t1 { font-size:clamp(20px,3.5vw,32px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#2ecc71,#ffd83d); -webkit-background-clip:text; background-clip:text; color:transparent; }
-  #titleBar .t2 { font-size:11px; letter-spacing:2px; color:#7a9a7a; text-transform:uppercase; font-weight:700; margin-top:2px; }
-  #globalStats { display:flex; justify-content:center; gap:24px; margin-top:8px; }
-  .gStat { font-size:12px; color:#ccc; font-weight:700; }
+  #titleBar { text-align:center; padding:8px 0 4px; color:#fff; }
+  #titleBar .t1 { font-size:clamp(16px,2.6vw,22px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#2ecc71,#ffd83d,#3fe6ff); -webkit-background-clip:text; background-clip:text; color:transparent; }
+  #globalStats { display:flex; justify-content:center; gap:16px; margin-top:4px; flex-wrap:wrap; }
+  #tipBanner { text-align:center; font-size:13px; font-weight:800; color:#fff; background:linear-gradient(90deg,rgba(63,230,255,.18),rgba(184,77,255,.18)); border:1.5px solid rgba(63,230,255,.4); border-radius:20px; padding:6px 18px; margin:4px auto 0; max-width:min(680px,92%); transition:opacity .3s ease; }
+  #tipBanner.fade { opacity:0; }
+  .gStat { font-size:10.5px; color:#ccc; font-weight:700; }
   .gStat b { color:#ffd83d; }
 
-  #mainGrid { position:absolute; top:120px; bottom:14px; left:14px; right:14px; display:flex; gap:14px; }
-  .panel { background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.12); border-radius:14px; padding:14px; overflow-y:auto; }
-  .panelTitle { font-size:12px; font-weight:900; letter-spacing:1.5px; color:#2ecc71; text-transform:uppercase; margin-bottom:10px; text-align:center; }
+  #mainGrid { position:absolute; top:56px; bottom:8px; left:8px; right:8px; display:flex; gap:8px; }
+  .panel { background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,.02)); border:1px solid rgba(255,255,255,.14); border-radius:12px; padding:8px; overflow-y:auto; box-shadow:0 4px 16px rgba(0,0,0,.25); }
+  .panelTitle { font-size:10px; font-weight:900; letter-spacing:.5px; color:#2ecc71; text-transform:uppercase; margin-bottom:2px; text-align:center; display:flex; align-items:center; justify-content:center; gap:4px; }
+  .microCaption { font-size:9px; color:#8899aa; text-align:center; margin-bottom:6px; line-height:1.3; }
 
-  #leaderboardPanel { width:26%; }
-  .lbRow { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,.03); }
-  .lbRank { width:20px; font-weight:900; color:#ffd83d; font-size:13px; }
-  .lbName { flex:1; font-size:12.5px; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .lbBal { font-size:12px; font-weight:800; color:#2ecc71; }
-  .lbIcons { font-size:11px; }
+  #leftPanel { width:20%; display:flex; flex-direction:column; gap:6px; }
+  .lbRow { display:flex; align-items:center; gap:5px; padding:4px 6px; border-radius:6px; margin-bottom:2px; background:rgba(255,255,255,.03); font-size:10px; }
+  .lbRow:first-child { background:linear-gradient(90deg,rgba(255,216,61,.15),rgba(255,216,61,.02)); border:1px solid rgba(255,216,61,.3); }
+  .lbRank { width:14px; font-weight:900; color:#ffd83d; }
+  .lbName { flex:1; font-weight:700; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .lbBal { font-weight:800; color:#2ecc71; }
 
-  #townPanel { flex:1; display:flex; flex-direction:column; }
-  #townShowcase { flex:1; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:6px; }
-  #townShowcase .crownName { font-size:16px; font-weight:900; color:#ffd83d; }
-  #townShowcase .crownSub { font-size:11px; color:#999; margin-bottom:6px; }
-  #townShowcase .crownIcons { font-size:64px; display:flex; gap:14px; }
-  #recentGrid { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:14px; }
-  .ownedIcon { font-size:28px; opacity:.9; }
+  #stocksBox { padding:6px; }
+  .stockRow { display:flex; justify-content:space-between; font-size:10px; padding:2px 4px; }
+  .stockTicker { font-weight:800; color:#3fe6ff; }
+  .stockPrice { font-weight:700; }
+  .stockPrice.up { color:#2ecc71; }
+  .stockPrice.down { color:#e74c3c; }
 
-  #shopPanel { width:26%; }
-  .shopSection { margin-bottom:10px; }
-  .shopSectionTitle { font-size:10px; color:#888; letter-spacing:1px; text-transform:uppercase; margin:8px 0 4px; }
-  .shopItem { display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px; margin-bottom:4px; background:rgba(255,255,255,.03); }
-  .shopItem .emoji { font-size:20px; }
+  #cityPanel { flex:1.15; display:flex; flex-direction:column; align-items:center; justify-content:center; position:relative; }
+  #cityCaption { font-size:10.5px; color:#9dd; text-align:center; margin-bottom:4px; background:rgba(63,230,255,.08); border:1px solid rgba(63,230,255,.25); border-radius:8px; padding:5px 12px; max-width:90%; }
+  #cityCanvasWrap { position:relative; }
+  #cityCanvas { max-width:100%; max-height:100%; border-radius:8px; border:2px solid rgba(255,255,255,.15); box-shadow:0 0 24px rgba(63,230,255,.08) inset; }
+  #zoneLegend { display:flex; gap:12px; margin-top:6px; font-size:9px; color:#aaa; }
+  .zoneLegendItem { display:flex; align-items:center; gap:3px; }
+  .zoneSwatch { width:10px; height:10px; border-radius:3px; box-shadow:0 0 4px rgba(255,255,255,.15); }
+
+  #shopPanel { width:27%; display:flex; flex-direction:column; gap:4px; }
+  .shopTabs { display:flex; gap:3px; margin-bottom:4px; }
+  .shopTab { flex:1; text-align:center; font-size:9px; font-weight:800; padding:5px 2px; border-radius:6px; background:rgba(255,255,255,.04); color:#888; cursor:default; letter-spacing:.3px; }
+  .shopTab.active { background:rgba(46,204,113,.18); color:#2ecc71; border:1px solid rgba(46,204,113,.35); }
+  .shopSectionTitle { font-size:8.5px; color:#888; letter-spacing:.5px; text-transform:uppercase; margin:5px 0 2px; }
+  .shopItem { display:flex; align-items:center; gap:5px; padding:4px 6px; border-radius:6px; margin-bottom:2px; background:rgba(255,255,255,.03); font-size:10px; }
+  .shopItem .emoji { font-size:14px; }
   .shopItem .info { flex:1; }
-  .shopItem .name { font-size:12px; font-weight:700; color:#fff; }
-  .shopItem .price { font-size:11px; color:#ffd83d; font-weight:700; }
-  .shopItem .cmd { font-size:10px; color:#666; font-family:monospace; }
+  .shopItem .name { font-weight:700; color:#fff; }
+  .shopItem .price { color:#ffd83d; font-weight:700; font-size:9px; }
+  .shopItem .cmd { font-size:8.5px; color:#666; font-family:monospace; }
+  .foodRow, .drinkRow { display:flex; gap:4px; margin-bottom:3px; }
+  .foodRow .shopItem, .drinkRow .shopItem { flex:1; flex-direction:column; align-items:center; text-align:center; gap:2px; }
 
-  #feed { position:absolute; bottom:14px; left:14px; display:flex; flex-direction:column; gap:3px; z-index:10; pointer-events:none; max-width:340px; }
-  .feedItem { font-size:12px; font-weight:700; color:#fff; background:rgba(10,20,10,.7); border:1px solid rgba(46,204,113,.3); border-radius:8px; padding:4px 10px; opacity:0; animation: feedFade 5s ease forwards; }
+  #commandRef { font-size:8.3px; color:#888; line-height:1.5; padding:5px 7px; background:rgba(255,255,255,.03); border-radius:7px; margin-top:3px; }
+  #commandRef b { color:#3fe6ff; }
+  #commandRef .grp { color:#ffd83d; font-weight:800; }
+
+  #feed { position:absolute; bottom:8px; left:8px; display:flex; flex-direction:column; gap:2px; z-index:10; pointer-events:none; max-width:320px; }
+  .feedItem { font-size:11px; font-weight:700; color:#fff; background:rgba(10,20,10,.75); border:1px solid rgba(46,204,113,.3); border-radius:7px; padding:3px 9px; opacity:0; animation: feedFade 5s ease forwards; }
   @keyframes feedFade { 0%{opacity:0; transform:translateY(6px);} 8%{opacity:1; transform:translateY(0);} 82%{opacity:1;} 100%{opacity:0;} }
 
   #popupFlash { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%) scale(0); text-align:center; z-index:60; pointer-events:none;
-    transition:transform .25s cubic-bezier(.34,1.56,.64,1); background:#0e1a0e; border:3px solid #2ecc71; border-radius:20px; padding:22px 40px; box-shadow:0 10px 50px rgba(0,0,0,.6); }
+    transition:transform .25s cubic-bezier(.34,1.56,.64,1); background:#0e1a0e; border:3px solid #2ecc71; border-radius:18px; padding:16px 32px; box-shadow:0 10px 50px rgba(0,0,0,.6); }
   #popupFlash.show { transform:translate(-50%,-50%) scale(1); }
-  #popupFlash .pfName { font-size:14px; color:#999; font-weight:700; margin-bottom:4px; }
-  #popupFlash .pfMain { font-size:clamp(22px,4vw,36px); font-weight:900; }
-  #popupFlash .pfSub { font-size:12px; color:#aaa; margin-top:4px; }
+  #popupFlash .pfName { font-size:12px; color:#999; font-weight:700; margin-bottom:3px; }
+  #popupFlash .pfMain { font-size:clamp(16px,3vw,26px); font-weight:900; }
+  #popupFlash .pfSub { font-size:10.5px; color:#aaa; margin-top:3px; }
 
-  #connectOverlay { position:absolute; inset:0; background:#0a0f0a; display:flex; flex-direction:column; align-items:center; justify-content:center; color:#fff; z-index:100; text-align:center; }
-  #connectOverlay .spin { width:36px; height:36px; border:4px solid rgba(46,204,113,.2); border-top-color:#2ecc71; border-radius:50%; animation:spin 1s linear infinite; margin-bottom:16px; }
-  @keyframes spin { to{ transform:rotate(360deg); } }
+  #eventBanner { position:absolute; top:56px; left:50%; transform:translateX(-50%) translateY(-40px); z-index:55; background:rgba(60,40,0,.9); border:2px solid #ffd83d; border-radius:12px; padding:7px 18px; font-size:12px; font-weight:800; color:#ffd83d; opacity:0; transition:all .4s ease; pointer-events:none; }
+  #eventBanner.show { transform:translateX(-50%) translateY(0); opacity:1; }
 </style>
 </head>
 <body>
 <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
 
 <div id="gameContainer">
-  <div id="connectOverlay">
-    <div class="spin"></div>
-    <div id="connectMsg">Connecting to the economy database...</div>
-  </div>
-
-  <div id="statusBar"><div id="statusPill">Connecting...</div></div>
-
   <div id="titleBar">
     <div class="t1">💰 HAYDO'S ECONOMY</div>
-    <div class="t2">!balance · !collect · !work · !gamble &lt;amt&gt; · !buy &lt;item&gt; · !inventory</div>
+    <div id="tipBanner">💬 Type in Twitch chat to play — no download, no signup!</div>
     <div id="globalStats">
       <div class="gStat">👥 <b id="totalUsers">0</b> players</div>
+      <div class="gStat">🏠 <b id="plotsSold">0</b>/500 plots</div>
       <div class="gStat">🏦 <b id="totalWealth">$0</b> total wealth</div>
+      <div class="gStat">🏥 <b id="hospitalCount">0</b> in hospital</div>
     </div>
   </div>
+  <div id="eventBanner"></div>
 
   <div id="mainGrid">
-    <div class="panel" id="leaderboardPanel">
-      <div class="panelTitle">🏆 Leaderboard</div>
-      <div id="lbList"></div>
+    <div id="leftPanel">
+      <div class="panel" style="flex:1;">
+        <div class="panelTitle">🏆 Leaderboard</div>
+        <div class="microCaption">The richest players right now</div>
+        <div id="lbList"></div>
+      </div>
+      <div class="panel" id="stocksBox">
+        <div class="panelTitle">📈 Stocks</div>
+        <div class="microCaption">Prices change live — buy low, sell high!</div>
+        <div id="stocksList"></div>
+      </div>
     </div>
 
-    <div class="panel" id="townPanel">
-      <div class="panelTitle">👑 Richest Player</div>
-      <div id="townShowcase"></div>
+    <div class="panel" id="cityPanel">
+      <div id="cityCaption">👆 <b>THE CITY</b> — every square is one player's claimed land! First buy a plot with <b>!buyland</b>, then build on it. Brighter squares = claimed, dim = still available.</div>
+      <div id="cityCanvasWrap"><canvas id="cityCanvas"></canvas></div>
+      <div id="zoneLegend">
+        <div class="zoneLegendItem"><div class="zoneSwatch" style="background:#c9a86a;"></div>Downtown (priciest)</div>
+        <div class="zoneLegendItem"><div class="zoneSwatch" style="background:#5a8a5a;"></div>Suburbs</div>
+        <div class="zoneLegendItem"><div class="zoneSwatch" style="background:#6a5a4a;"></div>Rural (cheapest)</div>
+      </div>
     </div>
 
     <div class="panel" id="shopPanel">
-      <div class="panelTitle">🏘️ Shop</div>
-      <div class="shopSection">
-        <div class="shopSectionTitle">Houses</div>
-        <div id="houseShopList"></div>
+      <div class="microCaption" style="margin-bottom:5px;">🛒 Everything chat can buy — type the command shown to get it</div>
+      <div class="shopTabs">
+        <div class="shopTab active">🏗️ Land</div>
+        <div class="shopTab active">🏠🚗🏢 Property</div>
+        <div class="shopTab active">🍔🥤 Survival</div>
       </div>
-      <div class="shopSection">
-        <div class="shopSectionTitle">Cars</div>
-        <div id="carShopList"></div>
+      <div id="landShopList"></div>
+      <div class="shopSectionTitle">🏠 Houses (appreciate!) / 🚗 Cars (depreciate!) / 🏢 Businesses</div>
+      <div id="houseShopList"></div>
+      <div id="carShopList"></div>
+      <div id="bizShopList"></div>
+      <div class="shopSectionTitle">🍔 Food (fights hunger)</div>
+      <div class="foodRow" id="foodShopList"></div>
+      <div class="shopSectionTitle">🥤 Drinks (fights thirst)</div>
+      <div class="foodRow" id="drinkShopList"></div>
+      <div class="microCaption" style="margin:6px 0 2px;">📋 Full command list (watch the banner above for quick tips!)</div>
+      <div id="commandRef">
+        <span class="grp">MONEY</span>: <b>!balance</b> · <b>!collect</b> · <b>!job</b> · <b>!work</b> · <b>!give &lt;user&gt; &lt;amt&gt;</b><br>
+        <span class="grp">PROPERTY</span>: <b>!buyland &lt;zone&gt;</b> · <b>!buy &lt;item&gt;</b> · <b>!sell &lt;item&gt;</b><br>
+        <span class="grp">MARKETPLACE</span>: <b>!listitem &lt;item&gt; &lt;price&gt;</b> · <b>!listings</b> · <b>!buyfrom &lt;user&gt; &lt;item&gt;</b> · <b>!cancellisting &lt;item&gt;</b><br>
+        <span class="grp">STOCKS</span>: <b>!stocks</b> · <b>!buystock &lt;t&gt; &lt;amt&gt;</b> · <b>!sellstock &lt;t&gt; &lt;shares/all&gt;</b><br>
+        <span class="grp">RISK IT</span>: <b>!gamble/!dice/!slots/!scratch &lt;amt&gt;</b> · <b>!rob &lt;user&gt;</b><br>
+        <span class="grp">SURVIVAL</span>: <b>!eat &lt;food&gt;</b> · <b>!drink &lt;drink&gt;</b> · <b>!payhospital</b><br>
+        <span class="grp">DEBT</span>: <b>!loan &lt;amt&gt;</b> · <b>!payloan &lt;amt&gt;</b> · <b>!inventory</b>
       </div>
     </div>
   </div>
@@ -117,54 +155,172 @@
 </div>
 
 <script>
-
 (function(){
   const TWITCH_CHANNEL = 'fwhaydo';
-  const STORAGE_KEY = 'haydo-economy-state';
+  const STORAGE_KEY = 'haydo-economy-state-v4';
 
-  const STARTING_BALANCE = 1000;
-  const COLLECT_COOLDOWN_MS = 24*60*60*1000; // 24 hours
-  const WORK_COOLDOWN_MS = 30*60*1000; // 30 minutes
-  const COLLECT_MIN = 200, COLLECT_MAX = 500;
-  const WORK_MIN = 50, WORK_MAX = 150;
-  const GAMBLE_WIN_CHANCE = 0.48;
+  // ---------- Grid / zones ----------
+  const COLS = 25, ROWS = 20;
 
+  function getZone(row, col){
+    const centerRow = ROWS/2, centerCol = COLS/2;
+    const dist = Math.sqrt(Math.pow(row-centerRow,2) + Math.pow(col-centerCol,2));
+    const maxDist = Math.sqrt(Math.pow(centerRow,2) + Math.pow(centerCol,2));
+    const normalized = dist / maxDist;
+    if(normalized < 0.25) return 'downtown';
+    if(normalized < 0.6) return 'suburb';
+    return 'rural';
+  }
+
+  const ZONE_MULTIPLIERS = { downtown:2.5, suburb:1.0, rural:0.55 };
+  const ZONE_BUSINESS_BONUS = { downtown:1.5, suburb:1.15, rural:1.0 };
+  const ZONE_COLORS = { downtown:'#c9a86a', suburb:'#5a8a5a', rural:'#6a5a4a' };
+  const LAND_BASE_PRICE = 400;
+  const LAND_PRICE_INCREMENT = 8;
+  const ITEM_INFLATION_PER_UNIT = 0.01;
+  const SELL_REFUND_PCT = 0.8;
+  const CAR_DEPRECIATION_PER_TICK = 0.02;
+  const CAR_VALUE_FLOOR_PCT = 0.25;
+  const HOUSE_APPRECIATION_PER_TICK = 0.015;
+  const HOUSE_VALUE_CAP_PCT = 3.0;
+
+  // ---------- Catalogs ----------
   const HOUSES = [
-    {id:'shack', name:'Shack', price:500, emoji:'🛖'},
-    {id:'cottage', name:'Cottage', price:1500, emoji:'🏡'},
-    {id:'house', name:'House', price:4000, emoji:'🏠'},
-    {id:'mansion', name:'Mansion', price:15000, emoji:'🏰'},
-    {id:'estate', name:'Private Estate', price:50000, emoji:'🏯'}
+    { id:'shack', name:'Shack', price:500, emoji:'\u{1F6D6}' },
+    { id:'cottage', name:'Cottage', price:1500, emoji:'\u{1F3E1}' },
+    { id:'house', name:'House', price:4000, emoji:'\u{1F3E0}' },
+    { id:'manor', name:'Manor', price:10000, emoji:'\u{1F3DB}\uFE0F' },
+    { id:'mansion', name:'Mansion', price:25000, emoji:'\u{1F3F0}' },
+    { id:'penthouse', name:'Penthouse', price:75000, emoji:'\u{1F3D9}\uFE0F' }
   ];
   const CARS = [
-    {id:'bike', name:'Bicycle', price:200, emoji:'🚲'},
-    {id:'sedan', name:'Sedan', price:1200, emoji:'🚗'},
-    {id:'sports', name:'Sports Car', price:6000, emoji:'🏎️'},
-    {id:'truck', name:'Monster Truck', price:12000, emoji:'🚙'},
-    {id:'jet', name:'Private Jet', price:75000, emoji:'✈️'}
+    { id:'bike', name:'Bicycle', price:200, emoji:'\u{1F6B2}' },
+    { id:'scooter', name:'Scooter', price:600, emoji:'\u{1F6F5}' },
+    { id:'sedan', name:'Sedan', price:1200, emoji:'\u{1F697}' },
+    { id:'sports', name:'Sports Car', price:6000, emoji:'\u{1F3CE}\uFE0F' },
+    { id:'muscle', name:'Muscle Car', price:15000, emoji:'\u{1F695}' },
+    { id:'truck', name:'Monster Truck', price:30000, emoji:'\u{1F699}' },
+    { id:'jet', name:'Private Jet', price:100000, emoji:'\u2708\uFE0F' }
   ];
-  const WORK_JOBS = ['walked dogs','streamed for tips','sold memes','fixed a computer','delivered pizza','mowed a lawn','busked on the corner','flipped burgers','coded a bug fix','washed cars'];
+  const BUSINESSES = [
+    { id:'stand', name:'Lemonade Stand', price:800, income:40, emoji:'\u{1F964}' },
+    { id:'channel', name:'Twitch Channel', price:5000, income:180, emoji:'\u{1F4FA}' },
+    { id:'mine', name:'Crypto Mine', price:20000, income:650, emoji:'\u26CF\uFE0F' },
+    { id:'corp', name:'Corporation', price:80000, income:2400, emoji:'\u{1F3E2}' }
+  ];
+  const FOODS = [
+    { id:'burger', name:'Burger', price:50, restore:30, emoji:'\u{1F354}' },
+    { id:'pizza', name:'Pizza', price:120, restore:60, emoji:'\u{1F355}' },
+    { id:'steak', name:'Steak', price:300, restore:100, emoji:'\u{1F969}' }
+  ];
+  const DRINKS = [
+    { id:'water', name:'Water', price:20, restore:30, emoji:'\u{1F4A7}' },
+    { id:'soda', name:'Soda', price:40, restore:50, emoji:'\u{1F964}' },
+    { id:'energy', name:'Energy Drink', price:80, restore:100, emoji:'\u26A1' }
+  ];
+  const JOBS = [
+    { id:'streamer', name:'Streamer', payMin:50, payMax:150, reqNetWorth:0, reqBusiness:false },
+    { id:'barista', name:'Barista', payMin:80, payMax:180, reqNetWorth:1500, reqBusiness:false },
+    { id:'youtuber', name:'YouTuber', payMin:150, payMax:300, reqNetWorth:5000, reqBusiness:false },
+    { id:'bizowner', name:'Business Owner', payMin:300, payMax:600, reqNetWorth:0, reqBusiness:true },
+    { id:'ceo', name:'CEO', payMin:600, payMax:1200, reqNetWorth:50000, reqBusiness:false }
+  ];
+  const STOCKS = {
+    MEME:   { basePrice:10,  volatility:0.12 },
+    TECH:   { basePrice:50,  volatility:0.05 },
+    GOLD:   { basePrice:100, volatility:0.02 },
+    CRYPTO: { basePrice:25,  volatility:0.18 }
+  };
 
-  let economyState = { users: {} }; // login -> {displayName, balance, lastCollect, lastWork, houses:[], cars:[]}
-  let dbReady = false;
+  const STARTING_BALANCE = 1000;
+  const COLLECT_COOLDOWN_MS = 24*60*60*1000;
+  const WORK_COOLDOWN_MS = 30*60*1000;
+  const ROB_COOLDOWN_MS = 3*60*1000;
+  const COLLECT_MIN = 200, COLLECT_MAX = 500;
+  const ROB_SUCCESS_CHANCE = 0.40;
+  const ROB_STEAL_MIN_PCT = 0.10, ROB_STEAL_MAX_PCT = 0.25;
+  const ROB_FINE_PCT = 0.10;
+  const ROB_MIN_TARGET_BALANCE = 200;
+  const LOAN_MAX = 5000;
+  const LOAN_INTEREST_RATE = 0.05;
+  const TAX_CYCLE_MS = 10*60*1000;
+  const PROPERTY_TAX_RATE = 0.015;
+  const STOCK_TICK_MS = 15*1000;
+  const EVENT_CHECK_MS = 6*60*1000;
+  const SURVIVAL_TICK_MS = 5*60*1000;
+  const SURVIVAL_DECAY = 2;
+  const HOSPITAL_BASE_FEE = 300;
+  const HOSPITAL_PCT_FEE = 0.10;
+
+  let economyState = {
+    users: {},
+    plotsSoldByZone: {downtown:0,suburb:0,rural:0},
+    unitsSoldEver: {},
+    stockPrices: {},
+    marketplace: []
+  };
+  Object.keys(STOCKS).forEach(t=> economyState.stockPrices[t] = STOCKS[t].basePrice);
+
+  let occupiedPlots = {};
+
+  function rebuildOccupiedPlots(){
+    occupiedPlots = {};
+    Object.entries(economyState.users).forEach(([login,u])=>{
+      if(u.landPlot) occupiedPlots[u.landPlot.row+','+u.landPlot.col] = login;
+    });
+  }
 
   function getUser(login, displayName){
     if(!economyState.users[login]){
-      economyState.users[login] = { displayName, balance: STARTING_BALANCE, lastCollect: 0, lastWork: 0, houses: [], cars: [] };
+      economyState.users[login] = {
+        displayName, balance: STARTING_BALANCE,
+        lastCollect:0, lastWork:0, lastRob:0,
+        currentJob:'streamer',
+        landPlot:null, houses:[], cars:[], businesses:[],
+        loanDebt:0, stockHoldings:{},
+        hunger:100, thirst:100, hospitalized:false, hospitalBill:0
+      };
     }
-    economyState.users[login].displayName = displayName; // keep display name fresh
+    economyState.users[login].displayName = displayName;
     return economyState.users[login];
   }
 
-  function persist(){
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(economyState));
-    } catch(e){
-      console.error('localStorage save failed', e);
-      addFeedItem('⚠️ Could not save progress — your browser storage may be full or disabled.');
-    }
+  function currentCatalogPrice(item){
+    const sold = economyState.unitsSoldEver[item.id] || 0;
+    return Math.round(item.price * (1 + sold*ITEM_INFLATION_PER_UNIT));
   }
 
+  // owned items are {id, boughtPrice, currentValue}; currentValue drifts via ticks
+  function ownedItemValue(owned){ return owned.currentValue; }
+
+  function netWorth(u){
+    let v = u.balance;
+    if(u.landPlot) v += currentLandPrice(u.landPlot.zone);
+    u.houses.forEach(o=> v += o.currentValue);
+    u.cars.forEach(o=> v += o.currentValue);
+    u.businesses.forEach(o=> v += o.currentValue);
+    Object.entries(u.stockHoldings||{}).forEach(([ticker,shares])=>{ v += shares*(economyState.stockPrices[ticker]||0); });
+    return v - u.loanDebt;
+  }
+
+  function propertyValue(u){
+    let v = 0;
+    if(u.landPlot) v += currentLandPrice(u.landPlot.zone);
+    u.houses.forEach(o=> v += o.currentValue);
+    u.cars.forEach(o=> v += o.currentValue);
+    u.businesses.forEach(o=> v += o.currentValue);
+    return v;
+  }
+
+  function currentLandPrice(zone){
+    const sold = economyState.plotsSoldByZone[zone] || 0;
+    return Math.round((LAND_BASE_PRICE + sold*LAND_PRICE_INCREMENT) * ZONE_MULTIPLIERS[zone]);
+  }
+
+  function persist(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(economyState)); }
+    catch(e){ console.error('save failed', e); addFeedItem('\u26A0\uFE0F Could not save progress.'); }
+  }
   function loadPersisted(){
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -172,9 +328,18 @@
         const parsed = JSON.parse(saved);
         if(parsed && parsed.users) economyState = parsed;
       }
-    } catch(e){
-      console.error('localStorage load failed', e);
-    }
+    } catch(e){ console.error('load failed', e); }
+    if(!economyState.unitsSoldEver) economyState.unitsSoldEver = {};
+    if(!economyState.stockPrices) economyState.stockPrices = {};
+    if(!economyState.marketplace) economyState.marketplace = [];
+    Object.keys(STOCKS).forEach(t=>{ if(!economyState.stockPrices[t]) economyState.stockPrices[t] = STOCKS[t].basePrice; });
+    Object.values(economyState.users).forEach(u=>{
+      if(typeof u.hunger !== 'number') u.hunger = 100;
+      if(typeof u.thirst !== 'number') u.thirst = 100;
+      if(typeof u.hospitalized !== 'boolean') u.hospitalized = false;
+      if(typeof u.hospitalBill !== 'number') u.hospitalBill = 0;
+    });
+    rebuildOccupiedPlots();
   }
 
   function fmt(n){ return '$' + Math.round(n).toLocaleString(); }
@@ -202,48 +367,105 @@
     setTimeout(()=>el.classList.remove('show'), 2600);
   }
 
+  function showEventBanner(text){
+    const el = document.getElementById('eventBanner');
+    el.textContent = text;
+    el.classList.add('show');
+    setTimeout(()=>el.classList.remove('show'), 5000);
+  }
+
+  // ---------- Rotating on-screen tips (short, one at a time, no wall of text) ----------
+  const TIPS = [
+    '\u{1F4AC} Type in Twitch chat to play \u2014 no download, no signup!',
+    '\u{1F195} New here? Type !collect to get free money once a day!',
+    '\u{1F3D7}\uFE0F Type !buyland suburb to claim your own spot in the city!',
+    '\u{1F3E0} Own land? Now type !buy shack to get your first house!',
+    '\u{1F4B0} Type !balance anytime to check how much money you have.',
+    '\u{1F6E0}\uFE0F Type !work to earn money \u2014 no waiting for your first paycheck!',
+    '\u{1F354} Getting hungry? Type !eat burger before you end up in the hospital!',
+    '\u{1F4A7} Don\u2019t forget to drink! Type !drink water to stay healthy.',
+    '\u{1F3B0} Feeling lucky? Try !gamble 100 or !slots 100 to risk it for more!',
+    '\u{1F4C8} Type !stocks to see prices, then !buystock TECH 100 to invest!',
+    '\u{1F91D} Type !give username 100 to send money to a friend in chat!',
+    '\u{1F697} Cars lose value over time \u2014 houses gain value! Choose wisely.',
+    '\u{1F3EA} Type !listings to see items other players are selling!',
+    '\u{1F977} Feeling risky? Type !rob username to try to steal their cash!',
+    '\u{1F3C6} Check the leaderboard on the left to see who\u2019s the richest!',
+    '\u{1F3D9}\uFE0F Every square in the city is a real player\u2019s land \u2014 claim yours!'
+  ];
+  let tipIndex = 0;
+  function rotateTip(){
+    const el = document.getElementById('tipBanner');
+    el.classList.add('fade');
+    setTimeout(()=>{
+      tipIndex = (tipIndex+1) % TIPS.length;
+      el.textContent = TIPS[tipIndex];
+      el.classList.remove('fade');
+    }, 300);
+  }
+
+  function hospitalBillFor(u){ return Math.round(HOSPITAL_BASE_FEE + u.balance*HOSPITAL_PCT_FEE); }
+
+  function sendToHospital(u){
+    if(u.hospitalized) return;
+    u.hospitalized = true;
+    u.hospitalBill = hospitalBillFor(u);
+    showPopup(u.displayName,'\u{1F3E5} HOSPITALIZED','You forgot to eat/drink! Pay '+fmt(u.hospitalBill)+' with !payhospital','#c0392b');
+    addFeedItem('\u{1F3E5} '+u.displayName+' collapsed and was rushed to the hospital!');
+  }
+
   // ---------- Rendering ----------
   function renderAll(){
     const users = Object.entries(economyState.users);
     document.getElementById('totalUsers').textContent = users.length;
     const totalWealth = users.reduce((s,[,u])=>s+u.balance,0);
     document.getElementById('totalWealth').textContent = fmt(totalWealth);
+    const plotsSold = Object.values(economyState.plotsSoldByZone).reduce((a,b)=>a+b,0);
+    document.getElementById('plotsSold').textContent = plotsSold;
+    document.getElementById('hospitalCount').textContent = users.filter(([,u])=>u.hospitalized).length;
 
-    // leaderboard
-    const sorted = users.slice().sort((a,b)=>b[1].balance-a[1].balance).slice(0,10);
+    const sorted = users.slice().sort((a,b)=>netWorth(b[1])-netWorth(a[1])).slice(0,10);
     const lbList = document.getElementById('lbList');
     lbList.innerHTML = '';
     sorted.forEach(([login,u],i)=>{
       const row = document.createElement('div');
       row.className = 'lbRow';
-      const icons = (u.houses.map(id=>HOUSES.find(h=>h.id===id)?.emoji||'').join('')) + (u.cars.map(id=>CARS.find(c=>c.id===id)?.emoji||'').join(''));
-      row.innerHTML = `<div class="lbRank">#${i+1}</div><div class="lbName">${u.displayName}</div><div class="lbIcons">${icons}</div><div class="lbBal">${fmt(u.balance)}</div>`;
+      const hpIcon = u.hospitalized ? ' \u{1F3E5}' : '';
+      row.innerHTML = '<div class="lbRank">#'+(i+1)+'</div><div class="lbName">'+u.displayName+hpIcon+'</div><div class="lbBal">'+fmt(netWorth(u))+'</div>';
       lbList.appendChild(row);
     });
-    if(sorted.length===0) lbList.innerHTML = '<div style="text-align:center;color:#666;font-size:12px;">No players yet — chat needs to use a command!</div>';
+    if(sorted.length===0) lbList.innerHTML = '<div style="text-align:center;color:#666;font-size:10px;">No players yet</div>';
 
-    // richest player showcase
-    const showcase = document.getElementById('townShowcase');
-    if(sorted.length===0){
-      showcase.innerHTML = '<div style="color:#666;font-size:13px;">Nobody has played yet</div>';
-    } else {
-      const [topLogin, topU] = sorted[0];
-      const houseIcons = topU.houses.map(id=>HOUSES.find(h=>h.id===id)?.emoji).filter(Boolean).join(' ') || '🏕️';
-      const carIcons = topU.cars.map(id=>CARS.find(c=>c.id===id)?.emoji).filter(Boolean).join(' ');
-      showcase.innerHTML = `
-        <div class="crownName">👑 ${topU.displayName}</div>
-        <div class="crownSub">${fmt(topU.balance)}</div>
-        <div class="crownIcons">${houseIcons} ${carIcons}</div>
-      `;
-    }
+    const stocksList = document.getElementById('stocksList');
+    stocksList.innerHTML = '';
+    Object.keys(STOCKS).forEach(ticker=>{
+      const price = economyState.stockPrices[ticker];
+      const base = STOCKS[ticker].basePrice;
+      const row = document.createElement('div');
+      row.className = 'stockRow';
+      row.innerHTML = '<span class="stockTicker">'+ticker+'</span><span class="stockPrice '+(price>=base?'up':'down')+'">$'+price.toFixed(2)+'</span>';
+      stocksList.appendChild(row);
+    });
 
-    // shop lists (show affordability at a glance for whoever is currently "in the lead" -- purely cosmetic reference)
+    renderShop();
+    renderCity();
+  }
+
+  function renderShop(){
+    const landList = document.getElementById('landShopList');
+    landList.innerHTML = '';
+    ['downtown','suburb','rural'].forEach(zone=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = '<div class="emoji">\u{1F4CD}</div><div class="info"><div class="name">'+(zone[0].toUpperCase()+zone.slice(1))+'</div><div class="price">'+fmt(currentLandPrice(zone))+'</div></div><div class="cmd">!buyland '+zone+'</div>';
+      landList.appendChild(div);
+    });
     const houseList = document.getElementById('houseShopList');
     houseList.innerHTML = '';
     HOUSES.forEach(h=>{
       const div = document.createElement('div');
       div.className = 'shopItem';
-      div.innerHTML = `<div class="emoji">${h.emoji}</div><div class="info"><div class="name">${h.name}</div><div class="price">${fmt(h.price)}</div></div><div class="cmd">!buy ${h.id}</div>`;
+      div.innerHTML = '<div class="emoji">'+h.emoji+'</div><div class="info"><div class="name">'+h.name+'</div><div class="price">'+fmt(currentCatalogPrice(h))+'</div></div><div class="cmd">!buy '+h.id+'</div>';
       houseList.appendChild(div);
     });
     const carList = document.getElementById('carShopList');
@@ -251,113 +473,536 @@
     CARS.forEach(c=>{
       const div = document.createElement('div');
       div.className = 'shopItem';
-      div.innerHTML = `<div class="emoji">${c.emoji}</div><div class="info"><div class="name">${c.name}</div><div class="price">${fmt(c.price)}</div></div><div class="cmd">!buy ${c.id}</div>`;
+      div.innerHTML = '<div class="emoji">'+c.emoji+'</div><div class="info"><div class="name">'+c.name+'</div><div class="price">'+fmt(currentCatalogPrice(c))+'</div></div><div class="cmd">!buy '+c.id+'</div>';
       carList.appendChild(div);
+    });
+    const bizList = document.getElementById('bizShopList');
+    bizList.innerHTML = '';
+    BUSINESSES.forEach(b=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = '<div class="emoji">'+b.emoji+'</div><div class="info"><div class="name">'+b.name+'</div><div class="price">'+fmt(currentCatalogPrice(b))+' \u00B7 +'+fmt(b.income)+'/10min</div></div><div class="cmd">!buy '+b.id+'</div>';
+      bizList.appendChild(div);
+    });
+    const foodList = document.getElementById('foodShopList');
+    foodList.innerHTML = '';
+    FOODS.forEach(f=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = '<div class="emoji">'+f.emoji+'</div><div class="name">'+f.name+'</div><div class="price">'+fmt(f.price)+'</div><div class="cmd">!eat '+f.id+'</div>';
+      foodList.appendChild(div);
+    });
+    const drinkList = document.getElementById('drinkShopList');
+    drinkList.innerHTML = '';
+    DRINKS.forEach(d=>{
+      const div = document.createElement('div');
+      div.className = 'shopItem';
+      div.innerHTML = '<div class="emoji">'+d.emoji+'</div><div class="name">'+d.name+'</div><div class="price">'+fmt(d.price)+'</div><div class="cmd">!drink '+d.id+'</div>';
+      drinkList.appendChild(div);
     });
   }
 
-  // ---------- Command handlers ----------
-  function cmdBalance(login, u){
-    showPopup(u.displayName, fmt(u.balance), 'Current Balance', '#2ecc71');
+  function renderCity(){
+    const canvas = document.getElementById('cityCanvas');
+    const cellSize = Math.min(26, Math.floor(640/COLS));
+    canvas.width = cellSize*COLS;
+    canvas.height = cellSize*ROWS;
+    const ctx = canvas.getContext('2d');
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        const zone = getZone(r,c);
+        const key = r+','+c;
+        const ownerLogin = occupiedPlots[key];
+        ctx.strokeStyle = 'rgba(0,0,0,.25)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = ZONE_COLORS[zone];
+        ctx.globalAlpha = ownerLogin ? 1 : 0.22;
+        ctx.fillRect(c*cellSize, r*cellSize, cellSize-1, cellSize-1);
+        ctx.strokeRect(c*cellSize+0.5, r*cellSize+0.5, cellSize-2, cellSize-2);
+        ctx.globalAlpha = 1;
+        if(ownerLogin){
+          const u = economyState.users[ownerLogin];
+          let icon = '\u2B1C';
+          if(u){
+            if(u.hospitalized) icon = '\u{1F3E5}';
+            else if(u.businesses.length){ const b=BUSINESSES.find(x=>x.id===u.businesses[u.businesses.length-1].id); if(b) icon=b.emoji; }
+            else if(u.houses.length){ const h=HOUSES.find(x=>x.id===u.houses[u.houses.length-1].id); if(h) icon=h.emoji; }
+          }
+          ctx.font = Math.max(8,cellSize-8)+'px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(icon, c*cellSize+cellSize/2, r*cellSize+cellSize/2);
+        }
+      }
+    }
   }
 
-  function cmdCollect(login, u){
+  // ---------- Guard: block actions while hospitalized ----------
+  function blockedByHospital(u){
+    if(u.hospitalized){
+      showPopup(u.displayName,'\u{1F3E5} IN THE HOSPITAL','Pay '+fmt(u.hospitalBill)+' with !payhospital first','#c0392b');
+      return true;
+    }
+    return false;
+  }
+
+  // ---------- Command handlers: core ----------
+  function cmdBalance(u){
+    showPopup(u.displayName, fmt(u.balance), 'Net Worth: '+fmt(netWorth(u))+' \u00B7 \u{1F356}'+u.hunger+' \u{1F4A7}'+u.thirst, '#2ecc71');
+  }
+
+  function cmdCollect(u){
+    if(blockedByHospital(u)) return;
     const now = Date.now();
-    const elapsed = now - u.lastCollect;
-    if(u.lastCollect && elapsed < COLLECT_COOLDOWN_MS){
-      const hoursLeft = Math.ceil((COLLECT_COOLDOWN_MS-elapsed)/3600000);
-      showPopup(u.displayName, 'ON COOLDOWN', `Come back in ~${hoursLeft}h for your next collect`, '#c0392b');
-      return;
+    if(u.lastCollect && now-u.lastCollect < COLLECT_COOLDOWN_MS){
+      const hrs = Math.ceil((COLLECT_COOLDOWN_MS-(now-u.lastCollect))/3600000);
+      showPopup(u.displayName,'ON COOLDOWN','Come back in ~'+hrs+'h','#c0392b'); return;
     }
-    const amount = Math.floor(COLLECT_MIN + Math.random()*(COLLECT_MAX-COLLECT_MIN));
-    u.balance += amount;
-    u.lastCollect = now;
-    showPopup(u.displayName, '+' + fmt(amount), 'Daily Collect!', '#2ecc71');
-    addFeedItem(`💵 ${u.displayName} collected ${fmt(amount)}!`);
-    persist();
-    renderAll();
+    const amt = Math.floor(COLLECT_MIN+Math.random()*(COLLECT_MAX-COLLECT_MIN));
+    u.balance += amt; u.lastCollect = now;
+    showPopup(u.displayName,'+'+fmt(amt),'Daily Collect!','#2ecc71');
+    addFeedItem('\u{1F4B5} '+u.displayName+' collected '+fmt(amt)+'!');
+    persist(); renderAll();
   }
 
-  function cmdWork(login, u){
+  function cmdJob(u, args){
+    if(blockedByHospital(u)) return;
+    if(!args[0]){
+      const list = JOBS.map(j=>j.id+(j.id===u.currentJob?' (current)':'')).join(', ');
+      showPopup(u.displayName, JOBS.find(j=>j.id===u.currentJob).name, 'Jobs: '+list, '#3fe6ff');
+      return;
+    }
+    const job = JOBS.find(j=>j.id===args[0].toLowerCase());
+    if(!job){ showPopup(u.displayName,'UNKNOWN JOB','Try: '+JOBS.map(j=>j.id).join(', '),'#c0392b'); return; }
+    const ownsBiz = u.businesses.length>0;
+    if(job.reqNetWorth && netWorth(u) < job.reqNetWorth){
+      showPopup(u.displayName,'NOT QUALIFIED','Need '+fmt(job.reqNetWorth)+' net worth','#c0392b'); return;
+    }
+    if(job.reqBusiness && !ownsBiz){
+      showPopup(u.displayName,'NOT QUALIFIED','Need to own a business first','#c0392b'); return;
+    }
+    u.currentJob = job.id;
+    showPopup(u.displayName,'NEW JOB: '+job.name,'Pay range '+fmt(job.payMin)+'-'+fmt(job.payMax),'#2ecc71');
+    persist(); renderAll();
+  }
+
+  function cmdWork(u){
+    if(blockedByHospital(u)) return;
     const now = Date.now();
-    const elapsed = now - u.lastWork;
-    if(u.lastWork && elapsed < WORK_COOLDOWN_MS){
-      const minsLeft = Math.ceil((WORK_COOLDOWN_MS-elapsed)/60000);
-      showPopup(u.displayName, 'ON COOLDOWN', `Rest up — back to work in ~${minsLeft}m`, '#c0392b');
-      return;
+    if(u.lastWork && now-u.lastWork < WORK_COOLDOWN_MS){
+      const mins = Math.ceil((WORK_COOLDOWN_MS-(now-u.lastWork))/60000);
+      showPopup(u.displayName,'ON COOLDOWN','Back to work in ~'+mins+'m','#c0392b'); return;
     }
-    const amount = Math.floor(WORK_MIN + Math.random()*(WORK_MAX-WORK_MIN));
-    const job = WORK_JOBS[Math.floor(Math.random()*WORK_JOBS.length)];
-    u.balance += amount;
-    u.lastWork = now;
-    showPopup(u.displayName, '+' + fmt(amount), `Worked: ${job}`, '#2ecc71');
-    addFeedItem(`🛠️ ${u.displayName} ${job} and earned ${fmt(amount)}!`);
-    persist();
-    renderAll();
+    const job = JOBS.find(j=>j.id===u.currentJob) || JOBS[0];
+    const amt = Math.floor(job.payMin+Math.random()*(job.payMax-job.payMin));
+    u.balance += amt; u.lastWork = now;
+    showPopup(u.displayName,'+'+fmt(amt),'Worked as '+job.name,'#2ecc71');
+    addFeedItem('\u{1F6E0}\uFE0F '+u.displayName+' worked as a '+job.name+' and earned '+fmt(amt)+'!');
+    persist(); renderAll();
   }
 
-  function cmdGamble(login, u, args){
-    const amount = parseInt(args[0], 10);
-    if(!amount || amount <= 0){
-      showPopup(u.displayName, 'INVALID BET', 'Use: !gamble <amount>', '#c0392b');
-      return;
-    }
-    if(amount > u.balance){
-      showPopup(u.displayName, 'TOO POOR', `You only have ${fmt(u.balance)}`, '#c0392b');
-      return;
-    }
-    const won = Math.random() < GAMBLE_WIN_CHANCE;
-    if(won){
-      u.balance += amount;
-      showPopup(u.displayName, '+' + fmt(amount), 'WON THE GAMBLE!', '#2ecc71');
-      addFeedItem(`🎰 ${u.displayName} gambled ${fmt(amount)} and WON ${fmt(amount)}!`);
-    } else {
-      u.balance -= amount;
-      showPopup(u.displayName, '-' + fmt(amount), 'Lost the gamble', '#c0392b');
-      addFeedItem(`🎰 ${u.displayName} gambled ${fmt(amount)} and lost it all.`);
-    }
-    persist();
-    renderAll();
+  function cmdGive(u, args, allUsersEntries, myLogin){
+    if(blockedByHospital(u)) return;
+    const targetName = (args[0]||'').toLowerCase().replace(/^@/,'');
+    const amt = parseInt(args[1],10);
+    if(!targetName || !amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !give <user> <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const targetEntry = allUsersEntries.find(([login,tu])=> login===targetName || tu.displayName.toLowerCase()===targetName);
+    if(!targetEntry || targetEntry[0]===myLogin){ showPopup(u.displayName,'INVALID TARGET','That player isn\u2019t registered yet','#c0392b'); return; }
+    u.balance -= amt;
+    targetEntry[1].balance += amt;
+    showPopup(u.displayName,'-'+fmt(amt),'Sent to '+targetEntry[1].displayName,'#3fe6ff');
+    addFeedItem('\u{1F91D} '+u.displayName+' sent '+fmt(amt)+' to '+targetEntry[1].displayName+'!');
+    persist(); renderAll();
   }
 
-  function cmdBuy(login, u, args){
+  // ---------- Command handlers: property ----------
+  function cmdBuyLand(u, args){
+    if(blockedByHospital(u)) return;
+    if(u.landPlot){ showPopup(u.displayName,'ALREADY OWN LAND','You already have a plot','#c0392b'); return; }
+    let zone = (args[0]||'suburb').toLowerCase();
+    if(!['downtown','suburb','rural'].includes(zone)) zone = 'suburb';
+    const price = currentLandPrice(zone);
+    if(u.balance < price){ showPopup(u.displayName,'CAN\u2019T AFFORD',zone+' land costs '+fmt(price),'#c0392b'); return; }
+    let candidates = [];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(getZone(r,c)===zone && !occupiedPlots[r+','+c]) candidates.push({row:r,col:c});
+    if(candidates.length===0){ showPopup(u.displayName,'SOLD OUT','No '+zone+' plots left \u2014 try another zone','#c0392b'); return; }
+    const plot = candidates[Math.floor(Math.random()*candidates.length)];
+    u.balance -= price;
+    u.landPlot = { row:plot.row, col:plot.col, zone };
+    occupiedPlots[plot.row+','+plot.col] = Object.keys(economyState.users).find(l=>economyState.users[l]===u);
+    economyState.plotsSoldByZone[zone] = (economyState.plotsSoldByZone[zone]||0)+1;
+    showPopup(u.displayName,'\u{1F4CD} LAND CLAIMED',zone[0].toUpperCase()+zone.slice(1)+' plot for '+fmt(price),'#2ecc71');
+    addFeedItem('\u{1F3D7}\uFE0F '+u.displayName+' claimed a '+zone+' plot!');
+    persist(); renderAll();
+  }
+
+  function findCatalogItem(id){
+    return HOUSES.find(x=>x.id===id) || CARS.find(x=>x.id===id) || BUSINESSES.find(x=>x.id===id);
+  }
+  function itemCategory(id){
+    if(HOUSES.find(x=>x.id===id)) return 'house';
+    if(CARS.find(x=>x.id===id)) return 'car';
+    if(BUSINESSES.find(x=>x.id===id)) return 'business';
+    return null;
+  }
+  function ownedListFor(u, cat){ return cat==='house'?u.houses : cat==='car'?u.cars : u.businesses; }
+
+  function cmdBuy(u, args){
+    if(blockedByHospital(u)) return;
+    if(!u.landPlot){ showPopup(u.displayName,'NEED LAND FIRST','Use !buyland before buying anything else','#c0392b'); return; }
     const itemId = (args[0]||'').toLowerCase();
-    const house = HOUSES.find(h=>h.id===itemId);
-    const car = CARS.find(c=>c.id===itemId);
-    const item = house || car;
-    if(!item){
-      showPopup(u.displayName, 'UNKNOWN ITEM', 'Check the shop list for valid item names', '#c0392b');
-      return;
+    const item = findCatalogItem(itemId);
+    if(!item){ showPopup(u.displayName,'UNKNOWN ITEM','Check the shop panel for valid names','#c0392b'); return; }
+    const cat = itemCategory(itemId);
+    const owned = ownedListFor(u, cat);
+    if(owned.find(o=>o.id===itemId)){ showPopup(u.displayName,'ALREADY OWNED','You already have a '+item.name,'#c0392b'); return; }
+    const price = currentCatalogPrice(item);
+    if(u.balance < price){ showPopup(u.displayName,'CAN\u2019T AFFORD',item.name+' costs '+fmt(price),'#c0392b'); return; }
+    u.balance -= price;
+    owned.push({ id:itemId, boughtPrice:price, currentValue:price });
+    economyState.unitsSoldEver[itemId] = (economyState.unitsSoldEver[itemId]||0)+1;
+    showPopup(u.displayName, item.emoji+' '+item.name, 'Purchased for '+fmt(price)+'!', '#2ecc71');
+    addFeedItem(item.emoji+' '+u.displayName+' bought a '+item.name+'!');
+    persist(); renderAll();
+  }
+
+  function cmdSell(u, args){
+    if(blockedByHospital(u)) return;
+    const itemId = (args[0]||'').toLowerCase();
+    const item = findCatalogItem(itemId);
+    if(!item){ showPopup(u.displayName,'UNKNOWN ITEM','Check your !inventory','#c0392b'); return; }
+    const cat = itemCategory(itemId);
+    const owned = ownedListFor(u, cat);
+    const idx = owned.findIndex(o=>o.id===itemId);
+    if(idx===-1){ showPopup(u.displayName,'NOT OWNED','You don\u2019t own a '+item.name,'#c0392b'); return; }
+    const refund = Math.round(owned[idx].currentValue*SELL_REFUND_PCT);
+    owned.splice(idx,1);
+    u.balance += refund;
+    showPopup(u.displayName,'+'+fmt(refund),'Sold '+item.name+' at current value','#ffd83d');
+    addFeedItem('\u{1F4B8} '+u.displayName+' sold their '+item.name+' for '+fmt(refund)+'.');
+    persist(); renderAll();
+  }
+
+  // ---------- Command handlers: player marketplace ----------
+  function cmdListItem(u, args, myLogin){
+    if(blockedByHospital(u)) return;
+    const itemId = (args[0]||'').toLowerCase();
+    const price = parseInt(args[1],10);
+    const item = findCatalogItem(itemId);
+    if(!item || !price || price<=0){ showPopup(u.displayName,'INVALID','Use: !listitem <item> <price>','#c0392b'); return; }
+    const cat = itemCategory(itemId);
+    const owned = ownedListFor(u, cat);
+    const idx = owned.findIndex(o=>o.id===itemId);
+    if(idx===-1){ showPopup(u.displayName,'NOT OWNED','You don\u2019t own a '+item.name,'#c0392b'); return; }
+    const [ownedItem] = owned.splice(idx,1);
+    economyState.marketplace.push({ sellerLogin:myLogin, sellerName:u.displayName, itemId, category:cat, price, listedAt:Date.now(), currentValue:ownedItem.currentValue });
+    showPopup(u.displayName,'\u{1F4CB} LISTED',item.name+' for '+fmt(price),'#3fe6ff');
+    addFeedItem('\u{1F4CB} '+u.displayName+' listed a '+item.name+' for '+fmt(price)+'!');
+    persist(); renderAll();
+  }
+
+  function cmdListings(u){
+    if(economyState.marketplace.length===0){ showPopup(u.displayName,'MARKETPLACE','No listings right now \u2014 !listitem to sell one','#3fe6ff'); return; }
+    const lines = economyState.marketplace.slice(0,6).map(l=>{
+      const item = findCatalogItem(l.itemId);
+      return (item?item.emoji:'')+item.name+' from '+l.sellerName+': '+fmt(l.price);
+    }).join('  |  ');
+    showPopup('MARKETPLACE', economyState.marketplace.length+' listing(s)', lines, '#3fe6ff');
+  }
+
+  function cmdCancelListing(u, args, myLogin){
+    const itemId = (args[0]||'').toLowerCase();
+    const idx = economyState.marketplace.findIndex(l=>l.sellerLogin===myLogin && l.itemId===itemId);
+    if(idx===-1){ showPopup(u.displayName,'NOT FOUND','No listing of that item from you','#c0392b'); return; }
+    const [listing] = economyState.marketplace.splice(idx,1);
+    const owned = ownedListFor(u, listing.category);
+    owned.push({ id:listing.itemId, boughtPrice:listing.currentValue, currentValue:listing.currentValue });
+    showPopup(u.displayName,'CANCELLED','Item returned to your inventory','#3fe6ff');
+    persist(); renderAll();
+  }
+
+  function cmdBuyFrom(u, args, myLogin){
+    if(blockedByHospital(u)) return;
+    const sellerName = (args[0]||'').toLowerCase();
+    const itemId = (args[1]||'').toLowerCase();
+    const idx = economyState.marketplace.findIndex(l=> (l.sellerName.toLowerCase()===sellerName || l.sellerLogin===sellerName) && l.itemId===itemId);
+    if(idx===-1){ showPopup(u.displayName,'NOT FOUND','Check !listings for valid seller/item','#c0392b'); return; }
+    const listing = economyState.marketplace[idx];
+    if(listing.sellerLogin===myLogin){ showPopup(u.displayName,'CAN\u2019T BUY YOUR OWN','List it, wait for someone else','#c0392b'); return; }
+    if(u.balance < listing.price){ showPopup(u.displayName,'TOO POOR','This item costs '+fmt(listing.price),'#c0392b'); return; }
+    const seller = economyState.users[listing.sellerLogin];
+    u.balance -= listing.price;
+    if(seller) seller.balance += listing.price;
+    const owned = ownedListFor(u, listing.category);
+    owned.push({ id:listing.itemId, boughtPrice:listing.price, currentValue:listing.price });
+    economyState.marketplace.splice(idx,1);
+    const item = findCatalogItem(itemId);
+    showPopup(u.displayName, item.emoji+' '+item.name, 'Bought from '+listing.sellerName+' for '+fmt(listing.price), '#2ecc71');
+    addFeedItem('\u{1F91D} '+u.displayName+' bought a '+item.name+' from '+listing.sellerName+'!');
+    persist(); renderAll();
+  }
+
+  // ---------- Command handlers: survival ----------
+  function cmdEat(u, args){
+    if(u.hospitalized){ showPopup(u.displayName,'\u{1F3E5} IN THE HOSPITAL','Pay '+fmt(u.hospitalBill)+' with !payhospital first','#c0392b'); return; }
+    const food = FOODS.find(f=>f.id===(args[0]||'').toLowerCase());
+    if(!food){ showPopup(u.displayName,'UNKNOWN FOOD','Try: '+FOODS.map(f=>f.id).join(', '),'#c0392b'); return; }
+    if(u.balance < food.price){ showPopup(u.displayName,'CAN\u2019T AFFORD',food.name+' costs '+fmt(food.price),'#c0392b'); return; }
+    u.balance -= food.price;
+    u.hunger = Math.min(100, u.hunger+food.restore);
+    showPopup(u.displayName, food.emoji+' Ate a '+food.name, 'Hunger: '+u.hunger+'/100', '#2ecc71');
+    persist(); renderAll();
+  }
+
+  function cmdDrink(u, args){
+    if(u.hospitalized){ showPopup(u.displayName,'\u{1F3E5} IN THE HOSPITAL','Pay '+fmt(u.hospitalBill)+' with !payhospital first','#c0392b'); return; }
+    const drink = DRINKS.find(d=>d.id===(args[0]||'').toLowerCase());
+    if(!drink){ showPopup(u.displayName,'UNKNOWN DRINK','Try: '+DRINKS.map(d=>d.id).join(', '),'#c0392b'); return; }
+    if(u.balance < drink.price){ showPopup(u.displayName,'CAN\u2019T AFFORD',drink.name+' costs '+fmt(drink.price),'#c0392b'); return; }
+    u.balance -= drink.price;
+    u.thirst = Math.min(100, u.thirst+drink.restore);
+    showPopup(u.displayName, drink.emoji+' Drank a '+drink.name, 'Thirst: '+u.thirst+'/100', '#2ecc71');
+    persist(); renderAll();
+  }
+
+  function cmdPayHospital(u){
+    if(!u.hospitalized){ showPopup(u.displayName,'NOT HOSPITALIZED','You\u2019re all good!','#2ecc71'); return; }
+    if(u.balance < u.hospitalBill){ showPopup(u.displayName,'CAN\u2019T AFFORD',fmt(u.hospitalBill)+' needed \u2014 !work or !collect first','#c0392b'); return; }
+    u.balance -= u.hospitalBill;
+    u.hospitalized = false;
+    u.hospitalBill = 0;
+    u.hunger = 50; u.thirst = 50;
+    showPopup(u.displayName,'\u2705 DISCHARGED','Back to normal! Eat/drink soon though','#2ecc71');
+    addFeedItem('\u2705 '+u.displayName+' paid their hospital bill and is back on their feet!');
+    persist(); renderAll();
+  }
+
+  // ---------- Command handlers: stocks ----------
+  function cmdStocks(u){
+    const lines = Object.keys(STOCKS).map(t=>t+': $'+economyState.stockPrices[t].toFixed(2)).join('  ');
+    showPopup(u.displayName, 'MARKET', lines, '#3fe6ff');
+  }
+
+  function cmdBuyStock(u, args){
+    if(blockedByHospital(u)) return;
+    const ticker = (args[0]||'').toUpperCase();
+    const amt = parseInt(args[1],10);
+    if(!STOCKS[ticker] || !amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !buystock <ticker> <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const price = economyState.stockPrices[ticker];
+    const shares = amt/price;
+    u.balance -= amt;
+    u.stockHoldings[ticker] = (u.stockHoldings[ticker]||0) + shares;
+    showPopup(u.displayName,'BOUGHT '+ticker,shares.toFixed(2)+' shares @ $'+price.toFixed(2),'#2ecc71');
+    persist(); renderAll();
+  }
+
+  function cmdSellStock(u, args){
+    if(blockedByHospital(u)) return;
+    const ticker = (args[0]||'').toUpperCase();
+    if(!STOCKS[ticker]){ showPopup(u.displayName,'INVALID','Use: !sellstock <ticker> <shares/all>','#c0392b'); return; }
+    const owned = u.stockHoldings[ticker] || 0;
+    if(owned<=0){ showPopup(u.displayName,'NO SHARES','You don\u2019t own any '+ticker,'#c0392b'); return; }
+    let sharesToSell = (args[1]||'').toLowerCase()==='all' ? owned : parseFloat(args[1]);
+    if(!sharesToSell || sharesToSell<=0 || sharesToSell>owned){ showPopup(u.displayName,'INVALID AMOUNT','You own '+owned.toFixed(2)+' shares','#c0392b'); return; }
+    const price = economyState.stockPrices[ticker];
+    const proceeds = Math.round(sharesToSell*price);
+    u.stockHoldings[ticker] -= sharesToSell;
+    u.balance += proceeds;
+    showPopup(u.displayName,'+'+fmt(proceeds),'Sold '+sharesToSell.toFixed(2)+' '+ticker+' shares','#2ecc71');
+    persist(); renderAll();
+  }
+
+  // ---------- Command handlers: risk it ----------
+  function cmdGamble(u, args){
+    if(blockedByHospital(u)) return;
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !gamble <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const won = Math.random() < 0.48;
+    if(won){ u.balance += amt; showPopup(u.displayName,'+'+fmt(amt),'WON THE GAMBLE!','#2ecc71'); addFeedItem('\u{1F3B0} '+u.displayName+' gambled '+fmt(amt)+' and WON!'); }
+    else { u.balance -= amt; showPopup(u.displayName,'-'+fmt(amt),'Lost the gamble','#c0392b'); }
+    persist(); renderAll();
+  }
+
+  function cmdDice(u, args){
+    if(blockedByHospital(u)) return;
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !dice <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const roll = Math.floor(Math.random()*6)+1;
+    const won = roll >= 4;
+    if(won){ const win=Math.round(amt*0.9); u.balance += win; showPopup(u.displayName,'\u{1F3B2} Rolled '+roll,'+'+fmt(win),'#2ecc71'); }
+    else { u.balance -= amt; showPopup(u.displayName,'\u{1F3B2} Rolled '+roll,'-'+fmt(amt),'#c0392b'); }
+    persist(); renderAll();
+  }
+
+  const SLOT_SYMBOLS = ['\u{1F352}','\u{1F34B}','\u{1F347}','\u{1F48E}','7\uFE0F\u20E3'];
+  function cmdSlots(u, args){
+    if(blockedByHospital(u)) return;
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !slots <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const reels = [0,1,2].map(()=>SLOT_SYMBOLS[Math.floor(Math.random()*SLOT_SYMBOLS.length)]);
+    let mult = 0;
+    if(reels[0]===reels[1] && reels[1]===reels[2]){ mult = reels[0]==='7\uFE0F\u20E3' ? 10 : (reels[0]==='\u{1F48E}' ? 6 : 3); }
+    else if(reels[0]===reels[1] || reels[1]===reels[2] || reels[0]===reels[2]){ mult = 1.5; }
+    u.balance -= amt;
+    const payout = Math.round(amt*mult);
+    u.balance += payout;
+    const display = reels.join(' ');
+    if(mult>0) showPopup(u.displayName, display, (payout>=amt?'+':'-')+fmt(Math.abs(payout-amt))+' net', mult>=3?'#2ecc71':'#ffd83d');
+    else showPopup(u.displayName, display, '-'+fmt(amt), '#c0392b');
+    persist(); renderAll();
+  }
+
+  function cmdScratch(u, args){
+    if(blockedByHospital(u)) return;
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !scratch <amount>','#c0392b'); return; }
+    if(amt > u.balance){ showPopup(u.displayName,'TOO POOR','You only have '+fmt(u.balance),'#c0392b'); return; }
+    const r = Math.random();
+    let mult;
+    if(r < 0.02) mult = 12;
+    else if(r < 0.12) mult = 3;
+    else if(r < 0.37) mult = 1.3;
+    else mult = 0;
+    u.balance -= amt;
+    const payout = Math.round(amt*mult);
+    u.balance += payout;
+    if(mult>=3) { showPopup(u.displayName,'\u{1F3AB} JACKPOT!','+'+fmt(payout-amt)+' net','#2ecc71'); addFeedItem('\u{1F3AB} '+u.displayName+' hit a scratch ticket jackpot for '+fmt(payout)+'!'); }
+    else if(mult>0) showPopup(u.displayName,'\u{1F3AB} Small win','+'+fmt(payout-amt)+' net','#ffd83d');
+    else showPopup(u.displayName,'\u{1F3AB} No win','-'+fmt(amt),'#c0392b');
+    persist(); renderAll();
+  }
+
+  function cmdRob(u, args, myLogin){
+    if(blockedByHospital(u)) return;
+    const now = Date.now();
+    if(u.lastRob && now-u.lastRob < ROB_COOLDOWN_MS){
+      const mins = Math.ceil((ROB_COOLDOWN_MS-(now-u.lastRob))/60000);
+      showPopup(u.displayName,'ON COOLDOWN','Wait ~'+mins+'m before robbing again','#c0392b'); return;
     }
-    const owned = house ? u.houses : u.cars;
-    if(owned.includes(itemId)){
-      showPopup(u.displayName, 'ALREADY OWNED', `You already have a ${item.name}`, '#c0392b');
-      return;
+    if(!u.landPlot){ showPopup(u.displayName,'NEED LAND FIRST','Get established before a life of crime','#c0392b'); return; }
+    const targetName = (args[0]||'').toLowerCase().replace(/^@/,'');
+    if(!targetName){ showPopup(u.displayName,'INVALID','Use: !rob <username>','#c0392b'); return; }
+    const targetEntry = Object.entries(economyState.users).find(([login,tu])=> login===targetName || tu.displayName.toLowerCase()===targetName);
+    if(!targetEntry || targetEntry[0]===myLogin){ showPopup(u.displayName,'INVALID TARGET','That player isn\u2019t registered yet','#c0392b'); return; }
+    const [targetLogin, target] = targetEntry;
+    if(target.balance < ROB_MIN_TARGET_BALANCE){ showPopup(u.displayName,'TOO POOR TO ROB',target.displayName+' doesn\u2019t have enough cash','#c0392b'); return; }
+    u.lastRob = now;
+    if(Math.random() < ROB_SUCCESS_CHANCE){
+      const pct = ROB_STEAL_MIN_PCT + Math.random()*(ROB_STEAL_MAX_PCT-ROB_STEAL_MIN_PCT);
+      const stolen = Math.round(target.balance*pct);
+      target.balance -= stolen; u.balance += stolen;
+      showPopup(u.displayName,'+'+fmt(stolen),'Successfully robbed '+target.displayName+'!','#2ecc71');
+      addFeedItem('\u{1F977} '+u.displayName+' robbed '+target.displayName+' for '+fmt(stolen)+'!');
+    } else {
+      const fine = Math.round(u.balance*ROB_FINE_PCT);
+      u.balance = Math.max(0, u.balance-fine);
+      showPopup(u.displayName,'-'+fmt(fine),'Caught trying to rob '+target.displayName+'!','#c0392b');
+      addFeedItem('\u{1F6A8} '+u.displayName+' got caught robbing '+target.displayName+'!');
     }
-    if(u.balance < item.price){
-      showPopup(u.displayName, 'CAN\'T AFFORD', `${item.name} costs ${fmt(item.price)}`, '#c0392b');
-      return;
-    }
-    u.balance -= item.price;
-    owned.push(itemId);
-    showPopup(u.displayName, item.emoji + ' ' + item.name, `Purchased for ${fmt(item.price)}!`, '#2ecc71');
-    addFeedItem(`${item.emoji} ${u.displayName} bought a ${item.name}!`);
-    persist();
+    persist(); renderAll();
+  }
+
+  // ---------- Command handlers: debt ----------
+  function cmdLoan(u, args){
+    if(blockedByHospital(u)) return;
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !loan <amount>','#c0392b'); return; }
+    if(u.loanDebt > 0){ showPopup(u.displayName,'ALREADY IN DEBT','Pay off your current loan first with !payloan','#c0392b'); return; }
+    if(amt > LOAN_MAX){ showPopup(u.displayName,'TOO MUCH','Max loan is '+fmt(LOAN_MAX),'#c0392b'); return; }
+    u.balance += amt; u.loanDebt = amt;
+    showPopup(u.displayName,'+'+fmt(amt),'Loan taken \u2014 5% interest per tax cycle','#ffd83d');
+    persist(); renderAll();
+  }
+
+  function cmdPayLoan(u, args){
+    const amt = parseInt(args[0],10);
+    if(!amt || amt<=0){ showPopup(u.displayName,'INVALID','Use: !payloan <amount>','#c0392b'); return; }
+    if(u.loanDebt<=0){ showPopup(u.displayName,'NO DEBT','You don\u2019t owe anything','#2ecc71'); return; }
+    const pay = Math.min(amt, u.balance, u.loanDebt);
+    u.balance -= pay; u.loanDebt -= pay;
+    showPopup(u.displayName,'-'+fmt(pay),'Remaining debt: '+fmt(u.loanDebt),'#3fe6ff');
+    persist(); renderAll();
+  }
+
+  function cmdInventory(u){
+    const h = u.houses.map(o=>({...HOUSES.find(x=>x.id===o.id), currentValue:o.currentValue})).filter(x=>x.id);
+    const c = u.cars.map(o=>({...CARS.find(x=>x.id===o.id), currentValue:o.currentValue})).filter(x=>x.id);
+    const b = u.businesses.map(o=>({...BUSINESSES.find(x=>x.id===o.id), currentValue:o.currentValue})).filter(x=>x.id);
+    const landTxt = u.landPlot ? (u.landPlot.zone+' plot') : 'no land yet';
+    const items = [...h,...c,...b].map(i=>i.emoji+i.name+' ('+fmt(i.currentValue)+')').join(' ') || 'nothing yet';
+    showPopup(u.displayName, landTxt, items, '#ffd83d');
+  }
+
+  // ---------- Background ticks ----------
+  function runTaxAndIncomeTick(){
+    Object.values(economyState.users).forEach(u=>{
+      u.cars.forEach(o=>{ o.currentValue = Math.max(o.boughtPrice*CAR_VALUE_FLOOR_PCT, o.currentValue*(1-CAR_DEPRECIATION_PER_TICK)); });
+      u.houses.forEach(o=>{ o.currentValue = Math.min(o.boughtPrice*HOUSE_VALUE_CAP_PCT, o.currentValue*(1+HOUSE_APPRECIATION_PER_TICK)); });
+      if(!u.landPlot) return;
+      const pv = propertyValue(u);
+      const tax = Math.round(pv*PROPERTY_TAX_RATE);
+      let income = 0;
+      u.businesses.forEach(o=>{
+        const b = BUSINESSES.find(x=>x.id===o.id);
+        if(b) income += Math.round(b.income * ZONE_BUSINESS_BONUS[u.landPlot.zone]);
+      });
+      u.balance = Math.max(0, u.balance - tax + income);
+      if(u.loanDebt > 0) u.loanDebt = Math.round(u.loanDebt * (1+LOAN_INTEREST_RATE));
+    });
+    persist(); renderAll();
+  }
+
+  function runSurvivalTick(){
+    Object.values(economyState.users).forEach(u=>{
+      if(u.hospitalized) return;
+      u.hunger = Math.max(0, u.hunger-SURVIVAL_DECAY);
+      u.thirst = Math.max(0, u.thirst-SURVIVAL_DECAY);
+      if(u.hunger<=0 || u.thirst<=0) sendToHospital(u);
+    });
+    persist(); renderAll();
+  }
+
+  function runStockTick(){
+    Object.keys(STOCKS).forEach(ticker=>{
+      let p = economyState.stockPrices[ticker];
+      p *= (1 + (Math.random()-0.5)*STOCKS[ticker].volatility);
+      p = Math.max(STOCKS[ticker].basePrice*0.2, Math.min(STOCKS[ticker].basePrice*5, p));
+      economyState.stockPrices[ticker] = Math.round(p*100)/100;
+    });
     renderAll();
   }
 
-  function cmdInventory(login, u){
-    const houseNames = u.houses.map(id=>HOUSES.find(h=>h.id===id)).filter(Boolean);
-    const carNames = u.cars.map(id=>CARS.find(c=>c.id===id)).filter(Boolean);
-    if(houseNames.length===0 && carNames.length===0){
-      showPopup(u.displayName, 'EMPTY', 'No houses or cars owned yet — !buy something!', '#999');
-      return;
+  function runRandomEvent(){
+    const users = Object.entries(economyState.users);
+    if(users.length===0) return;
+    const events = ['boom','crash','stimulus','audit'];
+    const ev = events[Math.floor(Math.random()*events.length)];
+    if(ev==='boom'){
+      Object.keys(STOCKS).forEach(t=> economyState.stockPrices[t] *= 1.12);
+      showEventBanner('\u{1F4C8} MARKET BOOM! All stocks up 12%!');
+    } else if(ev==='crash'){
+      Object.keys(STOCKS).forEach(t=> economyState.stockPrices[t] *= 0.88);
+      showEventBanner('\u{1F4C9} MARKET CRASH! All stocks down 12%!');
+    } else if(ev==='stimulus'){
+      users.forEach(([,u])=>{ u.balance += 100; });
+      showEventBanner('\u{1F4B5} ECONOMIC STIMULUS! Everyone +$100!');
+    } else if(ev==='audit'){
+      const richest = users.slice().sort((a,b)=>netWorth(b[1])-netWorth(a[1]))[0];
+      if(richest){
+        const fine = Math.round(richest[1].balance*0.1);
+        richest[1].balance -= fine;
+        showEventBanner('\u{1F575}\uFE0F TAX AUDIT! '+richest[1].displayName+' fined '+fmt(fine)+'!');
+      }
     }
-    const all = [...houseNames, ...carNames].map(i=>i.emoji+' '+i.name).join('  ');
-    showPopup(u.displayName, all, 'Your Property', '#ffd83d');
+    persist(); renderAll();
   }
 
-  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  // ---------- Twitch chat connection ----------
   let chatSocket = null;
   function connectTwitch(){
     chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
@@ -375,12 +1020,11 @@
       lines.forEach(line=>{
         if(!line) return;
         if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
-        if(line.includes(' 366 ')){ setStatus('Connected — chat is live'); }
         const parsed = parseIRCLine(line);
         if(parsed) handleChatMessage(parsed);
       });
     };
-    chatSocket.onclose = () => { setStatus('Twitch disconnected — retrying...'); setTimeout(connectTwitch, 3000); };
+    chatSocket.onclose = () => { setTimeout(connectTwitch, 3000); };
     chatSocket.onerror = () => { chatSocket.close(); };
   }
 
@@ -406,40 +1050,61 @@
   }
 
   function handleChatMessage(parsed){
-    if(!dbReady) return; // don't process commands until we've loaded persisted state
     const raw = parsed.message.trim();
     if(!raw.startsWith('!')) return;
     const parts = raw.slice(1).split(/\s+/);
     const cmd = parts[0].toLowerCase();
     const args = parts.slice(1);
-    const commands = ['balance','bal','collect','work','gamble','bet','buy','inventory','inv'];
+    const commands = ['balance','bal','collect','work','job','give','buyland','buy','sell',
+      'listitem','listings','buyfrom','cancellisting',
+      'stocks','buystock','sellstock','gamble','dice','slots','scratch','rob','loan','payloan',
+      'eat','drink','payhospital','inventory','inv'];
     if(!commands.includes(cmd)) return;
 
     const u = getUser(parsed.login, parsed.displayName);
-    if(cmd==='balance'||cmd==='bal') cmdBalance(parsed.login, u);
-    else if(cmd==='collect') cmdCollect(parsed.login, u);
-    else if(cmd==='work') cmdWork(parsed.login, u);
-    else if(cmd==='gamble'||cmd==='bet') cmdGamble(parsed.login, u, args);
-    else if(cmd==='buy') cmdBuy(parsed.login, u, args);
-    else if(cmd==='inventory'||cmd==='inv') cmdInventory(parsed.login, u);
-  }
+    const allUsersEntries = Object.entries(economyState.users);
 
-  function setStatus(text){
-    document.getElementById('statusPill').textContent = text;
+    if(cmd==='balance'||cmd==='bal') cmdBalance(u);
+    else if(cmd==='collect') cmdCollect(u);
+    else if(cmd==='job') cmdJob(u,args);
+    else if(cmd==='work') cmdWork(u);
+    else if(cmd==='give') cmdGive(u,args,allUsersEntries,parsed.login);
+    else if(cmd==='buyland') cmdBuyLand(u,args);
+    else if(cmd==='buy') cmdBuy(u,args);
+    else if(cmd==='sell') cmdSell(u,args);
+    else if(cmd==='listitem') cmdListItem(u,args,parsed.login);
+    else if(cmd==='listings') cmdListings(u);
+    else if(cmd==='buyfrom') cmdBuyFrom(u,args,parsed.login);
+    else if(cmd==='cancellisting') cmdCancelListing(u,args,parsed.login);
+    else if(cmd==='stocks') cmdStocks(u);
+    else if(cmd==='buystock') cmdBuyStock(u,args);
+    else if(cmd==='sellstock') cmdSellStock(u,args);
+    else if(cmd==='gamble') cmdGamble(u,args);
+    else if(cmd==='dice') cmdDice(u,args);
+    else if(cmd==='slots') cmdSlots(u,args);
+    else if(cmd==='scratch') cmdScratch(u,args);
+    else if(cmd==='rob') cmdRob(u,args,parsed.login);
+    else if(cmd==='loan') cmdLoan(u,args);
+    else if(cmd==='payloan') cmdPayLoan(u,args);
+    else if(cmd==='eat') cmdEat(u,args);
+    else if(cmd==='drink') cmdDrink(u,args);
+    else if(cmd==='payhospital') cmdPayHospital(u);
+    else if(cmd==='inventory'||cmd==='inv') cmdInventory(u);
   }
 
   // ---------- Startup ----------
   function init(){
     loadPersisted();
-    dbReady = true;
     renderAll();
-    document.getElementById('connectOverlay').style.display = 'none';
-    setStatus('Connecting to Twitch chat...');
     connectTwitch();
+    setInterval(runTaxAndIncomeTick, TAX_CYCLE_MS);
+    setInterval(runSurvivalTick, SURVIVAL_TICK_MS);
+    setInterval(runStockTick, STOCK_TICK_MS);
+    setInterval(runRandomEvent, EVENT_CHECK_MS);
+    setInterval(rotateTip, 7000);
   }
 
   init();
-  renderAll();
 
 })();
 </script>
