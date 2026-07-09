@@ -148,14 +148,6 @@
     "{p1} and {p2} shared supplies and rested together.",
     "{p1} and {p2} formed an uneasy alliance."
   ];
-  const HAZARD_LINES = [
-    "{p} was caught in a sudden rockslide and didn't make it.",
-    "{p} ate something poisonous by mistake.",
-    "{p} fell into a hidden ravine.",
-    "A sudden storm swept through and {p} didn't survive.",
-    "{p} was caught in their own trap.",
-    "{p} wandered too close to the edge and didn't make it back."
-  ];
   const FIGHT_LINES = [
     "{winner} ambushed {loser} in the underbrush. Only {winner} walked away.",
     "{winner} and {loser} fought over the last supply crate. {winner} won.",
@@ -230,21 +222,13 @@
     let pool = shuffle([...alive]);
     let events = [];
     let elims = 0;
-    while(pool.length > 0 && elims < targetEliminations){
-      if(pool.length >= 2 && Math.random() < 0.5){
-        const a = pool.pop(), b = pool.pop();
-        let winner = Math.random()<0.5?a:b, loser = winner===a?b:a;
-        if(loser.shielded){ loser.shielded=false; events.push({type:'shield', p:loser}); continue; }
-        events.push({type:'fight', winner, loser});
-        loser.alive = false; winner.kills++;
-        elims++;
-      } else {
-        const p = pool.pop();
-        if(p.shielded){ p.shielded=false; events.push({type:'shield', p}); continue; }
-        events.push({type:'hazard', p});
-        p.alive = false;
-        elims++;
-      }
+    while(pool.length >= 2 && elims < targetEliminations){
+      const a = pool.pop(), b = pool.pop();
+      let winner = Math.random()<0.5?a:b, loser = winner===a?b:a;
+      if(loser.shielded){ loser.shielded=false; events.push({type:'shield', p:loser}); continue; }
+      events.push({type:'fight', winner, loser});
+      loser.alive = false; winner.kills++;
+      elims++;
     }
     const safeBudget = Math.min(pool.length, 6);
     for(let i=0;i<safeBudget;i++){
@@ -273,7 +257,6 @@
     const ev = eventQueue.shift();
     let text, cls;
     if(ev.type==='fight'){ text = fill(pick(FIGHT_LINES), {winner:ev.winner.displayName, loser:ev.loser.displayName}); cls='elim'; }
-    else if(ev.type==='hazard'){ text = fill(pick(HAZARD_LINES), {p:ev.p.displayName}); cls='elim'; }
     else if(ev.type==='alliance'){ text = fill(pick(ALLIANCE_LINES), {p1:ev.a.displayName, p2:ev.b.displayName}); cls='alliance'; }
     else if(ev.type==='safe'){ text = fill(pick(SAFE_LINES), {p:ev.p.displayName}); cls='safe'; }
     else if(ev.type==='shield'){ text = fill(pick(SHIELD_SAVE_LINES), {p:ev.p.displayName}); cls='sponsor'; }
