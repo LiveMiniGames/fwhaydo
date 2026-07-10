@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Interactive Form — Host</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; height:100%; overflow:hidden; }
+  #canvas { position:relative; width:100%; height:100%; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  .field { position:absolute; transform:translate(-50%,-50%); background:#fff; border-radius:8px; padding:14px 18px; box-shadow:0 2px 10px rgba(0,0,0,.3); width:320px; }
+  .field .fLabel { font-weight:700; font-size:14px; color:#222; margin-bottom:8px; }
+  .field .fAnswer { font-size:15px; color:#111; border-bottom:2px solid #673ab7; padding-bottom:4px; min-height:20px; }
+
+  #headerBlock { position:absolute; transform:translate(-50%,-50%); text-align:center; max-width:80%; }
+  #headerDesc { font-size:13px; color:#555; margin-top:6px; font-weight:400; }
+
+  #decorImg { position:absolute; }
+
+  #navBar { position:absolute; bottom:16px; left:50%; transform:translateX(-50%); display:flex; gap:12px; align-items:center; z-index:20; background:rgba(0,0,0,.5); border-radius:30px; padding:8px 18px; }
+  #navBar button { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:20px; padding:8px 18px; font-size:13px; color:#fff; background:#673ab7; }
+  #navBar button:hover { opacity:.9; }
+  #navBar button:disabled { opacity:.3; cursor:not-allowed; }
+  #navBar button.danger { background:#c0392b; }
+  #navCount { color:#fff; font-size:12px; font-weight:700; }
+
+  #modeOverlay { position:absolute; transform:translate(-50%,-50%); background:rgba(0,0,0,.75); border:2px solid #fff; border-radius:14px; padding:14px 22px; color:#fff; text-align:center; min-width:200px; }
+  #modeOverlay .moTitle { font-size:11px; letter-spacing:1px; text-transform:uppercase; opacity:.8; margin-bottom:6px; }
+  #modeOverlay .moMain { font-size:26px; font-weight:900; }
+  #modeOverlay .moSub { font-size:11px; opacity:.7; margin-top:4px; }
+  .barsWrap { display:flex; flex-direction:column; gap:4px; margin-top:8px; }
+  .barRow { display:flex; align-items:center; gap:6px; font-size:11px; }
+  .barTrack { flex:1; height:10px; background:rgba(255,255,255,.15); border-radius:5px; overflow:hidden; }
+  .barFill { height:100%; background:#3fe6ff; }
+
+  #emptyState { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#666; font-size:16px; text-align:center; }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="canvas">
+  <div id="emptyState">Waiting for responses...</div>
+</div>
+
+<div id="navBar" style="display:none;">
+  <button id="deleteBtn" class="danger">Delete</button>
+  <span id="navCount">0 / 0</span>
+  <button id="nextBtn">Next ▶</button>
+</div>
+
+<link id="fontLink" rel="stylesheet" href="">
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'googleform-tool';
+
+  const FONT_MAP = {
+    clean: "'Roboto', sans-serif", threed: "'Montserrat', sans-serif", cartoon: "'Bangers', cursive",
+    handwritten: "'Permanent Marker', cursive", retro: "'Press Start 2P', monospace", elegant: "'Playfair Display', serif"
+  };
+  document.getElementById('fontLink').href = "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@900&family=Bangers&family=Permanent+Marker&family=Press+Start+2P&family=Playfair+Display:wght@700&display=swap";
+
+  let config = null;
+  let responses = [];
+  let currentIdx = -1;
+  let ably, channel;
+
+  // ---------- live chat vote tallying (last-vote-per-person wins, case-insensitive) ----------
+  let userVotes = new Map(); // login -> vote value
+  let chatSocket = null;
+
+  function connectTwitch(chan){
+    if(chatSocket){ try{chatSocket.close();}catch(e){} }
+    chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+    chatSocket.onopen = () => {
+      chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+      chatSocket.send('PASS SCHMOOPIE');
+      chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+      chatSocket.send('JOIN #' + chan.trim().toLowerCase().replace(/^#/,''));
+    };
+    let ircBuffer = '';
+    chatSocket.onmessage = (e) => {
+      ircBuffer += e.data;
+      const lines = ircBuffer.split('\r\n');
+      ircBuffer = lines.pop();
+      lines.forEach(line=>{
+        if(!line) return;
+        if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+        const parsed = parseIRCLine(line);
+        if(parsed) handleVoteMessage(parsed);
+      });
+    };
+    chatSocket.onclose = () => { setTimeout(()=>connectTwitch(chan), 3000); };
+    chatSocket.onerror = () => { chatSocket.close(); };
+  }
+  function parseIRCLine(line){
+    let tags = {}; let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{ const eq=kv.indexOf('='); if(eq>=0) tags[kv.slice(0,eq)]=kv.slice(eq+1); });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const nick = m[1].split('!')[0];
+    return { login: nick.toLowerCase(), message: m[3] };
+  }
+
+  function handleVoteMessage(parsed){
+    if(!config || config.mode === 'none') return;
+    const msg = parsed.message.trim().toLowerCase();
+    let vote = null;
+    if(config.mode === 'agree_disagree'){
+      if(msg==='agree'||msg==='disagree') vote = msg;
+    } else if(config.mode === 'yes_no'){
+      if(msg==='yes'||msg==='no') vote = msg;
+    } else if(config.mode === 'scale'){
+      const n = parseInt(msg,10);
+      if(!isNaN(n) && n>=1 && n<=10 && String(n)===msg) vote = n;
+    } else if(config.mode === 'custom'){
+      if(config.customKeywords.includes(msg)) vote = msg;
+    }
+    if(vote===null) return;
+    userVotes.set(parsed.login, vote); // last vote per person wins
+    renderModeOverlay();
+  }
+
+  function computeModeTally(){
+    if(config.mode === 'scale'){
+      let sum=0, count=0;
+      userVotes.forEach(v=>{ sum+=v; count++; });
+      return { average: count ? (sum/count) : 0, count };
+    }
+    const tally = {};
+    userVotes.forEach(v=>{ tally[v] = (tally[v]||0)+1; });
+    return tally;
+  }
+
+  function renderModeOverlay(){
+    let overlay = document.getElementById('modeOverlay');
+    if(!config || config.mode==='none'){ if(overlay) overlay.remove(); return; }
+    const canvas = document.getElementById('canvas');
+    if(!overlay){ overlay = document.createElement('div'); overlay.id='modeOverlay'; canvas.appendChild(overlay); }
+    overlay.style.left = config.modePos.x+'%'; overlay.style.top = config.modePos.y+'%';
+
+    if(config.mode === 'scale'){
+      const { average, count } = computeModeTally();
+      overlay.innerHTML = '<div class="moTitle">Live Average (1-10)</div><div class="moMain">'+average.toFixed(1)+'</div><div class="moSub">'+count+' vote'+(count===1?'':'s')+'</div>';
+    } else {
+      const tally = computeModeTally();
+      const total = Object.values(tally).reduce((a,b)=>a+b,0);
+      const title = config.mode==='agree_disagree' ? 'Agree vs Disagree' : config.mode==='yes_no' ? 'Yes vs No' : 'Live Votes';
+      let bars = '<div class="barsWrap">';
+      Object.entries(tally).sort((a,b)=>b[1]-a[1]).forEach(([k,v])=>{
+        const pct = total ? (v/total*100) : 0;
+        bars += '<div class="barRow"><div style="width:60px;text-transform:capitalize;">'+k+'</div><div class="barTrack"><div class="barFill" style="width:'+pct+'%"></div></div><div>'+v+'</div></div>';
+      });
+      bars += '</div>';
+      overlay.innerHTML = '<div class="moTitle">'+title+'</div>'+bars+'<div class="moSub">'+total+' total vote'+(total===1?'':'s')+'</div>';
+    }
+  }
+
+  // ---------- form rendering ----------
+  function applyFontFX(text, font){
+    if(font==='threed') return '<span style="text-shadow:1px 1px 0 #999,2px 2px 0 #888,3px 3px 0 #777,4px 4px 6px rgba(0,0,0,.4);">'+text+'</span>';
+    return text;
+  }
+
+  function renderStaticParts(){
+    if(!config) return;
+    const canvas = document.getElementById('canvas');
+    canvas.style.fontFamily = FONT_MAP[config.font] || FONT_MAP.clean;
+    if(config.background.type==='image' && config.background.imageUrl){
+      canvas.style.background = 'url('+config.background.imageUrl+') center/cover no-repeat';
+    } else {
+      canvas.style.background = config.background.color;
+    }
+
+    let header = document.getElementById('headerBlock');
+    if(!header){ header = document.createElement('div'); header.id='headerBlock'; canvas.appendChild(header); }
+    header.style.left = config.headerPos.x+'%'; header.style.top = config.headerPos.y+'%';
+    header.style.color = config.headerColor;
+    header.innerHTML = '<div style="font-size:28px;font-weight:900;">'+applyFontFX(config.headerText, config.font)+'</div><div id="headerDesc">'+(config.headerDesc||'')+'</div>';
+
+    let decor = document.getElementById('decorImg');
+    if(config.decorImage && config.decorImage.url){
+      if(!decor){ decor = document.createElement('img'); decor.id='decorImg'; canvas.appendChild(decor); }
+      decor.src = config.decorImage.url;
+      decor.style.width = config.decorImage.size+'px';
+      decor.style.left = config.decorImage.pos.x+'%';
+      decor.style.top = config.decorImage.pos.y+'%';
+      decor.style.transform = 'translate(-50%,-50%)';
+    } else if(decor){ decor.remove(); }
+
+    renderModeOverlay();
+  }
+
+  function renderCurrentResponse(){
+    document.querySelectorAll('.field').forEach(el=>el.remove());
+    const canvas = document.getElementById('canvas');
+    const empty = document.getElementById('emptyState');
+    if(!config || responses.length===0){
+      empty.style.display='flex';
+      document.getElementById('navBar').style.display='none';
+      return;
+    }
+    empty.style.display='none';
+    document.getElementById('navBar').style.display='flex';
+    if(currentIdx<0) currentIdx=0;
+    if(currentIdx>=responses.length) currentIdx=responses.length-1;
+    const r = responses[currentIdx];
+    config.fields.forEach(f=>{
+      const div = document.createElement('div');
+      div.className = 'field';
+      div.style.left = f.pos.x+'%'; div.style.top = f.pos.y+'%';
+      div.innerHTML = '<div class="fLabel">'+applyFontFX(f.label,config.font)+'</div><div class="fAnswer">'+((r.answers[f.id]||'').replace(/</g,'&lt;')||'<span style="color:#ccc;">(no answer)</span>')+'</div>';
+      canvas.appendChild(div);
+    });
+    document.getElementById('navCount').textContent = (currentIdx+1) + ' / ' + responses.length;
+    document.getElementById('nextBtn').disabled = currentIdx >= responses.length-1;
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    if(currentIdx < responses.length-1){ currentIdx++; renderCurrentResponse(); }
+  });
+  document.getElementById('deleteBtn').addEventListener('click', ()=>{
+    if(responses.length===0) return;
+    const r = responses[currentIdx];
+    if(channel) channel.publish('delete-response', { id:r.id });
+  });
+
+  function init(){
+    if(typeof Ably === 'undefined') return;
+    ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{
+      channel = ably.channels.get(CHANNEL_NAME);
+      channel.subscribe('config-snapshot', (msg)=>{
+        const prevChannel = config ? config.twitchChannel : null;
+        config = msg.data;
+        renderStaticParts();
+        renderCurrentResponse();
+        if(config.twitchChannel !== prevChannel) connectTwitch(config.twitchChannel);
+      });
+      channel.subscribe('responses-snapshot', (msg)=>{
+        responses = msg.data.responses || [];
+        renderCurrentResponse();
+      });
+      channel.publish('request-snapshot', {});
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>

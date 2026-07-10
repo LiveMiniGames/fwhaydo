@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Song Transitions — Control</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; }
+  body { background:#000; color:#fff; min-height:100vh; padding:20px; }
+  .wrap { max-width:900px; margin:0 auto; }
+  h1 { font-size:22px; font-weight:900; color:#1DB954; margin-bottom:4px; }
+  .sub { font-size:12px; color:#888; margin-bottom:20px; }
+
+  #status { font-size:11px; font-weight:700; margin-bottom:16px; }
+  #status.ok { color:#1DB954; }
+  #status.bad { color:#e74c3c; }
+
+  .card { background:#121212; border:1px solid #282828; border-radius:12px; padding:16px; margin-bottom:14px; }
+  .cardTitle { font-size:11px; font-weight:800; color:#1DB954; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+
+  .queueRow { display:flex; align-items:center; gap:12px; background:#181818; border-radius:8px; padding:10px 14px; margin-bottom:8px; }
+  .queueRow.current { border:2px solid #1DB954; background:#0e2818; }
+  .qNum { width:26px; font-weight:900; color:#1DB954; }
+  .qInfo { flex:1; }
+  .qUser { font-weight:800; font-size:13px; color:#fff; }
+  .qSongs { font-size:11px; color:#999; margin-top:2px; }
+  .qDelete { background:#e74c3c; border:none; color:#fff; font-weight:800; border-radius:8px; padding:6px 12px; cursor:pointer; font-size:11px; }
+  .qDelete:hover { background:#c0392b; }
+  .nowTag { font-size:9px; font-weight:900; color:#1DB954; letter-spacing:1px; }
+
+  #emptyMsg { text-align:center; color:#666; font-size:13px; padding:20px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🎛️ Song Transitions — Control</h1>
+  <div class="sub">This page holds the master queue. Keep it open during the segment. Delete anything inappropriate here.</div>
+  <div id="status">Connecting...</div>
+
+  <div class="card">
+    <div class="cardTitle">Queue</div>
+    <div id="queueList"></div>
+    <div id="emptyMsg" style="display:none;">No submissions yet.</div>
+  </div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'song-transitions';
+  const STORAGE_KEY = 'songtransitions-queue';
+
+  let queue = [];
+  let currentIndex = -1;
+  let ably, channel;
+
+  function loadPersisted(){
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if(saved){
+        const parsed = JSON.parse(saved);
+        queue = parsed.queue || [];
+        currentIndex = typeof parsed.currentIndex === 'number' ? parsed.currentIndex : -1;
+      }
+    } catch(e){ console.error(e); }
+  }
+  function persist(){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({queue, currentIndex})); }
+    catch(e){ console.error(e); }
+  }
+
+  function renderQueue(){
+    const list = document.getElementById('queueList');
+    const empty = document.getElementById('emptyMsg');
+    list.innerHTML = '';
+    if(queue.length === 0){ empty.style.display='block'; return; }
+    empty.style.display = 'none';
+    queue.forEach((item,i)=>{
+      const row = document.createElement('div');
+      row.className = 'queueRow' + (i===currentIndex ? ' current' : '');
+      row.innerHTML = `
+        <div class="qNum">${i+1}</div>
+        <div class="qInfo">
+          <div class="qUser">${item.displayName} ${i===currentIndex?'<span class="nowTag">● NOW UP</span>':''}</div>
+          <div class="qSongs">1: ${item.song1Url}<br>2: ${item.song2Url}</div>
+        </div>
+        <button class="qDelete" data-idx="${i}">Delete</button>
+      `;
+      list.appendChild(row);
+    });
+    document.querySelectorAll('.qDelete').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = parseInt(btn.dataset.idx,10);
+        deleteItem(idx);
+      });
+    });
+  }
+
+  function deleteItem(idx){
+    queue.splice(idx,1);
+    if(currentIndex > idx) currentIndex--;
+    else if(currentIndex === idx) currentIndex = Math.min(currentIndex, queue.length-1);
+    persist();
+    renderQueue();
+    broadcastSnapshot();
+  }
+
+  function broadcastSnapshot(){
+    if(!channel) return;
+    channel.publish('queue-snapshot', { queue, currentIndex });
+  }
+
+  function setStatus(text, cls){
+    const el = document.getElementById('status');
+    el.textContent = text;
+    el.className = cls || '';
+  }
+
+  function init(){
+    loadPersisted();
+    renderQueue();
+    if(typeof Ably === 'undefined'){
+      setStatus('Connection library failed to load — check network and reload', 'bad');
+      return;
+    }
+    try{
+      ably = new Ably.Realtime({ key: ABLY_KEY });
+      ably.connection.on('connected', ()=>{
+        setStatus('Connected ✓ — listening for submissions', 'ok');
+        channel = ably.channels.get(CHANNEL_NAME);
+        channel.subscribe('submit', (msg)=>{
+          const d = msg.data;
+          queue.push({ twitchLogin:d.twitchLogin, displayName:d.displayName, song1Url:d.song1Url, song2Url:d.song2Url, submittedAt:Date.now() });
+          persist();
+          renderQueue();
+          broadcastSnapshot();
+        });
+        channel.subscribe('next-requested', ()=>{
+          if(currentIndex < queue.length-1){
+            currentIndex++;
+            persist();
+            renderQueue();
+            broadcastSnapshot();
+          }
+        });
+        channel.subscribe('request-snapshot', ()=>{
+          broadcastSnapshot();
+        });
+        broadcastSnapshot();
+      });
+      ably.connection.on('failed', ()=>{ setStatus('Ably connection failed — check network', 'bad'); });
+    } catch(e){
+      setStatus('Error: ' + (e && e.message ? e.message : e), 'bad');
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

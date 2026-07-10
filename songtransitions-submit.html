@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Submit Your Song Transition</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; -webkit-tap-highlight-color:transparent; }
+  body { background:#000; color:#fff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+  .wrap { max-width:440px; width:100%; text-align:center; }
+  .logo { font-size:42px; margin-bottom:6px; }
+  h1 { font-size:24px; font-weight:900; color:#1DB954; margin-bottom:4px; }
+  .sub { font-size:13px; color:#999; margin-bottom:28px; }
+
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:.5px; border-radius:30px; padding:14px 36px; font-size:15px; color:#000; background:#1DB954; width:100%; }
+  .btn:hover { background:#1ed760; }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+
+  #loginScreen, #formScreen, #doneScreen { display:none; }
+  #loginScreen.show, #formScreen.show, #doneScreen.show { display:block; }
+
+  .field { text-align:left; margin-bottom:16px; }
+  .field label { font-size:11px; font-weight:800; color:#1DB954; text-transform:uppercase; letter-spacing:1px; display:block; margin-bottom:6px; }
+  .field input { width:100%; background:#121212; border:1.5px solid #282828; color:#fff; border-radius:10px; padding:12px 14px; font-size:14px; }
+  .field input:focus { border-color:#1DB954; outline:none; }
+
+  #userChip { display:flex; align-items:center; gap:8px; justify-content:center; margin-bottom:20px; background:#121212; border-radius:30px; padding:6px 14px 6px 6px; }
+  #userAvatar { width:28px; height:28px; border-radius:50%; overflow:hidden; background:#333; }
+  #userAvatar img { width:100%; height:100%; object-fit:cover; }
+  #userName { font-weight:800; font-size:13px; }
+
+  .errMsg { color:#e74c3c; font-size:12px; margin-top:10px; display:none; }
+  #doneScreen .checkmark { font-size:50px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="logo">🎧</div>
+  <h1>Submit Your Song Transition</h1>
+  <div class="sub">Pick two songs and we'll blend the ending of the first into the start of the second.</div>
+
+  <div id="loginScreen" class="show">
+    <button class="btn" id="loginBtn">Log in with Twitch to submit</button>
+    <div class="errMsg" id="loginErr"></div>
+  </div>
+
+  <div id="formScreen">
+    <div id="userChip"><div id="userAvatar"></div><div id="userName"></div></div>
+    <div class="field">
+      <label for="song1Input">Song 1 (YouTube link)</label>
+      <input type="text" id="song1Input" placeholder="https://youtube.com/watch?v=...">
+    </div>
+    <div class="field">
+      <label for="song2Input">Song 2 (YouTube link)</label>
+      <input type="text" id="song2Input" placeholder="https://youtube.com/watch?v=...">
+    </div>
+    <button class="btn" id="submitBtn">Submit Transition</button>
+    <div class="errMsg" id="formErr"></div>
+  </div>
+
+  <div id="doneScreen">
+    <div class="checkmark">✅</div>
+    <h1 style="font-size:20px;">Submitted!</h1>
+    <div class="sub">Your transition is in the queue. Watch the stream to hear it!</div>
+    <button class="btn" id="submitAnotherBtn" style="margin-top:16px;">Submit Another</button>
+  </div>
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
+  const REDIRECT_URI = location.origin + location.pathname;
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'song-transitions';
+
+  let twitchLogin = null, displayName = null;
+  let ably, channel;
+
+  function showScreen(id){
+    ['loginScreen','formScreen','doneScreen'].forEach(s=>{
+      document.getElementById(s).classList.toggle('show', s===id);
+    });
+  }
+
+  function extractYouTubeId(url){
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', ()=>{
+    const authUrl = 'https://id.twitch.tv/oauth2/authorize?client_id=' + TWITCH_CLIENT_ID
+      + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+      + '&response_type=token&scope=user:read:email';
+    location.href = authUrl;
+  });
+
+  async function handleOAuthCallback(){
+    const hash = location.hash;
+    if(!hash.includes('access_token')) return false;
+    const hashParams = new URLSearchParams(hash.slice(1));
+    const token = hashParams.get('access_token');
+    if(!token) return false;
+    history.replaceState(null,'', location.pathname + location.search);
+    try{
+      const resp = await fetch('https://api.twitch.tv/helix/users', {
+        headers:{'Authorization':'Bearer '+token, 'Client-Id':TWITCH_CLIENT_ID}
+      });
+      const data = await resp.json();
+      const user = data.data && data.data[0];
+      if(user){
+        twitchLogin = user.login;
+        displayName = user.display_name;
+        document.getElementById('userName').textContent = displayName;
+        if(user.profile_image_url){
+          document.getElementById('userAvatar').innerHTML = '<img src="'+user.profile_image_url+'">';
+        }
+        showScreen('formScreen');
+        return true;
+      }
+    } catch(e){
+      document.getElementById('loginErr').textContent = 'Login failed: ' + e.message;
+      document.getElementById('loginErr').style.display = 'block';
+    }
+    return false;
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    const errEl = document.getElementById('formErr');
+    errEl.style.display = 'none';
+    const song1Url = document.getElementById('song1Input').value.trim();
+    const song2Url = document.getElementById('song2Input').value.trim();
+    if(!song1Url || !song2Url){ errEl.textContent='Please paste both song links.'; errEl.style.display='block'; return; }
+    const id1 = extractYouTubeId(song1Url);
+    const id2 = extractYouTubeId(song2Url);
+    if(!id1 || !id2){ errEl.textContent='Both links need to be valid YouTube URLs.'; errEl.style.display='block'; return; }
+    if(!channel){ errEl.textContent='Not connected yet — wait a second and try again.'; errEl.style.display='block'; return; }
+    channel.publish('submit', { twitchLogin, displayName, song1Url, song2Url });
+    showScreen('doneScreen');
+  });
+
+  document.getElementById('submitAnotherBtn').addEventListener('click', ()=>{
+    document.getElementById('song1Input').value = '';
+    document.getElementById('song2Input').value = '';
+    showScreen('formScreen');
+  });
+
+  function waitForAbly(){
+    return new Promise(resolve=>{
+      if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ resolve(); return; }
+      const check = setInterval(()=>{
+        if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ clearInterval(check); resolve(); }
+      }, 200);
+    });
+  }
+
+  (async function init(){
+    await waitForAbly();
+    if(typeof Ably === 'undefined'){
+      document.getElementById('loginErr').textContent = 'Connection library failed to load — check network and reload.';
+      document.getElementById('loginErr').style.display = 'block';
+      return;
+    }
+    ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{ channel = ably.channels.get(CHANNEL_NAME); });
+
+    if(location.hash.includes('access_token')){
+      await handleOAuthCallback();
+    }
+  })();
+})();
+</script>
+</body>
+</html>

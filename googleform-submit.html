@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Form</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html, body { width:100%; min-height:100vh; }
+  #canvas { position:relative; width:100%; min-height:100vh; padding:40px 20px; }
+  .field { background:#fff; border-radius:8px; padding:16px 20px; box-shadow:0 1px 4px rgba(0,0,0,.2); max-width:420px; margin:0 auto 16px; }
+  .field label { display:block; font-weight:700; font-size:14px; color:#222; margin-bottom:8px; }
+  .field input { width:100%; border:none; border-bottom:2px solid #ccc; padding:6px 2px; font-size:14px; outline:none; }
+  .field input:focus { border-color:#673ab7; }
+  .headerBlock { text-align:center; margin-bottom:24px; }
+  .headerBlock .desc { font-size:13px; color:#555; margin-top:6px; font-weight:400; }
+  #submitBtn { display:block; margin:20px auto 0; border:none; outline:none; cursor:pointer; font-weight:800; border-radius:24px; padding:12px 32px; font-size:14px; color:#fff; background:#673ab7; }
+  #submitBtn:hover { opacity:.9; }
+  #doneMsg { text-align:center; max-width:420px; margin:20px auto; background:#fff; border-radius:8px; padding:20px; box-shadow:0 1px 4px rgba(0,0,0,.2); display:none; }
+  #doneMsg .check { font-size:36px; }
+  #submitAnotherBtn { margin-top:12px; border:none; outline:none; cursor:pointer; font-weight:800; border-radius:20px; padding:8px 20px; font-size:12px; color:#673ab7; background:#f0ebf8; }
+  #decorImg { position:absolute; }
+</style>
+</head>
+<body>
+<div id="canvas">
+  <div class="headerBlock" id="headerBlock">
+    <div id="headerTitle" style="font-size:26px;font-weight:900;"></div>
+    <div class="desc" id="headerDesc"></div>
+  </div>
+  <div id="fieldsContainer"></div>
+  <button id="submitBtn">Submit</button>
+  <div id="doneMsg"><div class="check">✅</div><div>Response submitted!</div><button id="submitAnotherBtn">Submit Another Response</button></div>
+</div>
+
+<link id="fontLink" rel="stylesheet" href="">
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'googleform-tool';
+
+  const FONT_MAP = {
+    clean: "'Roboto', sans-serif",
+    threed: "'Montserrat', sans-serif",
+    cartoon: "'Bangers', cursive",
+    handwritten: "'Permanent Marker', cursive",
+    retro: "'Press Start 2P', monospace",
+    elegant: "'Playfair Display', serif"
+  };
+  document.getElementById('fontLink').href = "https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@900&family=Bangers&family=Permanent+Marker&family=Press+Start+2P&family=Playfair+Display:wght@700&display=swap";
+
+  let config = null;
+  let ably, channel;
+
+  function applyFontFX(text, font){
+    if(font==='threed') return '<span style="text-shadow:1px 1px 0 #999,2px 2px 0 #888,3px 3px 0 #777,4px 4px 6px rgba(0,0,0,.4);">'+text+'</span>';
+    return text;
+  }
+
+  function renderForm(){
+    if(!config) return;
+    const canvas = document.getElementById('canvas');
+    canvas.style.fontFamily = FONT_MAP[config.font] || FONT_MAP.clean;
+    if(config.background.type==='image' && config.background.imageUrl){
+      canvas.style.background = 'url('+config.background.imageUrl+') center/cover no-repeat fixed';
+    } else {
+      canvas.style.background = config.background.color;
+    }
+    document.getElementById('headerTitle').innerHTML = applyFontFX(config.headerText, config.font);
+    document.getElementById('headerTitle').style.color = config.headerColor;
+    document.getElementById('headerDesc').textContent = config.headerDesc || '';
+
+    let decor = document.getElementById('decorImg');
+    if(config.decorImage && config.decorImage.url){
+      if(!decor){ decor = document.createElement('img'); decor.id='decorImg'; canvas.appendChild(decor); }
+      decor.src = config.decorImage.url;
+      decor.style.width = config.decorImage.size+'px';
+      decor.style.left = config.decorImage.pos.x+'%';
+      decor.style.top = config.decorImage.pos.y+'%';
+      decor.style.transform = 'translate(-50%,-50%)';
+    } else if(decor){ decor.remove(); }
+
+    const container = document.getElementById('fieldsContainer');
+    container.innerHTML = '';
+    config.fields.forEach(f=>{
+      const div = document.createElement('div');
+      div.className = 'field';
+      div.innerHTML = '<label>'+applyFontFX(f.label, config.font)+'</label><input type="text" data-field-id="'+f.id+'" placeholder="Your answer">';
+      container.appendChild(div);
+    });
+  }
+
+  document.getElementById('submitBtn').addEventListener('click', ()=>{
+    if(!config || !channel) return;
+    const answers = {};
+    document.querySelectorAll('[data-field-id]').forEach(inp=>{
+      answers[inp.dataset.fieldId] = inp.value.trim();
+    });
+    const hasAnyAnswer = Object.values(answers).some(v=>v);
+    if(!hasAnyAnswer) return;
+    channel.publish('submit-response', {
+      id: 'r_' + Date.now() + '_' + Math.floor(Math.random()*100000),
+      answers,
+      submittedAt: Date.now()
+    });
+    document.getElementById('fieldsContainer').style.display='none';
+    document.getElementById('submitBtn').style.display='none';
+    document.getElementById('doneMsg').style.display='block';
+  });
+
+  document.getElementById('submitAnotherBtn').addEventListener('click', ()=>{
+    document.querySelectorAll('[data-field-id]').forEach(inp=>inp.value='');
+    document.getElementById('fieldsContainer').style.display='block';
+    document.getElementById('submitBtn').style.display='block';
+    document.getElementById('doneMsg').style.display='none';
+  });
+
+  function init(){
+    if(typeof Ably === 'undefined') return;
+    ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{
+      channel = ably.channels.get(CHANNEL_NAME);
+      channel.subscribe('config-snapshot', (msg)=>{ config = msg.data; renderForm(); });
+      channel.publish('request-snapshot', {});
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>

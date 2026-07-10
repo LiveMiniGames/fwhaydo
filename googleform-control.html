@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interactive Form — Control Panel</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; }
+  body { background:#0f0f14; color:#efeff1; min-height:100vh; }
+  .wrap { display:flex; height:100vh; }
+
+  #sidebar { width:380px; flex-shrink:0; background:#17171f; border-right:1px solid #2a2a35; overflow-y:auto; padding:16px; }
+  #previewPane { flex:1; overflow:auto; padding:20px; position:relative; }
+
+  h1 { font-size:16px; font-weight:900; color:#9147ff; margin-bottom:2px; }
+  .subtitle { font-size:11px; color:#888; margin-bottom:16px; }
+
+  .section { background:#1e1e28; border:1px solid #2a2a35; border-radius:10px; padding:12px; margin-bottom:12px; }
+  .sectionTitle { font-size:11px; font-weight:800; color:#9147ff; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+  label { font-size:11px; color:#aaa; display:block; margin-bottom:4px; margin-top:8px; }
+  label:first-child { margin-top:0; }
+  input[type="text"], input[type="url"], input[type="number"], select, textarea {
+    width:100%; background:#0f0f14; border:1px solid #333; color:#fff; border-radius:6px; padding:8px 10px; font-size:12px;
+  }
+  textarea { resize:vertical; min-height:50px; }
+  input[type="color"] { width:100%; height:32px; border:none; border-radius:6px; cursor:pointer; }
+  input[type="radio"] { margin-right:4px; }
+  .radioRow { display:flex; align-items:center; gap:6px; font-size:12px; margin-bottom:4px; }
+
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:8px; padding:8px 14px; font-size:12px; color:#fff; background:#9147ff; margin-top:6px; }
+  .btn:hover { background:#7d2ff0; }
+  .btn.small { padding:4px 9px; font-size:11px; }
+  .btn.danger { background:#c0392b; }
+  .btn.danger:hover { background:#992d22; }
+  .btn.full { width:100%; }
+
+  .fieldRow { display:flex; gap:6px; align-items:center; margin-bottom:6px; background:#0f0f14; border-radius:6px; padding:6px 8px; }
+  .fieldRow input { flex:1; }
+
+  .modeGrid { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:8px; }
+  .modeBtn { background:#0f0f14; border:1.5px solid #333; border-radius:8px; padding:8px; font-size:11px; font-weight:700; color:#ccc; cursor:pointer; text-align:center; }
+  .modeBtn.active { border-color:#9147ff; background:#2a1a4a; color:#fff; }
+
+  #linksBox { font-size:10.5px; color:#8899aa; background:#0f0f14; border-radius:8px; padding:8px 10px; word-break:break-all; margin-top:6px; }
+  #linksBox b { color:#3fe6ff; }
+
+  .responseRow { background:#0f0f14; border-radius:6px; padding:8px 10px; margin-bottom:6px; font-size:11px; }
+  .responseRow .rMeta { color:#666; font-size:9px; margin-bottom:3px; }
+  .responseRow .rDel { float:right; background:#c0392b; border:none; color:#fff; border-radius:5px; padding:2px 8px; font-size:10px; cursor:pointer; }
+  #responsesCount { font-size:11px; color:#3fe6ff; margin-bottom:8px; }
+
+  /* ---- Live preview (mirrors host/submit rendering) ---- */
+  #previewCanvas { position:relative; width:900px; height:640px; margin:0 auto; overflow:hidden; border-radius:12px; box-shadow:0 0 0 2px #333; }
+  .draggable { position:absolute; cursor:move; user-select:none; }
+  .draggable:hover { outline:2px dashed #9147ff; }
+  #previewNote { text-align:center; font-size:11px; color:#888; margin-top:8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="sidebar">
+    <h1>🎛️ Form Control Panel</h1>
+    <div class="subtitle">Drag elements in the preview to reposition them. Everything syncs live.</div>
+    <div id="status" style="font-size:10px;color:#888;margin-bottom:10px;">Connecting...</div>
+
+    <div class="section">
+      <div class="sectionTitle">Background</div>
+      <div class="radioRow"><input type="radio" name="bgType" value="color" checked id="bgTypeColor"><label style="display:inline;margin:0;">Solid color</label></div>
+      <div class="radioRow"><input type="radio" name="bgType" value="image" id="bgTypeImage"><label style="display:inline;margin:0;">Image URL</label></div>
+      <input type="color" id="bgColor" value="#f0ebf8">
+      <input type="url" id="bgImageUrl" placeholder="https://..." style="margin-top:6px;">
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Header</div>
+      <label>Title text</label>
+      <input type="text" id="headerText" value="Untitled Form">
+      <label>Description (optional)</label>
+      <textarea id="headerDesc" placeholder="Form description..."></textarea>
+      <label>Accent color</label>
+      <input type="color" id="headerColor" value="#673ab7">
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Font Style</div>
+      <select id="fontSelect">
+        <option value="clean">Clean (default Google Forms look)</option>
+        <option value="threed">3D</option>
+        <option value="cartoon">Cartoon</option>
+        <option value="handwritten">Handwritten</option>
+        <option value="retro">Retro Pixel</option>
+        <option value="elegant">Elegant</option>
+      </select>
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Decorative Image (optional)</div>
+      <label>Image URL</label>
+      <input type="url" id="decorImageUrl" placeholder="https://...">
+      <label>Size (px width)</label>
+      <input type="number" id="decorImageSize" value="120">
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Questions / Fields</div>
+      <div id="fieldsList"></div>
+      <button class="btn small" id="addFieldBtn">+ Add Question</button>
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Chat-Interactive Mode</div>
+      <div class="modeGrid">
+        <div class="modeBtn" data-mode="none">None</div>
+        <div class="modeBtn" data-mode="agree_disagree">Agree / Disagree</div>
+        <div class="modeBtn" data-mode="yes_no">Yes / No</div>
+        <div class="modeBtn" data-mode="scale">1–10 Average</div>
+        <div class="modeBtn" data-mode="custom">Custom</div>
+      </div>
+      <div id="customKeywordsBox" style="display:none;">
+        <label>Valid keywords chat can type (comma separated)</label>
+        <input type="text" id="customKeywords" placeholder="blue, red, green">
+      </div>
+      <label style="margin-top:10px;">Twitch channel</label>
+      <input type="text" id="twitchChannel" value="fwhaydo">
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Links</div>
+      <div id="linksBox">
+        <div><b>Viewer submission link:</b><br><span id="submitLink"></span></div>
+        <div style="margin-top:6px;"><b>Host display link:</b><br><span id="hostLink"></span></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sectionTitle">Responses</div>
+      <div id="responsesCount">0 responses</div>
+      <div id="responsesList"></div>
+    </div>
+  </div>
+
+  <div id="previewPane">
+    <div id="previewCanvas"></div>
+    <div id="previewNote">Live preview — this is roughly what viewers and the host will see</div>
+  </div>
+</div>
+
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Montserrat:wght@900&family=Bangers&family=Permanent+Marker&family=Press+Start+2P&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'googleform-tool';
+  const CONFIG_STORAGE_KEY = 'googleform-config';
+  const RESPONSES_STORAGE_KEY = 'googleform-responses';
+
+  const FONT_MAP = {
+    clean: "'Roboto', sans-serif",
+    threed: "'Montserrat', sans-serif",
+    cartoon: "'Bangers', cursive",
+    handwritten: "'Permanent Marker', cursive",
+    retro: "'Press Start 2P', monospace",
+    elegant: "'Playfair Display', serif"
+  };
+
+  let config = {
+    background: { type:'color', color:'#f0ebf8', imageUrl:'' },
+    headerText: 'Untitled Form',
+    headerDesc: '',
+    headerColor: '#673ab7',
+    headerPos: { x:50, y:8 },
+    font: 'clean',
+    decorImage: { url:'', size:120, pos:{x:85,y:8} },
+    fields: [
+      { id:'f1', label:'Question 1', pos:{x:50,y:28} },
+      { id:'f2', label:'Question 2', pos:{x:50,y:44} }
+    ],
+    mode: 'none',
+    customKeywords: [],
+    modePos: { x:50, y:60 },
+    twitchChannel: 'fwhaydo'
+  };
+  let responses = [];
+  let fieldIdCounter = 3;
+
+  let ably, channel;
+
+  function persist(){
+    localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(config));
+    localStorage.setItem(RESPONSES_STORAGE_KEY, JSON.stringify(responses));
+  }
+  function loadPersisted(){
+    try{
+      const c = localStorage.getItem(CONFIG_STORAGE_KEY);
+      if(c) config = JSON.parse(c);
+      const r = localStorage.getItem(RESPONSES_STORAGE_KEY);
+      if(r) responses = JSON.parse(r);
+    }catch(e){ console.error(e); }
+  }
+
+  function broadcastConfig(){ if(channel) channel.publish('config-snapshot', config); }
+  function broadcastResponses(){ if(channel) channel.publish('responses-snapshot', { responses }); }
+
+  // ---------- Sidebar <-> config wiring ----------
+  function syncSidebarFromConfig(){
+    document.getElementById('bgTypeColor').checked = config.background.type==='color';
+    document.getElementById('bgTypeImage').checked = config.background.type==='image';
+    document.getElementById('bgColor').value = config.background.color;
+    document.getElementById('bgImageUrl').value = config.background.imageUrl;
+    document.getElementById('headerText').value = config.headerText;
+    document.getElementById('headerDesc').value = config.headerDesc;
+    document.getElementById('headerColor').value = config.headerColor;
+    document.getElementById('fontSelect').value = config.font;
+    document.getElementById('decorImageUrl').value = config.decorImage.url;
+    document.getElementById('decorImageSize').value = config.decorImage.size;
+    document.getElementById('twitchChannel').value = config.twitchChannel;
+    document.getElementById('customKeywords').value = config.customKeywords.join(', ');
+    document.querySelectorAll('.modeBtn').forEach(b=> b.classList.toggle('active', b.dataset.mode===config.mode));
+    document.getElementById('customKeywordsBox').style.display = config.mode==='custom' ? 'block' : 'none';
+    renderFieldsList();
+  }
+
+  function renderFieldsList(){
+    const list = document.getElementById('fieldsList');
+    list.innerHTML = '';
+    config.fields.forEach(f=>{
+      const row = document.createElement('div');
+      row.className = 'fieldRow';
+      row.innerHTML = '<input type="text" value="'+f.label.replace(/"/g,'&quot;')+'" data-id="'+f.id+'"><button class="btn small danger" data-remove="'+f.id+'">✕</button>';
+      list.appendChild(row);
+    });
+    list.querySelectorAll('input').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const f = config.fields.find(x=>x.id===inp.dataset.id);
+        if(f){ f.label = inp.value; renderPreview(); broadcastConfig(); persist(); }
+      });
+    });
+    list.querySelectorAll('[data-remove]').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        config.fields = config.fields.filter(f=>f.id!==btn.dataset.remove);
+        renderFieldsList(); renderPreview(); broadcastConfig(); persist();
+      });
+    });
+  }
+
+  document.getElementById('addFieldBtn').addEventListener('click', ()=>{
+    fieldIdCounter++;
+    config.fields.push({ id:'f'+fieldIdCounter, label:'Question '+fieldIdCounter, pos:{x:50, y:Math.min(90, 20+config.fields.length*16)} });
+    renderFieldsList(); renderPreview(); broadcastConfig(); persist();
+  });
+
+  ['bgTypeColor','bgTypeImage'].forEach(id=>{
+    document.getElementById(id).addEventListener('change', (e)=>{
+      config.background.type = e.target.value;
+      renderPreview(); broadcastConfig(); persist();
+    });
+  });
+  document.getElementById('bgColor').addEventListener('input', e=>{ config.background.color=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('bgImageUrl').addEventListener('input', e=>{ config.background.imageUrl=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('headerText').addEventListener('input', e=>{ config.headerText=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('headerDesc').addEventListener('input', e=>{ config.headerDesc=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('headerColor').addEventListener('input', e=>{ config.headerColor=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('fontSelect').addEventListener('change', e=>{ config.font=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('decorImageUrl').addEventListener('input', e=>{ config.decorImage.url=e.target.value; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('decorImageSize').addEventListener('input', e=>{ config.decorImage.size=parseInt(e.target.value)||120; renderPreview(); broadcastConfig(); persist(); });
+  document.getElementById('twitchChannel').addEventListener('input', e=>{ config.twitchChannel=e.target.value.trim(); broadcastConfig(); persist(); });
+  document.getElementById('customKeywords').addEventListener('input', e=>{
+    config.customKeywords = e.target.value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean);
+    broadcastConfig(); persist();
+  });
+  document.querySelectorAll('.modeBtn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      config.mode = btn.dataset.mode;
+      document.querySelectorAll('.modeBtn').forEach(b=>b.classList.toggle('active', b===btn));
+      document.getElementById('customKeywordsBox').style.display = config.mode==='custom' ? 'block' : 'none';
+      broadcastConfig(); persist();
+    });
+  });
+
+  // ---------- Draggable live preview ----------
+  function makeDraggable(el, posObj){
+    el.addEventListener('mousedown', (e)=>{
+      e.preventDefault();
+      const canvas = document.getElementById('previewCanvas');
+      const canvasRect = canvas.getBoundingClientRect();
+      function onMove(ev){
+        let x = ((ev.clientX-canvasRect.left)/canvasRect.width)*100;
+        let y = ((ev.clientY-canvasRect.top)/canvasRect.height)*100;
+        x = Math.max(0,Math.min(100,x)); y = Math.max(0,Math.min(100,y));
+        posObj.x = Math.round(x); posObj.y = Math.round(y);
+        renderPreview();
+      }
+      function onUp(){
+        window.removeEventListener('mousemove', onMove);
+        window.removeEventListener('mouseup', onUp);
+        broadcastConfig(); persist();
+      }
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup', onUp);
+    });
+  }
+
+  function renderPreview(){
+    const canvas = document.getElementById('previewCanvas');
+    canvas.innerHTML = '';
+    canvas.style.fontFamily = FONT_MAP[config.font] || FONT_MAP.clean;
+    if(config.background.type==='image' && config.background.imageUrl){
+      canvas.style.background = 'url('+config.background.imageUrl+') center/cover no-repeat';
+    } else {
+      canvas.style.background = config.background.color;
+    }
+
+    const header = document.createElement('div');
+    header.className = 'draggable';
+    header.style.left = config.headerPos.x+'%'; header.style.top = config.headerPos.y+'%'; header.style.transform='translate(-50%,-50%)';
+    header.style.color = config.headerColor;
+    header.style.fontWeight = '900'; header.style.fontSize = '26px'; header.style.textAlign='center'; header.style.maxWidth='80%';
+    header.innerHTML = applyFontFX(config.headerText, config.font) + (config.headerDesc ? '<div style="font-size:13px;font-weight:400;color:#555;margin-top:4px;">'+config.headerDesc+'</div>' : '');
+    canvas.appendChild(header);
+    makeDraggable(header, config.headerPos);
+
+    if(config.decorImage.url){
+      const img = document.createElement('img');
+      img.className = 'draggable';
+      img.src = config.decorImage.url;
+      img.style.left = config.decorImage.pos.x+'%'; img.style.top = config.decorImage.pos.y+'%'; img.style.transform='translate(-50%,-50%)';
+      img.style.width = config.decorImage.size+'px';
+      canvas.appendChild(img);
+      makeDraggable(img, config.decorImage.pos);
+    }
+
+    config.fields.forEach(f=>{
+      const card = document.createElement('div');
+      card.className = 'draggable';
+      card.style.left = f.pos.x+'%'; card.style.top = f.pos.y+'%'; card.style.transform='translate(-50%,-50%)';
+      card.style.background = '#fff'; card.style.borderRadius='8px'; card.style.padding='12px 16px'; card.style.boxShadow='0 1px 4px rgba(0,0,0,.2)'; card.style.width='320px';
+      card.innerHTML = '<div style="font-weight:700;font-size:13px;color:#222;margin-bottom:6px;">'+applyFontFX(f.label,config.font)+'</div><div style="border-bottom:1px solid #ccc;height:20px;"></div>';
+      canvas.appendChild(card);
+      makeDraggable(card, f.pos);
+    });
+
+    if(config.mode !== 'none'){
+      const modeBox = document.createElement('div');
+      modeBox.className = 'draggable';
+      modeBox.style.left = config.modePos.x+'%'; modeBox.style.top = config.modePos.y+'%'; modeBox.style.transform='translate(-50%,-50%)';
+      modeBox.style.background='rgba(103,58,183,.12)'; modeBox.style.border='2px dashed #673ab7'; modeBox.style.borderRadius='10px'; modeBox.style.padding='10px 16px'; modeBox.style.fontSize='11px'; modeBox.style.color='#673ab7'; modeBox.style.fontWeight='800';
+      modeBox.textContent = '📊 Live vote display (' + config.mode.replace('_',' ') + ')';
+      canvas.appendChild(modeBox);
+      makeDraggable(modeBox, config.modePos);
+    }
+  }
+
+  function applyFontFX(text, font){
+    if(font==='threed'){
+      return '<span style="text-shadow:1px 1px 0 #999,2px 2px 0 #888,3px 3px 0 #777,4px 4px 6px rgba(0,0,0,.4);">'+text+'</span>';
+    }
+    return text;
+  }
+
+  // ---------- Responses ----------
+  function renderResponses(){
+    document.getElementById('responsesCount').textContent = responses.length + ' response' + (responses.length===1?'':'s');
+    const list = document.getElementById('responsesList');
+    list.innerHTML = '';
+    responses.slice().reverse().slice(0,50).forEach(r=>{
+      const div = document.createElement('div');
+      div.className = 'responseRow';
+      const answersTxt = Object.values(r.answers).filter(Boolean).join(' · ') || '(empty)';
+      div.innerHTML = '<button class="rDel" data-id="'+r.id+'">Delete</button><div class="rMeta">'+new Date(r.submittedAt).toLocaleTimeString()+'</div>'+answersTxt;
+      list.appendChild(div);
+    });
+    list.querySelectorAll('.rDel').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        responses = responses.filter(r=>r.id!==btn.dataset.id);
+        renderResponses(); broadcastResponses(); persist();
+      });
+    });
+  }
+
+  // ---------- Links ----------
+  function setupLinks(){
+    const base = location.origin + location.pathname.replace('googleform-control','');
+    document.getElementById('submitLink').textContent = base + 'googleform-submit.html';
+    document.getElementById('hostLink').textContent = base + 'googleform-host.html';
+  }
+
+  function init(){
+    loadPersisted();
+    syncSidebarFromConfig();
+    renderPreview();
+    renderResponses();
+    setupLinks();
+    if(typeof Ably === 'undefined'){
+      document.getElementById('status').textContent = 'Connection library failed to load';
+      return;
+    }
+    ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{
+      document.getElementById('status').textContent = 'Connected ✓';
+      channel = ably.channels.get(CHANNEL_NAME);
+      channel.subscribe('submit-response', (msg)=>{
+        responses.push(msg.data);
+        renderResponses(); broadcastResponses(); persist();
+      });
+      channel.subscribe('delete-response', (msg)=>{
+        responses = responses.filter(r=>r.id!==msg.data.id);
+        renderResponses(); broadcastResponses(); persist();
+      });
+      channel.subscribe('request-snapshot', ()=>{
+        broadcastConfig(); broadcastResponses();
+      });
+      broadcastConfig(); broadcastResponses();
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>
