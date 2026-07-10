@@ -65,6 +65,7 @@
 </div>
 
 <script src="https://www.youtube.com/iframe_api"></script>
+<script src="https://w.soundcloud.com/player/api.js"></script>
 <script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
 <script>
 (function(){
@@ -74,7 +75,7 @@
 
   let ably, channel;
   let queue = [], currentIndex = -1;
-  let yt1, yt2, ytReady = false;
+  let ytReady = false;
   let transitionTimer1 = null, transitionTimer2 = null;
 
   document.getElementById('viewerLinkText').textContent = location.origin + location.pathname.replace('songtransitions-host','songtransitions-submit');
@@ -91,54 +92,112 @@
     const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
     return m ? m[1] : null;
   }
+  function detectPlatform(url){
+    if(/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
+    if(/open\.spotify\.com/i.test(url)) return 'spotify';
+    if(/soundcloud\.com/i.test(url)) return 'soundcloud';
+    if(/music\.apple\.com/i.test(url)) return 'applemusic';
+    return null;
+  }
+  function toSpotifyEmbedUrl(url){ return url.replace('open.spotify.com/', 'open.spotify.com/embed/') + (url.includes('?')?'&':'?') + 'autoplay=1'; }
+  function toAppleMusicEmbedUrl(url){ return url.replace('music.apple.com/', 'embed.music.apple.com/'); }
+
+  let scWidgets = { 1:null, 2:null };
 
   // ---------- YouTube IFrame API ----------
-  window.onYouTubeIframeAPIReady = function(){
-    yt1 = new YT.Player('player1', { height:'158', width:'280', videoId:'', playerVars:{controls:1}, events:{ onReady:()=>{ ytReady=true; tryPlayCurrent(); } } });
-    yt2 = new YT.Player('player2', { height:'158', width:'280', videoId:'', playerVars:{controls:1} });
-  };
+  window.onYouTubeIframeAPIReady = function(){ ytReady = true; tryPlayCurrent(); };
 
   function clearTransitionTimers(){
     if(transitionTimer1){ clearTimeout(transitionTimer1); transitionTimer1=null; }
     if(transitionTimer2){ clearTimeout(transitionTimer2); transitionTimer2=null; }
   }
 
+  // Rebuilds whichever slot (1 or 2) fresh, since each pair of songs can be a
+  // totally different mix of platforms from the last. Calls back once playback
+  // has actually started (immediately for Spotify/Apple Music, since we can't
+  // detect their real "ready" state, or after the platform's own ready event
+  // for YouTube/SoundCloud, which both support that properly).
+  function loadSlot(slotNum, url, platform, onStarted){
+    const container = document.getElementById('player'+slotNum);
+    container.innerHTML = '';
+    if(platform === 'youtube'){
+      const id = extractYouTubeId(url);
+      const div = document.createElement('div');
+      div.id = 'ytplayer'+slotNum;
+      container.appendChild(div);
+      const player = new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{ onReady:()=>{
+        let duration = player.getDuration ? player.getDuration() : 0;
+        if(!duration || duration < CLIP_SECONDS) duration = CLIP_SECONDS;
+        player.seekTo(Math.max(0, duration-CLIP_SECONDS), true);
+        player.playVideo();
+        onStarted(player);
+      }}});
+    } else if(platform === 'soundcloud'){
+      const iframe = document.createElement('iframe');
+      iframe.id = 'scplayer'+slotNum;
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = 'no'; iframe.scrolling = 'no';
+      iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&auto_play=false';
+      container.appendChild(iframe);
+      iframe.onload = () => {
+        const widget = SC.Widget(iframe);
+        widget.bind(SC.Widget.Events.READY, ()=>{
+          widget.getDuration((durationMs)=>{
+            let seekMs = Math.max(0, durationMs - CLIP_SECONDS*1000);
+            widget.seekTo(seekMs);
+            widget.play();
+            onStarted(widget);
+          });
+        });
+      };
+    } else if(platform === 'spotify'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = '0';
+      iframe.allow = 'autoplay; encrypted-media';
+      iframe.src = toSpotifyEmbedUrl(url);
+      container.appendChild(iframe);
+      // no reliable ready/seek control available for free Spotify embeds --
+      // it plays whatever preview it serves, we just time the transition ourselves
+      setTimeout(()=>onStarted(null), 1500);
+    } else if(platform === 'applemusic'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = '0';
+      iframe.allow = 'autoplay *; encrypted-media *;';
+      iframe.src = toAppleMusicEmbedUrl(url);
+      container.appendChild(iframe);
+      // same limitation as Spotify -- no scriptable seek/ready control available
+      setTimeout(()=>onStarted(null), 1500);
+    }
+  }
+
   function tryPlayCurrent(){
     clearTransitionTimers();
-    if(!ytReady || currentIndex < 0 || currentIndex >= queue.length) return;
+    if(currentIndex < 0 || currentIndex >= queue.length) return;
     const item = queue[currentIndex];
-    const id1 = extractYouTubeId(item.song1Url);
-    const id2 = extractYouTubeId(item.song2Url);
+    const platform1 = item.platform1 || detectPlatform(item.song1Url);
+    const platform2 = item.platform2 || detectPlatform(item.song2Url);
     document.getElementById('npUser').textContent = item.displayName + "'s transition";
-    document.getElementById('npStatus').textContent = 'Playing outro of song 1...';
-    if(!id1 || !id2){
+    if(!platform1 || !platform2){
       document.getElementById('npStatus').textContent = 'One of these links looks invalid — skip with Next';
       return;
     }
-    yt2.stopVideo();
-    yt1.loadVideoById({ videoId:id1 });
-    // give the player a moment to report duration, then seek to the last CLIP_SECONDS
-    transitionTimer1 = setTimeout(()=>{
-      let duration = yt1.getDuration ? yt1.getDuration() : 0;
-      if(!duration || duration < CLIP_SECONDS) duration = CLIP_SECONDS;
-      yt1.seekTo(Math.max(0, duration - CLIP_SECONDS), true);
-      yt1.playVideo();
+    if(platform1 === 'youtube' && !ytReady) return; // wait for the YT API to finish loading first
+    document.getElementById('npStatus').textContent = 'Playing outro of song 1' + (platform1!=='youtube'&&platform1!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
+    document.getElementById('player2').innerHTML = '';
+    loadSlot(1, item.song1Url, platform1, ()=>{
       transitionTimer2 = setTimeout(playSongTwo, CLIP_SECONDS*1000);
-    }, 1200);
+    });
   }
 
   function playSongTwo(){
     const item = queue[currentIndex];
     if(!item) return;
-    const id2 = extractYouTubeId(item.song2Url);
-    yt1.pauseVideo();
-    document.getElementById('npStatus').textContent = 'Playing intro of song 2...';
-    yt2.loadVideoById({ videoId:id2 });
-    yt2.playVideo();
-    transitionTimer2 = setTimeout(()=>{
-      yt2.pauseVideo();
-      document.getElementById('npStatus').textContent = 'Transition complete — click Next when ready';
-    }, CLIP_SECONDS*1000 + 800);
+    const platform2 = item.platform2 || detectPlatform(item.song2Url);
+    document.getElementById('npStatus').textContent = 'Playing intro of song 2' + (platform2!=='youtube'&&platform2!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
+    loadSlot(2, item.song2Url, platform2, ()=>{
+      transitionTimer2 = setTimeout(()=>{
+        document.getElementById('npStatus').textContent = 'Transition complete — click Next when ready';
+      }, CLIP_SECONDS*1000 + 800);
+    });
   }
 
   // ---------- Queue sync ----------

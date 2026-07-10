@@ -47,12 +47,12 @@
   <div id="formScreen">
     <div id="userChip"><div id="userAvatar"></div><div id="userName"></div></div>
     <div class="field">
-      <label for="song1Input">Song 1 (YouTube link)</label>
-      <input type="text" id="song1Input" placeholder="https://youtube.com/watch?v=...">
+      <label for="song1Input">Song 1 (YouTube, Spotify, SoundCloud, or Apple Music)</label>
+      <input type="text" id="song1Input" placeholder="Paste a link from any of the 4...">
     </div>
     <div class="field">
-      <label for="song2Input">Song 2 (YouTube link)</label>
-      <input type="text" id="song2Input" placeholder="https://youtube.com/watch?v=...">
+      <label for="song2Input">Song 2 (YouTube, Spotify, SoundCloud, or Apple Music)</label>
+      <input type="text" id="song2Input" placeholder="Paste a link from any of the 4...">
     </div>
     <button class="btn" id="submitBtn">Submit Transition</button>
     <div class="errMsg" id="formErr"></div>
@@ -86,6 +86,16 @@
   function extractYouTubeId(url){
     const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
     return m ? m[1] : null;
+  }
+
+  // Detects which of the 4 supported platforms a link belongs to. Returns
+  // null if it doesn't match any of them (rejected as invalid).
+  function detectPlatform(url){
+    if(/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
+    if(/open\.spotify\.com/i.test(url)) return 'spotify';
+    if(/soundcloud\.com/i.test(url)) return 'soundcloud';
+    if(/music\.apple\.com/i.test(url)) return 'applemusic';
+    return null;
   }
 
   document.getElementById('loginBtn').addEventListener('click', ()=>{
@@ -131,11 +141,11 @@
     const song1Url = document.getElementById('song1Input').value.trim();
     const song2Url = document.getElementById('song2Input').value.trim();
     if(!song1Url || !song2Url){ errEl.textContent='Please paste both song links.'; errEl.style.display='block'; return; }
-    const id1 = extractYouTubeId(song1Url);
-    const id2 = extractYouTubeId(song2Url);
-    if(!id1 || !id2){ errEl.textContent='Both links need to be valid YouTube URLs.'; errEl.style.display='block'; return; }
+    const platform1 = detectPlatform(song1Url);
+    const platform2 = detectPlatform(song2Url);
+    if(!platform1 || !platform2){ errEl.textContent='Links must be from YouTube, Spotify, SoundCloud, or Apple Music.'; errEl.style.display='block'; return; }
     if(!channel){ errEl.textContent='Not connected yet — wait a second and try again.'; errEl.style.display='block'; return; }
-    channel.publish('submit', { twitchLogin, displayName, song1Url, song2Url });
+    channel.publish('submit', { twitchLogin, displayName, song1Url, song2Url, platform1, platform2 });
     showScreen('doneScreen');
   });
 
