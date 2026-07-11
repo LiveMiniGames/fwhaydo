@@ -657,7 +657,20 @@ footer a{color:var(--purple);text-decoration:none}
         </div>
       </div>
 
-      <div class="game-card soon">
+      <div class="game-card" onclick="window.location.href='tierlist.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🏆</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">TIER LIST V2</div>
+          <div class="card-desc">Standalone tier list page. Viewers submit images in Discord — they save automatically via JSONBin and load in when you open this page. Drag images into tiers, vote with chat, clear the queue when done.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='tierlist.html'">Open Tool →</button>
+            <span class="card-players">👥 Unlimited viewers</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-card soon">      <div class="game-card soon">
         <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a1a,#141428)">🎮</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-soon">Coming Soon</span></div>
@@ -747,14 +760,7 @@ footer a{color:var(--purple);text-decoration:none}
         </div>
         <div class="sb-sec">
           <div class="sb-lbl">Discord Auto-Feed</div>
-          <p style="font-size:.7rem;color:var(--muted);line-height:1.55">Images posted in your Discord channel are saved automatically and load here when you open the page.</p>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">JSONBin — Image Queue</div>
-          <input class="sb-in" id="cfg-bin-id" type="text" placeholder="Bin ID (6a52807af5...)" oninput="localStorage.setItem('tl-bin-id',this.value)"/>
-          <input class="sb-in" id="cfg-bin-key" type="password" placeholder="Master Key ($2b$10$...)" style="margin-top:4px" oninput="localStorage.setItem('tl-bin-key',this.value)"/>
-          <button class="btn" style="width:100%;margin-top:5px" onclick="tlLoadQueue()">&#128260; Load Queued Images</button>
-          <button class="btn sec" style="width:100%;margin-top:4px" onclick="tlClearQueue()">&#128465; Clear Queue</button>
+          <p style="font-size:.7rem;color:var(--muted);line-height:1.55">Run the included Discord bot (see <strong style="color:var(--purple)">DISCORD SETUP.md</strong>) and images posted in the channel appear here automatically. If a message is deleted from Discord, it removes itself from the tier list too.</p>
         </div>
       </div>
 
@@ -857,56 +863,6 @@ let tiers = [
 ];
 let items = {}, queue = [], curVote = null, votingOpen = false, votes = {};
 let tmiClient = null, sortables = {}, modalCb = null, discordMap = {};
-
-// ── JSONBIN QUEUE ─────────────────────────────────────────────────
-function tlGetBinCfg(){
-  return {
-    binId: localStorage.getItem('tl-bin-id')||'',
-    key:   localStorage.getItem('tl-bin-key')||''
-  };
-}
-async function tlLoadQueue(){
-  const {binId,key}=tlGetBinCfg();
-  if(!binId||!key){alert('Enter your JSONBin Bin ID and Master Key in Settings first.');return;}
-  try{
-    const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
-    const data=await res.json();
-    const q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
-    if(!q.length){tlToast('No queued images found.');return;}
-    q.forEach(function(item){if(item.url)window.addImageFromDiscord(item.url,item.name||'Discord');});
-    tlToast('Loaded '+q.length+' image'+(q.length!==1?'s':'')+' from queue');
-  }catch(e){tlToast('Error loading queue — check Bin ID and Key');console.error(e);}
-}
-async function tlClearQueue(){
-  const {binId,key}=tlGetBinCfg();
-  if(!binId||!key)return;
-  if(!confirm('Clear all queued images?'))return;
-  try{
-    await fetch('https://api.jsonbin.io/v3/b/'+binId,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json','X-Master-Key':key},
-      body:JSON.stringify({queue:[]})
-    });
-    tlToast('Queue cleared.');
-  }catch(e){tlToast('Error clearing queue');}
-}
-function tlToast(msg){
-  var t=document.getElementById('tl-toast');
-  if(!t){t=document.createElement('div');t.id='tl-toast';
-    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;font-size:.8rem;z-index:9999;transition:opacity .3s';
-    document.body.appendChild(t);}
-  t.textContent=msg;t.style.opacity='1';
-  clearTimeout(t._timer);t._timer=setTimeout(function(){t.style.opacity='0';},3000);
-}
-window.addEventListener('load',function(){
-  var savedId=localStorage.getItem('tl-bin-id')||'';
-  var savedKey=localStorage.getItem('tl-bin-key')||'';
-  var elId=document.getElementById('cfg-bin-id');
-  var elKey=document.getElementById('cfg-bin-key');
-  if(elId)elId.value=savedId;
-  if(elKey)elKey.value=savedKey;
-  if(savedId&&savedKey)setTimeout(tlLoadQueue,1500);
-});
 const VEXTS = ['.mp4','.mov','.webm','.avi','.mkv','.m4v','.ogg'];
 
 function tlInit() {
