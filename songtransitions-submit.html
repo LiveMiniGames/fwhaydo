@@ -161,7 +161,7 @@
     return false;
   }
 
-  document.getElementById('submitBtn').addEventListener('click', ()=>{
+  document.getElementById('submitBtn').addEventListener('click', async ()=>{
     const errEl = document.getElementById('formErr');
     errEl.style.display = 'none';
     const song1Url = document.getElementById('song1Input').value.trim();
@@ -171,8 +171,19 @@
     const platform2 = detectPlatform(song2Url);
     if(!platform1 || !platform2){ errEl.textContent='Links must be from YouTube, Spotify, SoundCloud, or Apple Music.'; errEl.style.display='block'; return; }
     if(!channel){ errEl.textContent='Not connected yet — wait a second and try again.'; errEl.style.display='block'; return; }
-    channel.publish('submit', { twitchLogin, displayName, song1Url, song2Url, platform1, platform2 });
-    showScreen('doneScreen');
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+    try{
+      await channel.publish('submit', { twitchLogin, displayName, song1Url, song2Url, platform1, platform2 });
+      showScreen('doneScreen');
+    } catch(e){
+      errEl.textContent = 'Submission failed to send: ' + (e && e.message ? e.message : e);
+      errEl.style.display = 'block';
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Transition';
+    }
   });
 
   document.getElementById('submitAnotherBtn').addEventListener('click', ()=>{
