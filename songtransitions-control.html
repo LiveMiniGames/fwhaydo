@@ -7,7 +7,7 @@
 <style>
   * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; }
   body { background:#000; color:#fff; min-height:100vh; padding:20px; }
-  .wrap { max-width:900px; margin:0 auto; }
+  .wrap { max-width:1000px; margin:0 auto; }
   h1 { font-size:22px; font-weight:900; color:#1DB954; margin-bottom:4px; }
   .sub { font-size:12px; color:#888; margin-bottom:20px; }
 
@@ -16,7 +16,19 @@
   #status.bad { color:#e74c3c; }
 
   .card { background:#121212; border:1px solid #282828; border-radius:12px; padding:16px; margin-bottom:14px; }
-  .cardTitle { font-size:11px; font-weight:800; color:#1DB954; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+  .cardTitle { font-size:11px; font-weight:800; color:#1DB954; text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; display:flex; justify-content:space-between; }
+
+  .pendingRow { background:#181818; border:1px solid #333; border-radius:10px; padding:12px 14px; margin-bottom:10px; }
+  .pUser { font-weight:800; font-size:13px; color:#fff; margin-bottom:8px; }
+  .pPlayers { display:flex; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  .pPlayerBox { }
+  .pPlayerLabel { font-size:10px; color:#888; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .pPlayerBox iframe, .pPlayerBox > div { border-radius:8px; }
+  .pActions { display:flex; gap:8px; }
+  .approveBtn { background:#1DB954; border:none; color:#000; font-weight:800; border-radius:8px; padding:8px 16px; cursor:pointer; font-size:12px; }
+  .approveBtn:hover { background:#1ed760; }
+  .rejectBtn { background:#e74c3c; border:none; color:#fff; font-weight:800; border-radius:8px; padding:8px 16px; cursor:pointer; font-size:12px; }
+  .rejectBtn:hover { background:#c0392b; }
 
   .queueRow { display:flex; align-items:center; gap:12px; background:#181818; border-radius:8px; padding:10px 14px; margin-bottom:8px; }
   .queueRow.current { border:2px solid #1DB954; background:#0e2818; }
@@ -28,19 +40,26 @@
   .qDelete:hover { background:#c0392b; }
   .nowTag { font-size:9px; font-weight:900; color:#1DB954; letter-spacing:1px; }
 
-  #emptyMsg { text-align:center; color:#666; font-size:13px; padding:20px; }
+  .emptyMsg { text-align:center; color:#666; font-size:13px; padding:16px; }
+  .countBadge { background:#1DB954; color:#000; font-weight:900; font-size:11px; border-radius:10px; padding:2px 9px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>🎛️ Song Transitions — Control</h1>
-  <div class="sub">This page holds the master queue. Keep it open during the segment. Delete anything inappropriate here.</div>
+  <div class="sub">New submissions land in Pending Review first — listen to both songs, then Approve or Delete. Only approved transitions reach the host screen.</div>
   <div id="status">Connecting...</div>
 
   <div class="card">
-    <div class="cardTitle">Queue</div>
+    <div class="cardTitle">Pending Review <span class="countBadge" id="pendingCount">0</span></div>
+    <div id="pendingList"></div>
+    <div class="emptyMsg" id="pendingEmpty">No submissions waiting for review.</div>
+  </div>
+
+  <div class="card">
+    <div class="cardTitle">Approved Queue (live on host) <span class="countBadge" id="approvedCount">0</span></div>
     <div id="queueList"></div>
-    <div id="emptyMsg" style="display:none;">No submissions yet.</div>
+    <div class="emptyMsg" id="approvedEmpty">Nothing approved yet.</div>
   </div>
 </div>
 
@@ -71,39 +90,104 @@
   tryNext();
 })();
 </script>
+<script src="https://w.soundcloud.com/player/api.js"></script>
 <script>
 (function(){
   const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
   const CHANNEL_NAME = 'song-transitions';
-  const STORAGE_KEY = 'songtransitions-queue';
+  const STORAGE_KEY = 'songtransitions-queue-v2';
 
-  let queue = [];
-  let seenMessageIds = new Set();
+  let pending = [];   // awaiting moderation, never sent to host
+  let approved = [];  // moderated + approved -- this is what the host actually plays
   let currentIndex = -1;
+  let seenMessageIds = new Set();
   let ably, channel;
+
+  function detectPlatform(url){
+    if(/youtube\.com|youtu\.be/i.test(url)) return 'youtube';
+    if(/open\.spotify\.com/i.test(url)) return 'spotify';
+    if(/soundcloud\.com/i.test(url)) return 'soundcloud';
+    if(/music\.apple\.com/i.test(url)) return 'applemusic';
+    return null;
+  }
+  function extractYouTubeId(url){
+    const m = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/);
+    return m ? m[1] : null;
+  }
+  function toSpotifyEmbedUrl(url){ return url.replace('open.spotify.com/', 'open.spotify.com/embed/'); }
+  function toAppleMusicEmbedUrl(url){ return url.replace('music.apple.com/', 'embed.music.apple.com/'); }
+
+  // Simple full embeds for review purposes -- no seek automation needed here,
+  // just something Carson can play/scrub through himself to check the content
+  function buildPreviewEmbedHtml(url){
+    const platform = detectPlatform(url);
+    if(platform === 'youtube'){
+      const id = extractYouTubeId(url);
+      return id ? '<iframe width="280" height="158" src="https://www.youtube.com/embed/'+id+'" frameborder="0" allow="autoplay"></iframe>' : '<div style="color:#e74c3c;font-size:11px;">Invalid YouTube link</div>';
+    }
+    if(platform === 'soundcloud'){
+      return '<iframe width="280" height="158" scrolling="no" frameborder="no" src="https://w.soundcloud.com/player/?url='+encodeURIComponent(url)+'"></iframe>';
+    }
+    if(platform === 'spotify'){
+      return '<iframe width="280" height="152" frameborder="0" allow="autoplay; encrypted-media" src="'+toSpotifyEmbedUrl(url)+'"></iframe>';
+    }
+    if(platform === 'applemusic'){
+      return '<iframe width="280" height="150" frameborder="0" allow="autoplay *; encrypted-media *;" src="'+toAppleMusicEmbedUrl(url)+'"></iframe>';
+    }
+    return '<div style="color:#e74c3c;font-size:11px;">Unrecognized link: '+url+'</div>';
+  }
 
   function loadPersisted(){
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if(saved){
         const parsed = JSON.parse(saved);
-        queue = parsed.queue || [];
+        pending = parsed.pending || [];
+        approved = parsed.approved || [];
         currentIndex = typeof parsed.currentIndex === 'number' ? parsed.currentIndex : -1;
       }
     } catch(e){ console.error(e); }
   }
   function persist(){
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({queue, currentIndex})); }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify({pending, approved, currentIndex})); }
     catch(e){ console.error(e); }
   }
 
-  function renderQueue(){
-    const list = document.getElementById('queueList');
-    const empty = document.getElementById('emptyMsg');
+  function renderPending(){
+    const list = document.getElementById('pendingList');
+    document.getElementById('pendingCount').textContent = pending.length;
+    document.getElementById('pendingEmpty').style.display = pending.length ? 'none' : 'block';
     list.innerHTML = '';
-    if(queue.length === 0){ empty.style.display='block'; return; }
-    empty.style.display = 'none';
-    queue.forEach((item,i)=>{
+    pending.forEach((item)=>{
+      const row = document.createElement('div');
+      row.className = 'pendingRow';
+      row.innerHTML = `
+        <div class="pUser">${item.displayName}</div>
+        <div class="pPlayers">
+          <div class="pPlayerBox"><div class="pPlayerLabel">Song 1</div>${buildPreviewEmbedHtml(item.song1Url)}</div>
+          <div class="pPlayerBox"><div class="pPlayerLabel">Song 2</div>${buildPreviewEmbedHtml(item.song2Url)}</div>
+        </div>
+        <div class="pActions">
+          <button class="approveBtn" data-id="${item.id}">✓ Approve</button>
+          <button class="rejectBtn" data-id="${item.id}">✕ Delete</button>
+        </div>
+      `;
+      list.appendChild(row);
+    });
+    list.querySelectorAll('.approveBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>approveItem(btn.dataset.id));
+    });
+    list.querySelectorAll('.rejectBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{ pending = pending.filter(p=>p.id!==btn.dataset.id); persist(); renderPending(); });
+    });
+  }
+
+  function renderApproved(){
+    const list = document.getElementById('queueList');
+    document.getElementById('approvedCount').textContent = approved.length;
+    document.getElementById('approvedEmpty').style.display = approved.length ? 'none' : 'block';
+    list.innerHTML = '';
+    approved.forEach((item,i)=>{
       const row = document.createElement('div');
       row.className = 'queueRow' + (i===currentIndex ? ' current' : '');
       row.innerHTML = `
@@ -116,26 +200,35 @@
       `;
       list.appendChild(row);
     });
-    document.querySelectorAll('.qDelete').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const idx = parseInt(btn.dataset.idx,10);
-        deleteItem(idx);
-      });
+    list.querySelectorAll('.qDelete').forEach(btn=>{
+      btn.addEventListener('click', ()=>deleteApproved(parseInt(btn.dataset.idx,10)));
     });
   }
 
-  function deleteItem(idx){
-    queue.splice(idx,1);
-    if(currentIndex > idx) currentIndex--;
-    else if(currentIndex === idx) currentIndex = Math.min(currentIndex, queue.length-1);
+  function approveItem(id){
+    const idx = pending.findIndex(p=>p.id===id);
+    if(idx===-1) return;
+    const [item] = pending.splice(idx,1);
+    approved.push({ ...item, approvedAt: Date.now() });
     persist();
-    renderQueue();
+    renderPending();
+    renderApproved();
+    broadcastSnapshot();
+  }
+
+  function deleteApproved(idx){
+    approved.splice(idx,1);
+    if(currentIndex > idx) currentIndex--;
+    else if(currentIndex === idx) currentIndex = Math.min(currentIndex, approved.length-1);
+    persist();
+    renderApproved();
     broadcastSnapshot();
   }
 
   function broadcastSnapshot(){
     if(!channel) return;
-    channel.publish('queue-snapshot', { queue, currentIndex });
+    // host only ever sees the approved list -- pending items never reach it
+    channel.publish('queue-snapshot', { queue: approved, currentIndex });
   }
 
   function setStatus(text, cls){
@@ -151,9 +244,24 @@
     });
   }
 
+  function addSubmission(msg){
+    if(seenMessageIds.has(msg.id)) return; // avoid double-counting if history and live overlap
+    seenMessageIds.add(msg.id);
+    const d = msg.data;
+    const platform1 = d.platform1 || detectPlatform(d.song1Url);
+    const platform2 = d.platform2 || detectPlatform(d.song2Url);
+    pending.push({
+      id: 'sub_' + msg.id, // Ably message ids are unique per message
+      twitchLogin:d.twitchLogin, displayName:d.displayName,
+      song1Url:d.song1Url, song2Url:d.song2Url, platform1, platform2,
+      submittedAt: msg.timestamp || Date.now()
+    });
+  }
+
   async function init(){
     loadPersisted();
-    renderQueue();
+    renderPending();
+    renderApproved();
     await waitForAbly();
     if(typeof Ably === 'undefined'){
       setStatus('Connection library failed to load — check network and reload', 'bad');
@@ -165,45 +273,39 @@
         setStatus('Connected ✓ — checking for missed submissions...', 'ok');
         channel = ably.channels.get(CHANNEL_NAME);
 
-        function addSubmission(msg){
-          if(seenMessageIds.has(msg.id)) return; // avoid double-counting if history and live overlap
-          seenMessageIds.add(msg.id);
-          const d = msg.data;
-          queue.push({ twitchLogin:d.twitchLogin, displayName:d.displayName, song1Url:d.song1Url, song2Url:d.song2Url, submittedAt:msg.timestamp || Date.now() });
-        }
-
         channel.subscribe('submit', (msg)=>{
           addSubmission(msg);
           persist();
-          renderQueue();
-          broadcastSnapshot();
-        });
-
-        // catch up on anything published before this page was open --
-        // Ably keeps recent message history even for subscribers who weren't
-        // connected yet, this is what was missing before
-        channel.history({ direction:'backwards', limit:100 }, (err, resultPage)=>{
-          if(err){ console.error('history fetch failed', err); setStatus('Connected ✓ — but history fetch failed, live submissions will still work', 'ok'); return; }
-          const submitMessages = resultPage.items.filter(m=>m.name==='submit').reverse(); // oldest first
-          submitMessages.forEach(addSubmission);
-          renderQueue();
-          broadcastSnapshot();
-          persist();
-          setStatus('Connected ✓ — listening for submissions', 'ok');
+          renderPending();
         });
 
         channel.subscribe('next-requested', ()=>{
-          if(currentIndex < queue.length-1){
+          if(currentIndex < approved.length-1){
             currentIndex++;
             persist();
-            renderQueue();
+            renderApproved();
             broadcastSnapshot();
           }
         });
-        channel.subscribe('request-snapshot', ()=>{
+        channel.subscribe('request-snapshot', ()=>{ broadcastSnapshot(); });
+
+        // catch up on anything published before this page was open, THEN
+        // do the initial broadcast -- sequenced so we never send a stale
+        // snapshot before history has actually loaded
+        channel.history({ direction:'backwards', limit:100 }, (err, resultPage)=>{
+          if(err){
+            console.error('history fetch failed', err);
+            setStatus('Connected ✓ — history fetch failed, live submissions will still work', 'ok');
+          } else {
+            const submitMessages = resultPage.items.filter(m=>m.name==='submit').reverse();
+            submitMessages.forEach(addSubmission);
+            persist();
+            setStatus('Connected ✓ — listening for submissions', 'ok');
+          }
+          renderPending();
+          renderApproved();
           broadcastSnapshot();
         });
-        broadcastSnapshot();
       });
       ably.connection.on('failed', ()=>{ setStatus('Ably connection failed — check network', 'bad'); });
     } catch(e){
