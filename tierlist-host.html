@@ -96,13 +96,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
   font-size:.5rem;padding:2px 4px;text-align:center;color:#fff;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* Zoom button — appears on hover, doesn't interfere with drag */
-.tier-item .zoom-btn{
-  position:absolute;top:2px;right:2px;
-  background:rgba(0,0,0,.75);color:#fff;border:none;border-radius:3px;
-  font-size:.65rem;padding:2px 5px;cursor:pointer;opacity:0;transition:opacity .15s;
-  pointer-events:none;
-}
-.tier-item:hover .zoom-btn{opacity:1;pointer-events:auto}
+
 .sortable-ghost{opacity:.25}
 .sortable-chosen{cursor:grabbing!important}
 
@@ -503,13 +497,30 @@ function mkItem(item,inQ){
   const nm=document.createElement('div');nm.className='iname';nm.textContent=item.name;
   div.appendChild(nm);
 
-  // Zoom button — only visible on hover, small and in corner
+  // Button container — top right corner, appears on hover
+  const btnWrap=document.createElement('div');
+  btnWrap.style.cssText='position:absolute;top:2px;right:2px;display:flex;flex-direction:column;gap:2px;opacity:0;transition:opacity .15s;pointer-events:none';
+  btnWrap.className='item-btns';
+
   const zb=document.createElement('button');
-  zb.className='zoom-btn';zb.textContent='🔍';zb.title='Zoom';
+  zb.style.cssText='background:rgba(0,0,0,.8);color:#fff;border:none;border-radius:3px;font-size:.62rem;padding:2px 5px;cursor:pointer;line-height:1.4';
+  zb.textContent='🔍';zb.title='Zoom';
   zb.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();openSpotlight(item);});
-  // Prevent zoom button from interfering with drag
   zb.addEventListener('mousedown',e=>e.stopPropagation());
-  div.appendChild(zb);
+
+  const db=document.createElement('button');
+  db.style.cssText='background:rgba(180,0,0,.85);color:#fff;border:none;border-radius:3px;font-size:.62rem;padding:2px 5px;cursor:pointer;line-height:1.4';
+  db.textContent='✕';db.title='Remove';
+  db.addEventListener('click',e=>{e.stopPropagation();e.preventDefault();removeItem(item.id);});
+  db.addEventListener('mousedown',e=>e.stopPropagation());
+
+  btnWrap.appendChild(zb);
+  btnWrap.appendChild(db);
+  div.appendChild(btnWrap);
+
+  // Show buttons on hover
+  div.addEventListener('mouseenter',()=>{ btnWrap.style.opacity='1';btnWrap.style.pointerEvents='auto'; });
+  div.addEventListener('mouseleave',()=>{ btnWrap.style.opacity='0';btnWrap.style.pointerEvents='none'; });
 
   if(inQ){
     div.style.cursor='pointer';
