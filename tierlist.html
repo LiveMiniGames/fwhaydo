@@ -586,6 +586,18 @@
       </div>
       <button class="btn" style="width:100%;margin-bottom:14px;" onclick="copyBotConfig()">📋 Copy Config for Bot</button>
 
+      <div class="section-title" style="margin-top:16px">JSONBin Storage (Image Queue)</div>
+      <div class="setting-group">
+        <label>JSONBin Bin ID</label>
+        <input type="text" id="cfg-bin-id" placeholder="64abc123..." oninput="localStorage.setItem('tierlist-bin-id',this.value)"/>
+      </div>
+      <div class="setting-group">
+        <label>JSONBin Master Key</label>
+        <input type="password" id="cfg-bin-key" placeholder="$2b$10$..." oninput="localStorage.setItem('tierlist-bin-key',this.value)"/>
+      </div>
+      <button class="btn" style="width:100%;margin-bottom:6px;" onclick="loadQueueFromBin()">🔄 Load Queued Images Now</button>
+      <button class="btn secondary" style="width:100%;margin-bottom:14px;" onclick="clearBinQueue()">🗑 Clear Image Queue</button>
+
       <div class="section-title">Twitch Connection</div>
       <div class="setting-group">
         <label>Your Twitch Channel Name</label>
@@ -838,6 +850,79 @@ function copyBotConfig(){
     prompt('Copy this and paste it into line 6 of bot.js:', `const WATCH_CHANNEL = '${ch}';`);
   });
 }
+
+// ── JSONBIN QUEUE ──────────────────────────────────────────────
+function getBinConfig(){
+  return {
+    binId: document.getElementById('cfg-bin-id')?.value.trim() || localStorage.getItem('tierlist-bin-id') || '',
+    key:   document.getElementById('cfg-bin-key')?.value.trim() || localStorage.getItem('tierlist-bin-key') || '',
+  };
+}
+
+async function loadQueueFromBin(){
+  const {binId, key} = getBinConfig();
+  if(!binId || !key){
+    alert('Enter your JSONBin Bin ID and Master Key in Settings first.');
+    return;
+  }
+  try {
+    const res  = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+      headers: {'X-Master-Key': key}
+    });
+    const data = await res.json();
+    const queue = Array.isArray(data.record?.queue) ? data.record.queue : [];
+    if(!queue.length){ showToast('No queued images found.'); return; }
+    queue.forEach(item => {
+      if(item.url) window.addImageFromDiscord(item.url, item.name || 'Discord');
+    });
+    showToast(`✅ Loaded ${queue.length} image${queue.length!==1?'s':''} from queue`);
+  } catch(e){
+    showToast('Error loading queue — check your Bin ID and Key');
+    console.error(e);
+  }
+}
+
+async function clearBinQueue(){
+  const {binId, key} = getBinConfig();
+  if(!binId || !key) return;
+  if(!confirm('Clear all queued images? This cannot be undone.')) return;
+  try {
+    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json','X-Master-Key':key},
+      body: JSON.stringify({queue:[]})
+    });
+    showToast('Queue cleared.');
+  } catch(e){ showToast('Error clearing queue'); }
+}
+
+function showToast(msg){
+  let t = document.getElementById('toast-msg');
+  if(!t){
+    t = document.createElement('div');
+    t.id='toast-msg';
+    t.style.cssText='position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:10px 20px;border-radius:8px;font-size:.82rem;z-index:9999;transition:opacity .3s';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg; t.style.opacity='1';
+  clearTimeout(t._t);
+  t._t=setTimeout(()=>t.style.opacity='0',3000);
+}
+
+// Auto-load queue when page opens
+window.addEventListener('load', ()=>{
+  // Restore saved JSONBin config
+  const savedBinId  = localStorage.getItem('tierlist-bin-id')  || '';
+  const savedBinKey = localStorage.getItem('tierlist-bin-key') || '';
+  const elId  = document.getElementById('cfg-bin-id');
+  const elKey = document.getElementById('cfg-bin-key');
+  if(elId)  elId.value  = savedBinId;
+  if(elKey) elKey.value = savedBinKey;
+  // Auto-load if configured
+  if(savedBinId && savedBinKey){
+    setTimeout(loadQueueFromBin, 1200);
+  }
+});
 
 // Called externally (e.g. from a Discord bot WebSocket message)
 window.addImageFromDiscord = function(url, name) {
