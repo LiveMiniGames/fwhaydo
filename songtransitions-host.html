@@ -138,12 +138,26 @@
     if(transitionTimer2){ clearTimeout(transitionTimer2); transitionTimer2=null; }
   }
 
-  // Rebuilds whichever slot (1 or 2) fresh, since each pair of songs can be a
-  // totally different mix of platforms from the last. Calls back once playback
-  // has actually started (immediately for Spotify/Apple Music, since we can't
-  // detect their real "ready" state, or after the platform's own ready event
-  // for YouTube/SoundCloud, which both support that properly).
-  function loadSlot(slotNum, url, platform, onStarted){
+  // YouTube's onReady event can fire before the video's duration is actually
+  // available -- calling getDuration() immediately sometimes returns 0, which
+  // was silently causing seeks to fall back to the start of the song instead
+  // of the last 30 seconds. This polls briefly until a real duration shows up.
+  function waitForValidDuration(player, callback, attempts){
+    attempts = attempts || 0;
+    const duration = player.getDuration ? player.getDuration() : 0;
+    if(duration && duration > 0){
+      callback(duration);
+    } else if(attempts < 20){
+      setTimeout(()=>waitForValidDuration(player, callback, attempts+1), 150);
+    } else {
+      callback(CLIP_SECONDS); // give up after ~3s and just play from the start rather than hang forever
+    }
+  }
+
+  // Loads a slot and actually plays it, seeking to the last CLIP_SECONDS.
+  // onEnded fires the moment the track genuinely finishes (for platforms that
+  // support it), separate from onStarted which fires once playback begins.
+  function loadSlotActive(slotNum, url, platform, onStarted, onEnded){
     const container = document.getElementById('player'+slotNum);
     container.innerHTML = '';
     if(platform === 'youtube'){
@@ -151,13 +165,16 @@
       const div = document.createElement('div');
       div.id = 'ytplayer'+slotNum;
       container.appendChild(div);
-      const player = new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{ onReady:()=>{
-        let duration = player.getDuration ? player.getDuration() : 0;
-        if(!duration || duration < CLIP_SECONDS) duration = CLIP_SECONDS;
-        player.seekTo(Math.max(0, duration-CLIP_SECONDS), true);
-        player.playVideo();
-        onStarted(player);
-      }}});
+      const player = new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{
+        onReady:()=>{
+          waitForValidDuration(player, (duration)=>{
+            player.seekTo(Math.max(0, duration-CLIP_SECONDS), true);
+            player.playVideo();
+            onStarted(player);
+          });
+        },
+        onStateChange:(e)=>{ if(e.data === YT.PlayerState.ENDED && onEnded) onEnded(); }
+      }});
     } else if(platform === 'soundcloud'){
       const iframe = document.createElement('iframe');
       iframe.id = 'scplayer'+slotNum;
@@ -168,21 +185,23 @@
         const widget = SC.Widget(iframe);
         widget.bind(SC.Widget.Events.READY, ()=>{
           widget.getDuration((durationMs)=>{
-            let seekMs = Math.max(0, durationMs - CLIP_SECONDS*1000);
+            const safeDurationMs = durationMs && durationMs > 0 ? durationMs : CLIP_SECONDS*1000;
+            const seekMs = Math.max(0, safeDurationMs - CLIP_SECONDS*1000);
             widget.seekTo(seekMs);
             widget.play();
             onStarted(widget);
           });
+          if(onEnded) widget.bind(SC.Widget.Events.FINISH, onEnded);
         });
       };
     } else if(platform === 'spotify'){
       const iframe = document.createElement('iframe');
       iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = '0';
       iframe.allow = 'autoplay; encrypted-media';
-      iframe.src = toSpotifyEmbedUrl(url);
+      iframe.src = toSpotifyEmbedUrl(url) + (url.includes('?')?'&':'?') + 'autoplay=1';
       container.appendChild(iframe);
-      // no reliable ready/seek control available for free Spotify embeds --
-      // it plays whatever preview it serves, we just time the transition ourselves
+      // no reliable ready/seek/ended control available for free Spotify embeds --
+      // it plays whatever preview it serves, we time the transition ourselves
       setTimeout(()=>onStarted(null), 1500);
     } else if(platform === 'applemusic'){
       const iframe = document.createElement('iframe');
@@ -190,8 +209,42 @@
       iframe.allow = 'autoplay *; encrypted-media *;';
       iframe.src = toAppleMusicEmbedUrl(url);
       container.appendChild(iframe);
-      // same limitation as Spotify -- no scriptable seek/ready control available
+      // same limitation as Spotify -- no scriptable seek/ready/ended control available
       setTimeout(()=>onStarted(null), 1500);
+    }
+  }
+
+  // Loads a slot WITHOUT playing it -- shows the player/thumbnail immediately
+  // so both songs are visible from the moment a transition loads, instead of
+  // song 2's box sitting empty until song 1 finishes.
+  function loadSlotPreview(slotNum, url, platform){
+    const container = document.getElementById('player'+slotNum);
+    container.innerHTML = '';
+    if(platform === 'youtube'){
+      const id = extractYouTubeId(url);
+      const div = document.createElement('div');
+      div.id = 'ytplayer'+slotNum;
+      container.appendChild(div);
+      new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{
+        onReady:(e)=>{ e.target.cueVideoById(id); } // loads + shows thumbnail, does not play
+      }});
+    } else if(platform === 'soundcloud'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = 'no'; iframe.scrolling = 'no';
+      iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&auto_play=false';
+      container.appendChild(iframe);
+    } else if(platform === 'spotify'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = '0';
+      iframe.allow = 'encrypted-media';
+      iframe.src = toSpotifyEmbedUrl(url); // no autoplay param -- sits ready, silent
+      container.appendChild(iframe);
+    } else if(platform === 'applemusic'){
+      const iframe = document.createElement('iframe');
+      iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = '0';
+      iframe.allow = 'encrypted-media *;';
+      iframe.src = toAppleMusicEmbedUrl(url);
+      container.appendChild(iframe);
     }
   }
 
@@ -208,10 +261,21 @@
     }
     if(platform1 === 'youtube' && !ytReady) return; // wait for the YT API to finish loading first
     document.getElementById('npStatus').textContent = 'Playing outro of song 1' + (platform1!=='youtube'&&platform1!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
-    document.getElementById('player2').innerHTML = '';
-    loadSlot(1, item.song1Url, platform1, ()=>{
-      transitionTimer2 = setTimeout(playSongTwo, CLIP_SECONDS*1000);
-    });
+
+    // song 2 is visible immediately, just not playing yet
+    loadSlotPreview(2, item.song2Url, platform2);
+
+    let advanced = false;
+    function advanceToSongTwo(){
+      if(advanced) return; // the "ended" event and the timer fallback could both fire -- only act once
+      advanced = true;
+      clearTransitionTimers();
+      playSongTwo();
+    }
+    loadSlotActive(1, item.song1Url, platform1, ()=>{
+      // safety-net timer in case the platform's "ended" event never fires
+      transitionTimer1 = setTimeout(advanceToSongTwo, CLIP_SECONDS*1000 + 1500);
+    }, advanceToSongTwo);
   }
 
   function playSongTwo(){
@@ -219,11 +283,11 @@
     if(!item) return;
     const platform2 = item.platform2 || detectPlatform(item.song2Url);
     document.getElementById('npStatus').textContent = 'Playing intro of song 2' + (platform2!=='youtube'&&platform2!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
-    loadSlot(2, item.song2Url, platform2, ()=>{
+    loadSlotActive(2, item.song2Url, platform2, ()=>{
       transitionTimer2 = setTimeout(()=>{
         document.getElementById('npStatus').textContent = 'Transition complete — click Next when ready';
       }, CLIP_SECONDS*1000 + 800);
-    });
+    }, null);
   }
 
   // ---------- Queue sync ----------
