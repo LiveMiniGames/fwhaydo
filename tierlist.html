@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Stream Tier List</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js">loadDiscordChannel();
+</script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── TOP BAR ── */
+  #topbar {
+    background: #111;
+    border-bottom: 2px solid #9147ff;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+  }
+  #topbar h1 {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: 1px;
+    flex: 1;
+  }
+  .btn {
+    background: #9147ff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .btn:hover { background: #772ce8; }
+  .btn.secondary {
+    background: #2a2a3e;
+    border: 1px solid #444;
+  }
+  .btn.secondary:hover { background: #3a3a55; }
+  .btn.danger { background: #c0392b; }
+  .btn.danger:hover { background: #a93226; }
+
+  #twitch-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+  }
+  #status-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: #555;
+    transition: background 0.3s;
+  }
+  #status-dot.connected { background: #2ecc71; }
+  #status-dot.error { background: #e74c3c; }
+
+  /* ── MAIN LAYOUT ── */
+  #main {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* ── TIER LIST AREA ── */
+  #tierlist-wrap {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+  }
+
+  #tierlist-title {
+    font-size: 1.6rem;
+    font-weight: 800;
+    text-align: center;
+    margin-bottom: 18px;
+    color: #fff;
+    letter-spacing: 2px;
+  }
+
+  .tier-row {
+    display: flex;
+    align-items: stretch;
+    margin-bottom: 4px;
+    border: 1px solid #333;
+    border-radius: 4px;
+    overflow: hidden;
+    min-height: 80px;
+  }
+
+  .tier-label {
+    width: 70px;
+    min-width: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+  }
+  .tier-label:hover::after {
+    content: '✏️';
+    position: absolute;
+    font-size: 0.7rem;
+    bottom: 4px;
+    right: 4px;
+  }
+
+  .tier-items {
+    flex: 1;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 8px;
+    background: #1e1e2e;
+    min-height: 80px;
+    align-items: flex-start;
+    align-content: flex-start;
+  }
+
+  .tier-item {
+    width: 80px;
+    height: 80px;
+    border-radius: 4px;
+    overflow: hidden;
+    cursor: grab;
+    border: 2px solid transparent;
+    transition: border-color 0.15s, transform 0.15s;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .tier-item:hover { border-color: #9147ff; transform: scale(1.05); }
+  .tier-item img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+  }
+  .tier-item .item-name {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.7);
+    font-size: 0.55rem;
+    padding: 2px 3px;
+    text-align: center;
+    color: #eee;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .tier-item .vote-badge {
+    position: absolute;
+    top: 2px; right: 2px;
+    background: #9147ff;
+    color: #fff;
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 3px;
+  }
+
+  /* ── QUEUE ── */
+  #queue-section {
+    margin-top: 20px;
+  }
+  #queue-section h3 {
+    font-size: 0.85rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 10px;
+    border-top: 1px solid #333;
+    padding-top: 12px;
+  }
+  #queue {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    background: #161625;
+    padding: 10px;
+    border-radius: 6px;
+    min-height: 96px;
+    border: 2px dashed #333;
+  }
+  #queue:empty::after {
+    content: 'Images added from Discord will appear here';
+    color: #555;
+    font-size: 0.82rem;
+    align-self: center;
+    margin: auto;
+  }
+
+  /* Current item spotlight */
+  #spotlight {
+    display: none;
+    background: #111;
+    border: 2px solid #9147ff;
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 14px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+  #spotlight.active { display: flex; }
+  #spotlight h3 { font-size: 0.8rem; color: #9147ff; text-transform: uppercase; letter-spacing: 1px; }
+  #spotlight img { max-height: 180px; border-radius: 6px; object-fit: contain; }
+  #spotlight .sub { font-size: 0.75rem; color: #888; }
+  #vote-tally {
+    display: flex; gap: 8px; flex-wrap: wrap; justify-content: center;
+  }
+  .vote-chip {
+    background: #2a2a3e;
+    border-radius: 20px;
+    padding: 3px 10px;
+    font-size: 0.78rem;
+    color: #ccc;
+  }
+  .vote-chip .count { color: #9147ff; font-weight: 700; }
+
+  /* ── SIDEBAR ── */
+  #sidebar {
+    width: 280px;
+    background: #111;
+    border-left: 1px solid #222;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  #sidebar-tabs {
+    display: flex;
+    border-bottom: 1px solid #222;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px 4px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn.active { color: #9147ff; border-bottom-color: #9147ff; }
+
+  .tab-panel { display: none; flex: 1; overflow-y: auto; padding: 14px; }
+  .tab-panel.active { display: block; }
+
+  /* Chat log */
+  #chat-log {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .chat-msg {
+    font-size: 0.78rem;
+    line-height: 1.4;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: #1a1a2e;
+    word-break: break-word;
+  }
+  .chat-msg .user { font-weight: 700; }
+  .chat-msg.vote-msg { border-left: 3px solid #9147ff; }
+  .chat-msg.vote-msg .vote-label { color: #9147ff; font-weight: 700; }
+
+  /* Settings */
+  .setting-group {
+    margin-bottom: 16px;
+  }
+  .setting-group label {
+    display: block;
+    font-size: 0.75rem;
+    color: #aaa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+  }
+  .setting-group input[type="text"],
+  .setting-group input[type="number"],
+  .setting-group select {
+    width: 100%;
+    background: #1e1e2e;
+    border: 1px solid #333;
+    border-radius: 5px;
+    color: #fff;
+    padding: 7px 10px;
+    font-size: 0.82rem;
+  }
+  .setting-group input[type="text"]:focus,
+  .setting-group input[type="number"]:focus {
+    outline: none;
+    border-color: #9147ff;
+  }
+
+  .tier-config-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 6px;
+  }
+  .tier-config-row input[type="text"] {
+    flex: 1;
+    background: #1e1e2e;
+    border: 1px solid #333;
+    border-radius: 5px;
+    color: #fff;
+    padding: 5px 8px;
+    font-size: 0.82rem;
+  }
+  .tier-config-row input[type="color"] {
+    width: 36px; height: 30px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 2px;
+    background: none;
+  }
+  .tier-config-row .remove-tier {
+    background: none;
+    border: none;
+    color: #c0392b;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 4px;
+  }
+
+  /* Add image panel */
+  #add-image-panel {
+    margin-bottom: 14px;
+    padding: 10px;
+    background: #1a1a2e;
+    border-radius: 6px;
+    border: 1px dashed #333;
+  }
+  #add-image-panel label {
+    font-size: 0.75rem;
+    color: #aaa;
+    display: block;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  #add-image-panel input[type="text"] {
+    width: 100%;
+    background: #111;
+    border: 1px solid #333;
+    border-radius: 5px;
+    color: #fff;
+    padding: 6px 8px;
+    font-size: 0.8rem;
+    margin-bottom: 6px;
+  }
+
+  /* Modal */
+  #modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #modal-overlay.active { display: flex; }
+  #modal {
+    background: #1e1e2e;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 24px;
+    min-width: 300px;
+    max-width: 420px;
+    width: 90%;
+  }
+  #modal h2 { font-size: 1rem; margin-bottom: 16px; color: #fff; }
+  #modal input[type="text"] {
+    width: 100%;
+    background: #111;
+    border: 1px solid #444;
+    border-radius: 5px;
+    color: #fff;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  #modal input[type="text"]:focus { outline: none; border-color: #9147ff; }
+  #modal .modal-btns { display: flex; gap: 8px; justify-content: flex-end; }
+
+  /* Vote mode toggle */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .toggle-row label { font-size: 0.8rem; color: #ccc; }
+  .toggle {
+    position: relative;
+    width: 40px; height: 22px;
+  }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute;
+    inset: 0;
+    background: #333;
+    border-radius: 22px;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  .toggle-slider::before {
+    content: '';
+    position: absolute;
+    height: 16px; width: 16px;
+    left: 3px; bottom: 3px;
+    background: #fff;
+    border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .toggle-slider { background: #9147ff; }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+
+  /* Leaderboard / chat stats */
+  #leaderboard {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .lb-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 8px;
+    background: #1a1a2e;
+    border-radius: 5px;
+    font-size: 0.8rem;
+  }
+  .lb-rank { color: #9147ff; font-weight: 700; width: 20px; }
+  .lb-name { flex: 1; }
+  .lb-score { color: #f1c40f; font-weight: 700; }
+
+  .section-title {
+    font-size: 0.7rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    margin-top: 14px;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: #111; }
+  ::-webkit-scrollbar-thumb { background: #333; border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: #9147ff; }
+
+  /* Drag ghost */
+  .sortable-ghost { opacity: 0.3; }
+  .sortable-chosen { cursor: grabbing; }
+</style>
+</head>
+<body>
+
+<!-- TOP BAR -->
+<div id="topbar">
+  <h1>🎮 STREAM TIER LIST</h1>
+  <div id="twitch-status">
+    <div id="status-dot"></div>
+    <span id="status-text">Not connected</span>
+  </div>
+  <button class="btn secondary" onclick="openTab('settings')">⚙️ Settings</button>
+  <button class="btn secondary" onclick="clearAll()">🗑️ Clear All</button>
+  <button class="btn" onclick="openTab('add')">+ Add Image</button>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- TIER LIST -->
+  <div id="tierlist-wrap">
+    <div id="tierlist-title">ROOM TIER LIST</div>
+
+    <!-- Current item spotlight -->
+    <div id="spotlight">
+      <h3>⬇ Now Ranking — chat vote with !tier [label]</h3>
+      <img id="spotlight-img" src="" alt="">
+      <div class="sub" id="spotlight-name"></div>
+      <div id="vote-tally"></div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn secondary" onclick="skipCurrent()">⏭ Skip</button>
+        <button class="btn" onclick="placeByVote()">✅ Lock In Vote</button>
+      </div>
+    </div>
+
+    <!-- Tier rows -->
+    <div id="tier-rows"></div>
+
+    <!-- Queue -->
+    <div id="queue-section">
+      <h3>📥 Queue — drag to place, or use chat voting</h3>
+      <div id="queue"></div>
+    </div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div id="sidebar-tabs">
+      <button class="tab-btn active" onclick="openTab('chat')">Chat</button>
+      <button class="tab-btn" onclick="openTab('leaderboard')">Stats</button>
+      <button class="tab-btn" onclick="openTab('add')">Add</button>
+      <button class="tab-btn" onclick="openTab('settings')">Config</button>
+    </div>
+
+    <!-- CHAT TAB -->
+    <div id="tab-chat" class="tab-panel active">
+      <div class="section-title">Live Twitch Chat</div>
+      <div id="chat-log"></div>
+    </div>
+
+    <!-- LEADERBOARD TAB -->
+    <div id="tab-leaderboard" class="tab-panel">
+      <div class="section-title">Most Active Voters</div>
+      <div id="leaderboard"></div>
+    </div>
+
+    <!-- ADD IMAGE TAB -->
+    <div id="tab-add" class="tab-panel">
+      <div class="section-title">Add Image Manually</div>
+      <div id="add-image-panel">
+        <label>Image URL</label>
+        <input type="text" id="manual-url" placeholder="https://i.imgur.com/..." />
+        <label>Label / Name</label>
+        <input type="text" id="manual-name" placeholder="e.g. SomeViewer's Room" />
+        <button class="btn" style="width:100%;margin-top:4px;" onclick="addManualImage()">Add to Queue</button>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Upload Image File</div>
+      <div id="add-image-panel">
+        <label>Pick a file from your computer</label>
+        <input type="file" id="file-upload" accept="image/*" style="color:#ccc;font-size:0.8rem;width:100%;margin-bottom:8px;">
+        <input type="text" id="file-name" placeholder="Label for this image" />
+        <button class="btn" style="width:100%;margin-top:6px;" onclick="addFileImage()">Add to Queue</button>
+      </div>
+      <div class="section-title" style="margin-top:14px;">Discord Bot Setup</div>
+      <p style="font-size:0.75rem;color:#888;line-height:1.5;">
+        To auto-pull images from Discord, you need a small Discord bot running separately. 
+        See the <strong style="color:#9147ff;">DISCORD SETUP.md</strong> file included with this download for step-by-step instructions.
+      </p>
+    </div>
+
+    <!-- SETTINGS TAB -->
+    <div id="tab-settings" class="tab-panel">
+      <div class="section-title">Discord Channel</div>
+      <div class="setting-group">
+        <label>Discord Image Channel Name</label>
+        <input type="text" id="cfg-discord-channel" placeholder="tier-list-submissions"
+          oninput="saveDiscordChannel(this.value)"
+          style="font-size:.85rem"/>
+        <div style="font-size:.7rem;color:#888;margin-top:4px">
+          This is the Discord channel your bot watches for image uploads.<br>
+          Change it here and it saves automatically — no code editing needed.
+        </div>
+      </div>
+      <button class="btn" style="width:100%;margin-bottom:14px;" onclick="copyBotConfig()">📋 Copy Config for Bot</button>
+
+      <div class="section-title">Twitch Connection</div>
+      <div class="setting-group">
+        <label>Your Twitch Channel Name</label>
+        <input type="text" id="cfg-channel" placeholder="yourchannelname" />
+      </div>
+      <button class="btn" style="width:100%;margin-bottom:14px;" onclick="connectTwitch()">Connect to Twitch Chat</button>
+      <button class="btn secondary" style="width:100%;margin-bottom:4px;" onclick="disconnectTwitch()">Disconnect</button>
+
+      <div class="section-title">Vote Mode</div>
+      <div class="toggle-row">
+        <label>Chat auto-places on majority vote</label>
+        <label class="toggle">
+          <input type="checkbox" id="cfg-auto-place" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="setting-group">
+        <label>Votes needed to auto-place</label>
+        <input type="number" id="cfg-vote-threshold" value="5" min="1" max="100" />
+      </div>
+      <div class="setting-group">
+        <label>Vote command prefix (e.g. !tier)</label>
+        <input type="text" id="cfg-vote-prefix" value="!tier" />
+      </div>
+
+      <div class="section-title">Tier List Title</div>
+      <div class="setting-group">
+        <input type="text" id="cfg-title" value="ROOM TIER LIST" oninput="document.getElementById('tierlist-title').textContent=this.value" />
+      </div>
+
+      <div class="section-title">Tiers</div>
+      <div id="tier-config-list"></div>
+      <button class="btn secondary" style="width:100%;margin-top:6px;" onclick="addTier()">+ Add Tier</button>
+      <button class="btn" style="width:100%;margin-top:6px;" onclick="applyTiers()">✅ Apply Tier Changes</button>
+
+      <div class="section-title" style="margin-top:16px;">Save / Load</div>
+      <button class="btn secondary" style="width:100%;margin-bottom:6px;" onclick="saveState()">💾 Save to File</button>
+      <button class="btn secondary" style="width:100%;" onclick="document.getElementById('load-input').click()">📂 Load from File</button>
+      <input type="file" id="load-input" accept=".json" style="display:none" onchange="loadState(event)" />
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (for editing labels) -->
+<div id="modal-overlay">
+  <div id="modal">
+    <h2 id="modal-title">Edit</h2>
+    <input type="text" id="modal-input" />
+    <div class="modal-btns">
+      <button class="btn secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="confirmModal()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════
+let tiers = [
+  { id: 't-s', label: 'S', color: '#FF7F7F' },
+  { id: 't-a', label: 'A', color: '#FFBF7F' },
+  { id: 't-b', label: 'B', color: '#FFDF80' },
+  { id: 't-c', label: 'C', color: '#FFFF7F' },
+  { id: 't-d', label: 'D', color: '#BFFF7F' },
+  { id: 't-f', label: 'F', color: '#8080FF' },
+];
+
+let items = {}; // id -> { id, url, name, tier: null|tierId }
+let queue = []; // ids in queue
+let currentItem = null; // id being voted on
+let votes = {}; // tierId -> Set of usernames
+let voterActivity = {}; // username -> count
+let tmiClient = null;
+let sortables = {};
+let modalCallback = null;
+
+// ══════════════════════════════════════════
+//  INIT
+// ══════════════════════════════════════════
+function init() {
+  renderTierConfigList();
+  renderTiers();
+  renderLeaderboard();
+}
+
+// ══════════════════════════════════════════
+//  TIER RENDERING
+// ══════════════════════════════════════════
+function renderTiers() {
+  const container = document.getElementById('tier-rows');
+  container.innerHTML = '';
+  // Destroy old sortables
+  Object.values(sortables).forEach(s => s.destroy && s.destroy());
+  sortables = {};
+
+  tiers.forEach(tier => {
+    const row = document.createElement('div');
+    row.className = 'tier-row';
+    row.id = `row-${tier.id}`;
+
+    const label = document.createElement('div');
+    label.className = 'tier-label';
+    label.style.background = tier.color;
+    label.textContent = tier.label;
+    label.title = 'Click to rename';
+    label.onclick = () => editTierLabel(tier.id);
+
+    const itemsDiv = document.createElement('div');
+    itemsDiv.className = 'tier-items';
+    itemsDiv.id = `items-${tier.id}`;
+    itemsDiv.dataset.tierId = tier.id;
+
+    // Render items already in this tier
+    Object.values(items).forEach(item => {
+      if (item.tier === tier.id) {
+        itemsDiv.appendChild(makeItemEl(item));
+      }
+    });
+
+    row.appendChild(label);
+    row.appendChild(itemsDiv);
+    container.appendChild(row);
+
+    // Make sortable
+    sortables[tier.id] = new Sortable(itemsDiv, {
+      group: 'tierlist',
+      animation: 150,
+      ghostClass: 'sortable-ghost',
+      chosenClass: 'sortable-chosen',
+      onAdd(evt) {
+        const id = evt.item.dataset.id;
+        const prevTier = items[id]?.tier;
+        if (prevTier === null || prevTier === undefined) {
+          queue = queue.filter(q => q !== id);
+          renderQueue();
+        }
+        items[id].tier = tier.id;
+      },
+      onRemove(evt) {
+        // handled by onAdd of destination
+      }
+    });
+  });
+
+  // Queue sortable
+  const queueEl = document.getElementById('queue');
+  sortables['queue'] = new Sortable(queueEl, {
+    group: 'tierlist',
+    animation: 150,
+    ghostClass: 'sortable-ghost',
+    onAdd(evt) {
+      const id = evt.item.dataset.id;
+      items[id].tier = null;
+      if (!queue.includes(id)) queue.push(id);
+    }
+  });
+}
+
+function makeItemEl(item) {
+  const div = document.createElement('div');
+  div.className = 'tier-item';
+  div.dataset.id = item.id;
+  div.title = item.name;
+
+  const img = document.createElement('img');
+  img.src = item.url;
+  img.alt = item.name;
+  img.onerror = () => { img.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="%23333"/><text x="40" y="45" text-anchor="middle" fill="%23888" font-size="10">No img</text></svg>'; };
+
+  const nameTag = document.createElement('div');
+  nameTag.className = 'item-name';
+  nameTag.textContent = item.name;
+
+  div.appendChild(img);
+  div.appendChild(nameTag);
+
+  div.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    removeItem(item.id);
+  });
+
+  return div;
+}
+
+function renderQueue() {
+  const queueEl = document.getElementById('queue');
+  // Only re-add items that should be there but aren't
+  queue.forEach(id => {
+    if (!queueEl.querySelector(`[data-id="${id}"]`)) {
+      queueEl.appendChild(makeItemEl(items[id]));
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+//  ADD IMAGES
+// ══════════════════════════════════════════
+function addToQueue(url, name) {
+  const id = 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2,6);
+  items[id] = { id, url, name: name || 'Untitled', tier: null };
+  queue.push(id);
+  const queueEl = document.getElementById('queue');
+  queueEl.appendChild(makeItemEl(items[id]));
+
+  // If no current item being spotlighted, spotlight this one
+  if (!currentItem) spotlightNext();
+}
+
+function addManualImage() {
+  const url = document.getElementById('manual-url').value.trim();
+  const name = document.getElementById('manual-name').value.trim() || 'Room';
+  if (!url) { alert('Please enter an image URL'); return; }
+  addToQueue(url, name);
+  document.getElementById('manual-url').value = '';
+  document.getElementById('manual-name').value = '';
+}
+
+function addFileImage() {
+  const file = document.getElementById('file-upload').files[0];
+  const name = document.getElementById('file-name').value.trim() || file?.name || 'Room';
+  if (!file) { alert('Please select a file'); return; }
+  const reader = new FileReader();
+  reader.onload = e => addToQueue(e.target.result, name);
+  reader.readAsDataURL(file);
+  document.getElementById('file-name').value = '';
+}
+
+// ── DISCORD CHANNEL CONFIG ─────────────────────────────────────
+function saveDiscordChannel(name){
+  localStorage.setItem('tierlist-discord-channel', name.trim());
+}
+
+function loadDiscordChannel(){
+  const saved = localStorage.getItem('tierlist-discord-channel') || '';
+  const el = document.getElementById('cfg-discord-channel');
+  if(el) el.value = saved;
+  return saved;
+}
+
+function copyBotConfig(){
+  const ch = document.getElementById('cfg-discord-channel').value.trim() || 'your-channel-name';
+  const config = `// Paste this into line 6 of your bot.js file:\nconst WATCH_CHANNEL = '${ch}';`;
+  navigator.clipboard.writeText(config).then(()=>{
+    const btn = event.target;
+    const orig = btn.textContent;
+    btn.textContent = '✅ Copied!';
+    setTimeout(()=>btn.textContent=orig, 2000);
+  }).catch(()=>{
+    prompt('Copy this and paste it into line 6 of bot.js:', `const WATCH_CHANNEL = '${ch}';`);
+  });
+}
+
+// Called externally (e.g. from a Discord bot WebSocket message)
+window.addImageFromDiscord = function(url, name) {
+  addToQueue(url, name || 'Discord Image');
+};
+
+function removeItem(id) {
+  delete items[id];
+  queue = queue.filter(q => q !== id);
+  document.querySelectorAll(`[data-id="${id}"]`).forEach(el => el.remove());
+  if (currentItem === id) { currentItem = null; spotlightNext(); }
+}
+
+function clearAll() {
+  if (!confirm('Clear everything from the tier list and queue?')) return;
+  items = {};
+  queue = [];
+  currentItem = null;
+  votes = {};
+  renderTiers();
+  document.getElementById('spotlight').classList.remove('active');
+}
+
+// ══════════════════════════════════════════
+//  SPOTLIGHT / VOTING
+// ══════════════════════════════════════════
+function spotlightNext() {
+  if (queue.length === 0) {
+    document.getElementById('spotlight').classList.remove('active');
+    currentItem = null;
+    return;
+  }
+  currentItem = queue[0];
+  const item = items[currentItem];
+  votes = {};
+  tiers.forEach(t => { votes[t.id] = new Set(); });
+
+  document.getElementById('spotlight-img').src = item.url;
+  document.getElementById('spotlight-name').textContent = item.name;
+  document.getElementById('spotlight').classList.add('active');
+  renderVoteTally();
+}
+
+function renderVoteTally() {
+  const el = document.getElementById('vote-tally');
+  el.innerHTML = '';
+  const prefix = document.getElementById('cfg-vote-prefix')?.value || '!tier';
+  tiers.forEach(tier => {
+    const count = votes[tier.id]?.size || 0;
+    const chip = document.createElement('div');
+    chip.className = 'vote-chip';
+    chip.innerHTML = `<span style="color:${tier.color};font-weight:700">${tier.label}</span> <span class="count">${count}</span>`;
+    el.appendChild(chip);
+  });
+}
+
+function processVote(username, message) {
+  if (!currentItem) return false;
+  const prefix = (document.getElementById('cfg-vote-prefix')?.value || '!tier').toLowerCase();
+  const msg = message.trim().toLowerCase();
+
+  if (!msg.startsWith(prefix)) return false;
+  const label = msg.slice(prefix.length).trim();
+  const tier = tiers.find(t => t.label.toLowerCase() === label);
+  if (!tier) return false;
+
+  // Remove previous vote from this user
+  tiers.forEach(t => votes[t.id]?.delete(username));
+  votes[tier.id].add(username);
+
+  // Track activity
+  voterActivity[username] = (voterActivity[username] || 0) + 1;
+  renderLeaderboard();
+  renderVoteTally();
+
+  // Auto-place if threshold met
+  const autoPlace = document.getElementById('cfg-auto-place')?.checked;
+  const threshold = parseInt(document.getElementById('cfg-vote-threshold')?.value || 5);
+  if (autoPlace && votes[tier.id].size >= threshold) {
+    placeItemInTier(currentItem, tier.id);
+  }
+
+  return true;
+}
+
+function placeByVote() {
+  if (!currentItem) return;
+  // Find winning tier
+  let maxVotes = 0, winTier = null;
+  tiers.forEach(t => {
+    const v = votes[t.id]?.size || 0;
+    if (v > maxVotes) { maxVotes = v; winTier = t.id; }
+  });
+  if (!winTier) { alert('No votes yet!'); return; }
+  placeItemInTier(currentItem, winTier);
+}
+
+function placeItemInTier(itemId, tierId) {
+  const item = items[itemId];
+  if (!item) return;
+
+  item.tier = tierId;
+  queue = queue.filter(q => q !== itemId);
+
+  // Remove from queue DOM
+  document.querySelectorAll(`#queue [data-id="${itemId}"]`).forEach(el => el.remove());
+
+  // Add to tier DOM
+  const tierItemsEl = document.getElementById(`items-${tierId}`);
+  if (tierItemsEl) tierItemsEl.appendChild(makeItemEl(item));
+
+  currentItem = null;
+  votes = {};
+  spotlightNext();
+}
+
+function skipCurrent() {
+  if (!currentItem) return;
+  // Move to end of queue
+  queue = queue.filter(q => q !== currentItem);
+  queue.push(currentItem);
+  currentItem = null;
+  spotlightNext();
+}
+
+// ══════════════════════════════════════════
+//  TWITCH CONNECTION
+// ══════════════════════════════════════════
+function connectTwitch() {
+  const channel = document.getElementById('cfg-channel').value.trim();
+  if (!channel) { alert('Enter your Twitch channel name first!'); openTab('settings'); return; }
+
+  disconnectTwitch();
+  setStatus('connecting', 'Connecting...');
+
+  // Use tmi.js via CDN (loaded dynamically)
+  if (!window.tmi) {
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/tmi.js/1.8.5/tmi.min.js';
+    script.onload = () => doConnect(channel);
+    script.onerror = () => setStatus('error', 'Failed to load tmi.js');
+    document.head.appendChild(script);
+  } else {
+    doConnect(channel);
+  }
+}
+
+function doConnect(channel) {
+  try {
+    tmiClient = new tmi.Client({ channels: [channel] });
+
+    tmiClient.connect().then(() => {
+      setStatus('connected', `Connected: #${channel}`);
+    }).catch(err => {
+      setStatus('error', 'Connection failed');
+      console.error(err);
+    });
+
+    tmiClient.on('message', (ch, tags, message, self) => {
+      const username = tags['display-name'] || tags.username || 'user';
+      const color = tags.color || '#9147ff';
+
+      const isVote = processVote(username, message);
+      addChatMessage(username, color, message, isVote);
+    });
+
+    tmiClient.on('disconnected', () => {
+      setStatus('error', 'Disconnected');
+    });
+
+  } catch(e) {
+    setStatus('error', 'Error: ' + e.message);
+  }
+}
+
+function disconnectTwitch() {
+  if (tmiClient) {
+    try { tmiClient.disconnect(); } catch(e) {}
+    tmiClient = null;
+  }
+  setStatus('', 'Not connected');
+}
+
+function setStatus(type, text) {
+  const dot = document.getElementById('status-dot');
+  const textEl = document.getElementById('status-text');
+  dot.className = type === 'connected' ? 'connected' : type === 'error' ? 'error' : '';
+  if (type === 'connecting') dot.style.background = '#f39c12';
+  else dot.style.background = '';
+  textEl.textContent = text;
+}
+
+// ══════════════════════════════════════════
+//  CHAT LOG
+// ══════════════════════════════════════════
+const MAX_CHAT = 80;
+function addChatMessage(username, color, message, isVote) {
+  const log = document.getElementById('chat-log');
+  const div = document.createElement('div');
+  div.className = 'chat-msg' + (isVote ? ' vote-msg' : '');
+  div.innerHTML = `<span class="user" style="color:${color}">${escHtml(username)}</span>: ${escHtml(message)}` +
+    (isVote ? ` <span class="vote-label">✓ voted</span>` : '');
+  log.appendChild(div);
+  while (log.children.length > MAX_CHAT) log.removeChild(log.firstChild);
+  log.scrollTop = log.scrollHeight;
+}
+
+// ══════════════════════════════════════════
+//  LEADERBOARD
+// ══════════════════════════════════════════
+function renderLeaderboard() {
+  const sorted = Object.entries(voterActivity).sort((a,b) => b[1]-a[1]).slice(0,15);
+  const el = document.getElementById('leaderboard');
+  el.innerHTML = '';
+  if (sorted.length === 0) {
+    el.innerHTML = '<div style="color:#555;font-size:0.8rem;padding:8px;">No votes yet</div>';
+    return;
+  }
+  sorted.forEach(([name, count], i) => {
+    const row = document.createElement('div');
+    row.className = 'lb-row';
+    row.innerHTML = `<span class="lb-rank">#${i+1}</span><span class="lb-name">${escHtml(name)}</span><span class="lb-score">${count} votes</span>`;
+    el.appendChild(row);
+  });
+}
+
+// ══════════════════════════════════════════
+//  TIER CONFIG
+// ══════════════════════════════════════════
+function renderTierConfigList() {
+  const list = document.getElementById('tier-config-list');
+  list.innerHTML = '';
+  tiers.forEach((tier, i) => {
+    const row = document.createElement('div');
+    row.className = 'tier-config-row';
+    row.innerHTML = `
+      <input type="color" value="${tier.color}" onchange="tiers[${i}].color='${tier.color}';tiers[${i}].color=this.value" />
+      <input type="text" value="${tier.label}" placeholder="Label" onchange="tiers[${i}].label=this.value" />
+      <button class="remove-tier" onclick="removeTier(${i})">✕</button>
+    `;
+    list.appendChild(row);
+  });
+}
+
+function addTier() {
+  tiers.push({ id: 't-' + Date.now(), label: 'NEW', color: '#888888' });
+  renderTierConfigList();
+}
+
+function removeTier(i) {
+  // Move items back to queue
+  const tid = tiers[i].id;
+  Object.values(items).forEach(item => {
+    if (item.tier === tid) { item.tier = null; queue.push(item.id); }
+  });
+  tiers.splice(i, 1);
+  renderTierConfigList();
+  renderTiers();
+  renderQueue();
+}
+
+function applyTiers() {
+  renderTierConfigList();
+  renderTiers();
+  // Re-render queued items
+  const queueEl = document.getElementById('queue');
+  queueEl.innerHTML = '';
+  queue.forEach(id => queueEl.appendChild(makeItemEl(items[id])));
+  alert('Tiers updated!');
+}
+
+function editTierLabel(tierId) {
+  const tier = tiers.find(t => t.id === tierId);
+  if (!tier) return;
+  openModal('Edit Tier Label', tier.label, (val) => {
+    tier.label = val;
+    document.querySelector(`#row-${tierId} .tier-label`).textContent = val;
+    renderTierConfigList();
+  });
+}
+
+// ══════════════════════════════════════════
+//  MODAL
+// ══════════════════════════════════════════
+function openModal(title, defaultVal, callback) {
+  document.getElementById('modal-title').textContent = title;
+  document.getElementById('modal-input').value = defaultVal || '';
+  modalCallback = callback;
+  document.getElementById('modal-overlay').classList.add('active');
+  document.getElementById('modal-input').focus();
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('active');
+  modalCallback = null;
+}
+function confirmModal() {
+  const val = document.getElementById('modal-input').value.trim();
+  if (val && modalCallback) modalCallback(val);
+  closeModal();
+}
+document.getElementById('modal-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') confirmModal();
+  if (e.key === 'Escape') closeModal();
+});
+document.getElementById('modal-overlay').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+});
+
+// ══════════════════════════════════════════
+//  TABS
+// ══════════════════════════════════════════
+function openTab(name) {
+  document.querySelectorAll('.tab-btn').forEach((b, i) => {
+    const panels = ['chat','leaderboard','add','settings'];
+    b.classList.toggle('active', panels[i] === name);
+  });
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name)?.classList.add('active');
+}
+
+// ══════════════════════════════════════════
+//  SAVE / LOAD
+// ══════════════════════════════════════════
+function saveState() {
+  const state = {
+    tiers,
+    items,
+    queue,
+    title: document.getElementById('cfg-title').value,
+    channel: document.getElementById('cfg-channel').value,
+    votePrefix: document.getElementById('cfg-vote-prefix').value,
+    voteThreshold: document.getElementById('cfg-vote-threshold').value,
+  };
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tierlist-save.json';
+  a.click();
+}
+
+function loadState(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const state = JSON.parse(e.target.result);
+      tiers = state.tiers || tiers;
+      items = state.items || {};
+      queue = state.queue || [];
+      if (state.title) { document.getElementById('cfg-title').value = state.title; document.getElementById('tierlist-title').textContent = state.title; }
+      if (state.channel) document.getElementById('cfg-channel').value = state.channel;
+      if (state.votePrefix) document.getElementById('cfg-vote-prefix').value = state.votePrefix;
+      if (state.voteThreshold) document.getElementById('cfg-vote-threshold').value = state.voteThreshold;
+      renderTierConfigList();
+      renderTiers();
+      renderQueue();
+      alert('Loaded!');
+    } catch(e) { alert('Failed to load: ' + e.message); }
+  };
+  reader.readAsText(file);
+}
+
+// ══════════════════════════════════════════
+//  UTILS
+// ══════════════════════════════════════════
+function escHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ══════════════════════════════════════════
+//  WebSocket listener (for Discord bot bridge)
+// ══════════════════════════════════════════
+// Your Discord bot sends: { type: "image", url: "...", name: "..." }
+// Point it at ws://localhost:3001 and this picks it up automatically
+function tryWebSocket() {
+  try {
+    const ws = new WebSocket('ws://localhost:3001');
+    ws.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        if (data.type === 'image') addToQueue(data.url, data.name || 'Discord');
+      } catch(err) {}
+    };
+    ws.onerror = () => {}; // silently ignore if no bot running
+  } catch(e) {}
+}
+// Try connecting to local Discord bot bridge
+setTimeout(tryWebSocket, 2000);
+
+// Start
+init();
+</script>
+</body>
+</html>
