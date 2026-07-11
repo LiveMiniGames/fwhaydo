@@ -36,7 +36,8 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 /* ── VOTE BAR ── */
 #votebar{
   background:#111;border-bottom:1px solid var(--border);
-  padding:8px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;flex-shrink:0;
+  padding:10px 14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;flex-shrink:0;
+  min-height:68px;
 }
 #v-status{font-size:.7rem;font-weight:800;padding:4px 10px;border-radius:4px;
   background:var(--card);color:var(--muted);border:1px solid var(--border);white-space:nowrap}
@@ -44,10 +45,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 #v-iname{font-size:.78rem;font-weight:700;color:#fff;flex:1;min-width:0;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #v-tallies{display:flex;gap:8px;flex-wrap:wrap}
-.tally{display:flex;align-items:center;gap:5px;background:var(--card);
-  border:1px solid var(--border);border-radius:5px;padding:4px 10px}
-.t-lbl{font-size:1rem;font-weight:900}
-.t-cnt{font-size:.85rem;font-weight:800;color:#fff;min-width:18px;text-align:center}
+.tally{display:flex;align-items:center;gap:8px;background:var(--card);
+  border:2px solid var(--border);border-radius:8px;padding:8px 16px}
+.t-lbl{font-size:1.8rem;font-weight:900;line-height:1}
+.t-cnt{font-size:1.6rem;font-weight:900;color:#fff;min-width:32px;text-align:center;line-height:1}
 .vbtn{padding:6px 14px;font-size:.74rem;font-weight:800;border:none;border-radius:5px;
   cursor:pointer;font-family:inherit;white-space:nowrap}
 .vbtn.green{background:var(--green);color:#000}
@@ -719,9 +720,11 @@ function handleMsg(user,color,msg){
     }
     if(match){
       isV=true;vTier=match;
-      if(document.getElementById('cfg-ov')?.checked)tiers.forEach(t=>votes[t.id]?.delete(user));
+      // Always remove previous vote from all tiers — only latest vote counts
+      tiers.forEach(t=>votes[t.id]?.delete(user));
       votes[match.id].add(user);
-      updateTallyCount(match.id);
+      // Re-render all tallies so removed votes show correctly
+      renderTallies();
     }
   }
   const showV=document.getElementById('cfg-sv')?.checked??true;
