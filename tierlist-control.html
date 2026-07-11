@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tier List Control Panel</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0a0a14;--surface:#13131f;--card:#1a1a2a;--border:#252535;
+  --purple:#9147ff;--purple2:#772ce8;--green:#2dc653;--red:#e63946;
+  --gold:#f4b942;--text:#efeff1;--muted:#8888a0}
+body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;
+  min-height:100vh;padding:24px 16px}
+h1{font-size:1.4rem;font-weight:900;color:var(--purple);margin-bottom:4px}
+.subtitle{font-size:.78rem;color:var(--muted);margin-bottom:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:16px;max-width:1100px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.card-title{font-size:.72rem;font-weight:800;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);padding-bottom:10px;border-bottom:1px solid var(--border)}
+.lbl{font-size:.7rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:4px}
+.inp{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:9px 12px;color:#fff;font-size:.85rem;font-family:inherit;width:100%;outline:none}
+.inp:focus{border-color:var(--purple)}
+textarea.inp{min-height:100px;resize:vertical;font-family:monospace;font-size:.76rem;line-height:1.6}
+.btn{padding:10px 16px;font-size:.82rem;font-weight:800;border:none;border-radius:6px;
+  cursor:pointer;font-family:inherit;transition:all .18s;width:100%;letter-spacing:.5px}
+.btn-purple{background:var(--purple);color:#fff}
+.btn-purple:hover{background:var(--purple2)}
+.btn-green{background:var(--green);color:#000}
+.btn-green:hover{background:#22a84a}
+.btn-red{background:var(--red);color:#fff}
+.btn-red:hover{background:#c0392b}
+.btn-grey{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.btn-grey:hover{color:#fff;border-color:var(--purple)}
+.btn-gold{background:var(--gold);color:#000}
+.status{font-size:.75rem;font-weight:700;padding:8px 12px;border-radius:6px;text-align:center;min-height:34px;display:flex;align-items:center;justify-content:center}
+.status.ok{background:rgba(45,198,83,.15);color:var(--green);border:1px solid rgba(45,198,83,.3)}
+.status.err{background:rgba(230,57,70,.12);color:var(--red);border:1px solid rgba(230,57,70,.3)}
+.status.idle{background:var(--card);color:var(--muted);border:1px solid var(--border)}
+.host-url{background:var(--card);border:1px solid var(--border);border-radius:6px;
+  padding:10px 12px;font-size:.72rem;color:var(--purple);word-break:break-all;cursor:pointer;
+  transition:border-color .18s}
+.host-url:hover{border-color:var(--purple)}
+.host-url b{color:var(--muted);display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:1px;margin-bottom:3px}
+.queue-list{display:flex;flex-direction:column;gap:4px;max-height:200px;overflow-y:auto}
+.q-item{display:flex;align-items:center;gap:8px;padding:6px 8px;background:var(--card);border-radius:5px;border:1px solid var(--border)}
+.q-img{width:36px;height:36px;object-fit:cover;border-radius:4px;flex-shrink:0}
+.q-name{font-size:.74rem;font-weight:700;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.q-del{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;flex-shrink:0;padding:2px 6px}
+.q-del:hover{color:var(--red)}
+.tier-row-cfg{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.tier-row-cfg input[type=color]{width:36px;height:32px;border:none;border-radius:4px;cursor:pointer;padding:2px;background:none}
+.tier-row-cfg input[type=text]{flex:1;background:var(--card);border:1px solid var(--border);border-radius:5px;color:#fff;padding:7px 10px;font-size:.82rem;font-family:inherit;outline:none}
+.tier-row-cfg input[type=text]:focus{border-color:var(--purple)}
+.tier-row-cfg button{background:none;border:none;color:var(--muted);cursor:pointer;font-size:.9rem;padding:4px 8px}
+.tier-row-cfg button:hover{color:var(--red)}
+.tog-row{display:flex;justify-content:space-between;align-items:center;font-size:.78rem}
+.tog{position:relative;display:inline-block;width:36px;height:20px}
+.tog input{opacity:0;width:0;height:0}
+.tog-sl{position:absolute;cursor:pointer;inset:0;background:#333;border-radius:20px;transition:.3s}
+.tog-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+input:checked+.tog-sl{background:var(--purple)}
+input:checked+.tog-sl:before{transform:translateX(16px)}
+hr{border:none;border-top:1px solid var(--border)}
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<h1>🎛 Tier List Control Panel</h1>
+<div class="subtitle">Configure everything here. The host page is plug-and-play — no setup needed.</div>
+
+<div class="grid">
+
+  <!-- HOST URL -->
+  <div class="card">
+    <div class="card-title">Host URL</div>
+    <div class="host-url" onclick="copyHostUrl()" id="host-url-box">
+      <b>Click to copy — share this with Haydo / add to OBS</b>
+      <span id="host-url-text">Save settings first to generate URL</span>
+    </div>
+    <button class="btn btn-purple" onclick="openHostPage()">🔗 Open Host Page</button>
+  </div>
+
+  <!-- TWITCH -->
+  <div class="card">
+    <div class="card-title">Twitch Connection</div>
+    <div><div class="lbl">Channel Name</div>
+    <input class="inp" id="cfg-twitch" type="text" placeholder="fwhaydo"/></div>
+    <button class="btn btn-purple" onclick="saveAll()">💾 Save Settings</button>
+    <div class="status idle" id="twitch-status">Not saved yet</div>
+  </div>
+
+  <!-- JSONBIN -->
+  <div class="card">
+    <div class="card-title">JSONBin — Discord Image Queue</div>
+    <div><div class="lbl">Bin ID</div>
+    <input class="inp" id="cfg-bin-id" type="text" placeholder="6a52807af5f4af5e29819d83"/></div>
+    <div><div class="lbl">Master Key</div>
+    <input class="inp" id="cfg-bin-key" type="password" placeholder="$2b$10$..."/></div>
+    <button class="btn btn-green" onclick="loadQueue()">🔄 Load Queued Images → Host</button>
+    <button class="btn btn-red" onclick="clearQueue()">🗑 Clear Queue</button>
+    <div class="status idle" id="bin-status">Not connected</div>
+  </div>
+
+  <!-- QUEUE PREVIEW -->
+  <div class="card">
+    <div class="card-title">Current Queue <span id="q-count" style="color:var(--purple)">0 images</span></div>
+    <div class="queue-list" id="queue-preview">
+      <div style="font-size:.74rem;color:var(--muted);text-align:center;padding:12px">Queue is empty</div>
+    </div>
+    <button class="btn btn-grey" onclick="refreshQueuePreview()">↻ Refresh Preview</button>
+  </div>
+
+  <!-- TIERS CONFIG -->
+  <div class="card">
+    <div class="card-title">Tier Configuration</div>
+    <div id="tier-cfg-list"></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-grey" onclick="addTierCfg()" style="flex:1">+ Add Tier</button>
+      <button class="btn btn-purple" onclick="saveTiers()" style="flex:1">💾 Save Tiers</button>
+    </div>
+    <div class="status idle" id="tier-status">Not saved</div>
+  </div>
+
+  <!-- VOTE SETTINGS -->
+  <div class="card">
+    <div class="card-title">Vote Settings</div>
+    <div class="tog-row">
+      <span>Show votes in chat log</span>
+      <label class="tog"><input type="checkbox" id="cfg-sv" checked/><span class="tog-sl"></span></label>
+    </div>
+    <hr/>
+    <div class="tog-row">
+      <span>One vote per viewer</span>
+      <label class="tog"><input type="checkbox" id="cfg-ov" checked/><span class="tog-sl"></span></label>
+    </div>
+    <hr/>
+    <div><div class="lbl">Tier List Title</div>
+    <input class="inp" id="cfg-title" type="text" value="INTERACTIVE TIER LIST"/></div>
+    <button class="btn btn-purple" onclick="saveAll()">💾 Save Settings</button>
+  </div>
+
+  <!-- BULK ADD -->
+  <div class="card">
+    <div class="card-title">Bulk Add Images to Queue</div>
+    <div style="font-size:.7rem;color:var(--muted);line-height:1.6">
+      One URL per line. Add <code style="color:var(--purple)">, Label</code> after URL to name it.
+    </div>
+    <textarea class="inp" id="bulk-input" placeholder="https://i.imgur.com/abc.jpg, Room 1&#10;https://i.imgur.com/def.jpg, Room 2"></textarea>
+    <button class="btn btn-green" onclick="bulkAddToQueue()">📋 Add to JSONBin Queue</button>
+    <div class="status idle" id="bulk-status">Ready</div>
+  </div>
+
+  <!-- ABLY -->
+  <div class="card">
+    <div class="card-title">Ably API Key (Real-time Sync)</div>
+    <div style="font-size:.7rem;color:var(--muted);line-height:1.6">
+      Used to sync the queue between control panel and host page in real time.
+    </div>
+    <div><div class="lbl">Ably Key</div>
+    <input class="inp" id="cfg-ably" type="text" placeholder="IPJIJg.DKgG0Q:D9MT68Ii7IXk2jXiSzc2HoPTYVMeREpJ7__8_uY53qY"/></div>
+    <button class="btn btn-purple" onclick="saveAll()">💾 Save All Settings</button>
+    <div class="status idle" id="save-status">Not saved</div>
+  </div>
+
+</div>
+
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
+<script>
+// ── LOAD SAVED CONFIG ────────────────────────────────────────────
+function loadSaved(){
+  const s = getSaved();
+  document.getElementById('cfg-twitch').value  = s.twitch  || '';
+  document.getElementById('cfg-bin-id').value  = s.binId   || '';
+  document.getElementById('cfg-bin-key').value = s.binKey  || '';
+  document.getElementById('cfg-ably').value    = s.ablyKey || '';
+  document.getElementById('cfg-title').value   = s.title   || 'INTERACTIVE TIER LIST';
+  document.getElementById('cfg-sv').checked    = s.sv !== false;
+  document.getElementById('cfg-ov').checked    = s.ov !== false;
+  renderTierCfg(s.tiers || defaultTiers());
+  updateHostUrl(s);
+}
+
+function getSaved(){
+  try{ return JSON.parse(localStorage.getItem('tl-ctrl'))||{}; }
+  catch(e){ return {}; }
+}
+
+function defaultTiers(){
+  return [
+    {id:'S',label:'S',color:'#FF7F7F'},
+    {id:'A',label:'A',color:'#FFBF7F'},
+    {id:'B',label:'B',color:'#FFDF80'},
+    {id:'C',label:'C',color:'#FFFF7F'},
+    {id:'D',label:'D',color:'#BFFF7F'},
+    {id:'F',label:'F',color:'#8080FF'},
+  ];
+}
+
+// ── SAVE ALL ─────────────────────────────────────────────────────
+function saveAll(){
+  const cfg = {
+    twitch:  document.getElementById('cfg-twitch').value.trim().toLowerCase(),
+    binId:   document.getElementById('cfg-bin-id').value.trim(),
+    binKey:  document.getElementById('cfg-bin-key').value.trim(),
+    ablyKey: document.getElementById('cfg-ably').value.trim(),
+    title:   document.getElementById('cfg-title').value.trim() || 'INTERACTIVE TIER LIST',
+    sv:      document.getElementById('cfg-sv').checked,
+    ov:      document.getElementById('cfg-ov').checked,
+    tiers:   getTierCfg(),
+  };
+  localStorage.setItem('tl-ctrl', JSON.stringify(cfg));
+  updateHostUrl(cfg);
+  setStatus('save-status','✅ All settings saved!','ok');
+  setStatus('twitch-status','✅ Twitch: '+cfg.twitch,'ok');
+  // Broadcast to host page via Ably
+  if(cfg.ablyKey) broadcastConfig(cfg);
+}
+
+function updateHostUrl(cfg){
+  const base = location.origin + location.pathname.replace('tierlist-control','tierlist-host');
+  const key  = encodeURIComponent(cfg.ablyKey||'');
+  const url  = base + '?key=' + key;
+  document.getElementById('host-url-text').textContent = url;
+}
+
+function copyHostUrl(){
+  const txt = document.getElementById('host-url-text').textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    document.getElementById('host-url-box').querySelector('b').textContent='✅ Copied!';
+    setTimeout(()=>{document.getElementById('host-url-box').querySelector('b').textContent='Click to copy — share this with Haydo / add to OBS';},2000);
+  });
+}
+
+function openHostPage(){
+  const txt = document.getElementById('host-url-text').textContent;
+  window.open(txt,'_blank');
+}
+
+// ── TIERS ────────────────────────────────────────────────────────
+let tiersCfg = [];
+
+function renderTierCfg(tiers){
+  tiersCfg = tiers || getTierCfg();
+  const el = document.getElementById('tier-cfg-list');
+  el.innerHTML='';
+  tiersCfg.forEach((t,i)=>{
+    const row=document.createElement('div'); row.className='tier-row-cfg';
+    row.innerHTML=`<input type="color" value="${t.color}" oninput="tiersCfg[${i}].color=this.value"/>
+      <input type="text" value="${esc(t.label)}" placeholder="Label" oninput="tiersCfg[${i}].label=this.value;tiersCfg[${i}].id=this.value"/>
+      <button onclick="removeTierCfg(${i})">✕</button>`;
+    el.appendChild(row);
+  });
+}
+
+function getTierCfg(){
+  return [...tiersCfg];
+}
+
+function addTierCfg(){
+  tiersCfg.push({id:'NEW',label:'NEW',color:'#888888'});
+  renderTierCfg(tiersCfg);
+}
+
+function removeTierCfg(i){
+  tiersCfg.splice(i,1);
+  renderTierCfg(tiersCfg);
+}
+
+function saveTiers(){
+  const s = getSaved();
+  s.tiers = getTierCfg();
+  localStorage.setItem('tl-ctrl', JSON.stringify(s));
+  setStatus('tier-status','✅ Tiers saved!','ok');
+  const cfg = getSaved();
+  if(cfg.ablyKey) broadcastConfig(cfg);
+}
+
+// ── JSONBIN ──────────────────────────────────────────────────────
+function getBinCfg(){
+  return {
+    binId: document.getElementById('cfg-bin-id').value.trim() || getSaved().binId || '',
+    key:   document.getElementById('cfg-bin-key').value.trim() || getSaved().binKey || '',
+  };
+}
+
+async function loadQueue(){
+  const {binId,key}=getBinCfg();
+  if(!binId||!key){setStatus('bin-status','Enter Bin ID and Master Key first','err');return;}
+  setStatus('bin-status','Loading...','idle');
+  try{
+    const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
+    const data=await res.json();
+    const q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
+    if(!q.length){setStatus('bin-status','Queue is empty','idle');return;}
+    // Broadcast to host page
+    const cfg=getSaved();
+    if(cfg.ablyKey){
+      const ab=new Ably.Realtime({key:cfg.ablyKey});
+      ab.connection.on('connected',()=>{
+        const ch=ab.channels.get('tierlist-host');
+        ch.publish('load-queue',{queue:q});
+        setTimeout(()=>ab.close(),2000);
+      });
+    }
+    setStatus('bin-status','✅ Sent '+q.length+' images to host page','ok');
+    renderQueuePreview(q);
+  }catch(e){setStatus('bin-status','Error: '+e.message,'err');}
+}
+
+async function clearQueue(){
+  const {binId,key}=getBinCfg();
+  if(!binId||!key){setStatus('bin-status','Enter Bin ID and Master Key first','err');return;}
+  if(!confirm('Clear all queued images from JSONBin?'))return;
+  try{
+    await fetch('https://api.jsonbin.io/v3/b/'+binId,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json','X-Master-Key':key},
+      body:JSON.stringify({queue:[]})
+    });
+    setStatus('bin-status','✅ Queue cleared','ok');
+    renderQueuePreview([]);
+  }catch(e){setStatus('bin-status','Error: '+e.message,'err');}
+}
+
+async function refreshQueuePreview(){
+  const {binId,key}=getBinCfg();
+  if(!binId||!key){setStatus('bin-status','Enter Bin ID and Key','err');return;}
+  try{
+    const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
+    const data=await res.json();
+    const q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
+    renderQueuePreview(q);
+  }catch(e){}
+}
+
+function renderQueuePreview(queue){
+  const el=document.getElementById('queue-preview');
+  document.getElementById('q-count').textContent=queue.length+' image'+(queue.length!==1?'s':'');
+  if(!queue.length){el.innerHTML='<div style="font-size:.74rem;color:var(--muted);text-align:center;padding:12px">Queue is empty</div>';return;}
+  el.innerHTML='';
+  queue.forEach((item,i)=>{
+    const div=document.createElement('div'); div.className='q-item';
+    div.innerHTML=`<img class="q-img" src="${esc(item.url)}" onerror="this.style.display='none'"/>
+      <span class="q-name">${esc(item.name||'Image '+(i+1))}</span>
+      <button class="q-del" onclick="removeQueueItem(${i})">✕</button>`;
+    el.appendChild(div);
+  });
+}
+
+let _queueCache=[];
+async function removeQueueItem(idx){
+  const {binId,key}=getBinCfg();
+  if(!binId||!key)return;
+  try{
+    const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
+    const data=await res.json();
+    let q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
+    q.splice(idx,1);
+    await fetch('https://api.jsonbin.io/v3/b/'+binId,{
+      method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key},
+      body:JSON.stringify({queue:q})
+    });
+    renderQueuePreview(q);
+  }catch(e){}
+}
+
+async function bulkAddToQueue(){
+  const {binId,key}=getBinCfg();
+  if(!binId||!key){setStatus('bulk-status','Enter Bin ID and Key first','err');return;}
+  const raw=document.getElementById('bulk-input').value.trim();
+  if(!raw){setStatus('bulk-status','Paste some URLs first','err');return;}
+  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('http'));
+  if(!lines.length){setStatus('bulk-status','No valid URLs found','err');return;}
+  setStatus('bulk-status','Saving...','idle');
+  try{
+    const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
+    const data=await res.json();
+    let q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
+    lines.forEach((line,i)=>{
+      const ci=line.indexOf(',');
+      let url=line,name='Image '+(q.length+i+1);
+      if(ci>-1){url=line.slice(0,ci).trim();name=line.slice(ci+1).trim();}
+      q.push({url,name,ts:Date.now()});
+    });
+    await fetch('https://api.jsonbin.io/v3/b/'+binId,{
+      method:'PUT',headers:{'Content-Type':'application/json','X-Master-Key':key},
+      body:JSON.stringify({queue:q})
+    });
+    document.getElementById('bulk-input').value='';
+    setStatus('bulk-status','✅ Added '+lines.length+' images','ok');
+    renderQueuePreview(q);
+  }catch(e){setStatus('bulk-status','Error: '+e.message,'err');}
+}
+
+// ── ABLY BROADCAST ───────────────────────────────────────────────
+function broadcastConfig(cfg){
+  try{
+    const ab=new Ably.Realtime({key:cfg.ablyKey});
+    ab.connection.on('connected',()=>{
+      const ch=ab.channels.get('tierlist-host');
+      ch.publish('config',{
+        twitch: cfg.twitch,
+        title:  cfg.title,
+        tiers:  cfg.tiers || defaultTiers(),
+        sv:     cfg.sv,
+        ov:     cfg.ov,
+      });
+      setTimeout(()=>ab.close(),2000);
+    });
+  }catch(e){}
+}
+
+// ── UTILS ────────────────────────────────────────────────────────
+function setStatus(id,msg,type){
+  const el=document.getElementById(id);
+  el.textContent=msg;
+  el.className='status '+type;
+}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+loadSaved();
+setTimeout(refreshQueuePreview, 500);
+</script>
+</body>
+</html>

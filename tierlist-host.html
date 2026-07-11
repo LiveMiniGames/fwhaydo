@@ -2,10 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FwHaydo — Stream Tools</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Tier List — Host</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
+
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -257,453 +258,14 @@ footer a{color:var(--purple);text-decoration:none}
 #toast.red{border-color:var(--red);color:var(--red)}
 ::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:#0e0e16}::-webkit-scrollbar-thumb{background:#2a2a3a;border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--purple)}
 .sortable-ghost{opacity:.25}.sortable-chosen{cursor:grabbing!important;z-index:10}
+
+/* Override body for full screen host view */
+body{margin:0;padding:0;background:#0a0a14;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+#page-tierlist{display:flex!important;flex-direction:column;height:100vh}
 </style>
 </head>
 <body>
 
-<!-- ═══════════════════════════════════
-     HOME PAGE
-═══════════════════════════════════ -->
-<div id="page-home" class="page active">
-  <nav>
-    <span class="nav-logo" onclick="goHome()">FwHaydo<span>.</span></span>
-    <div class="nav-links">
-      <button onclick="document.getElementById('sec-tools').scrollIntoView({behavior:'smooth'})">Tools</button>
-    </div>
-    <a class="nav-twitch" href="https://twitch.tv/FwHaydo" target="_blank">
-      <svg style="width:14px;height:14px;fill:#fff" viewBox="0 0 24 24"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714z"/></svg>
-      Follow on Twitch
-    </a>
-  </nav>
-
-  <div class="hero">
-    <div class="hero-badge">Free Stream Tools</div>
-    <h1>Tools built for<br><span>FwHaydo's stream</span></h1>
-    <p>Interactive stream tools and games with Twitch chat integration. Free, no ads, no BS.</p>
-    <div class="hero-pills">
-      <div class="pill"><span class="dot"></span>Twitch Chat Integrated</div>
-      <div class="pill"><span class="dot"></span>Discord Connected</div>
-      <div class="pill"><span class="dot"></span>Free Forever</div>
-    </div>
-  </div>
-
-  <div class="section" id="sec-tools">
-    <div class="sec-header">
-      <h2>🛠 Stream Tools</h2>
-      <span class="sec-count">26 tools</span>
-    </div>
-    <div class="game-grid">
-
-      <div class="game-card" onclick="showTierList()">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0533,#2d1060)">🏆</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-discord">Discord</span>
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">INTERACTIVE TIER LIST</div>
-          <div class="card-desc">Viewers submit room photos in Discord. Chat votes to rank them live on a fully customizable tier list. You control when voting opens and closes — nothing ever auto-places.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();showTierList()">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='wordhunt.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a2e,#0e2e4a)">🔎</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">INTERACTIVE CONTEXTO</div>
-          <div class="card-desc">Unlimited-round Contexto-style word game. Chat guesses words live and gets ranked by AI semantic similarity — closest meaning wins. Pick a word yourself or randomize it, even from you.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='wordhunt.html'">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='codle.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2e1a0a,#4a2e0e)">🔢</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">CODLE</div>
-          <div class="card-desc">Wordle, but with numbers. Classic mode (5 digits, 6 guesses), a fully custom mode (3-8 digits, 4-8 guesses), or set your own secret code and send a challenge link to a friend.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='codle.html'">Open Tool →</button>
-            <span class="card-players">👤 Solo or challenge a friend</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='quizlive.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2e0a1a,#4a0e2e)">🧠</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">INTERACTIVE KAHOOT</div>
-          <div class="card-desc">Kahoot-style trivia, but chat answers right in Twitch chat with A/B/C/D — no separate app, so chat never goes dead. Viewers type !join to enter the lobby, then compete on a live speed-based leaderboard with a top-3 podium finale.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='quizlive.html'">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='bracket-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2e0e4a)">🥊</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">BRACKET ROYALE</div>
-          <div class="card-desc">Viewers log in with Twitch and submit text, images, or TikTok/YouTube Shorts links — then it's a 1v1 elimination bracket with chat voting 1 or 2 until one champion remains. Fully customizable bracket size and submission limits.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bracket-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='two-truths-lie.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2e0a2e,#4a0e4a)">🎭</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">2 TRUTHS AND A LIE</div>
-          <div class="card-desc">Type 3 statements live or paste a whole batch ahead of time. Chat votes 1, 2, or 3 in chat for which one's the lie. Live vote bars, points leaderboard, reveal whenever you're ready.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='two-truths-lie.html'">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='coin-flip.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🪙</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">HAYDO COIN FLIP</div>
-          <div class="card-desc">A fully custom coin flip built for FwHaydo. Upload your face for Heads and the FW logo for Tails — they get engraved onto a 3D spinning coin. Tracks heads/tails counts, streaks, and flip history.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='coin-flip.html'">Open Tool →</button>
-            <span class="card-players">👤 Streamer controls</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='higher-lower.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a2010,#0e3a1a)">🃏</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HIGHER OR LOWER</div>
-          <div class="card-desc">An 8-deck card shoe shuffled like a real casino. Guess whether the next card is higher or lower than the current one. Odds update live so you always know the probability before guessing. Green/red streak tracker, full history strip.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='higher-lower.html'">Open Tool →</button>
-            <span class="card-players">👤 Streamer controls</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='familyfeud.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🎮</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">FAMILY FEUD</div>
-          <div class="card-desc">Paste your questions and answers before the game. Chat types answers freely — fuzzy matching handles typos and alternate phrasings. First person to get each answer earns the points. Live leaderboard tracks scores across all questions.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='familyfeud.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='wur-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#3b0764,#6b21a8)">🤔</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">WOULD U RATHER</div>
-          <div class="card-desc">Three modes: viewers submit their own Would U Rathers for approval, bulk paste your own list, or random pick. Chat votes 1 or 2. Live vote bars on the overlay update in real time.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='wur-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat votes</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='bingo-host.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🎱</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">INTERACTIVE BINGO</div>
-          <div class="card-desc">Fully customizable bingo cards for any stream segment. Fill in all 24 squares yourself, pick a mode (Standard, Blackout, Four Corners, X Pattern, T Shape), share the viewer link, and mark squares live. Auto-detects bingo — no trolling possible.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingo-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydolife.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a2a,#1a1060)">🎮</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDOLIFE</div>
-          <div class="card-desc">A BitLife-style streaming simulator where you play as Haydo. Start with 0 viewers and grind your way up. Make decisions that affect your viewer count, energy, Twitch followers, and TikTok. Haydo moves around his actual room based on your choices.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydolife.html'">Play →</button>
-            <span class="card-players">🎮 Single player</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-surfer.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#1a0a3a)">🏃</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO SURFER</div>
-          <div class="card-desc">Infinite runner starring Haydo. Dodge thrown controllers, big L's, lag spikes, chat messages and cops. Collect Twitch followers as coins. Viewer count climbs the further you run. Arrow keys or swipe to move. Space to jump.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-surfer.html'">Play →</button>
-            <span class="card-players">🎮 Single player</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-corn-maze.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0f1c08,#2f5c1c)">🌽</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S CORN MAZE</div>
-          <div class="card-desc">Chat types !join to drop into a shared corn maze together. Move with up/down/left/right or !up/!down/!left/!right (both work so non-mods can dodge Twitch's repeat-message block). Everyone starts in the same spot — first one to find the exit wins. A brand new maze generates automatically every round, so nobody can just memorize the route.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-corn-maze.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-dodgeball.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1206,#ff5b3d)">🏐</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S DODGEBALL</div>
-          <div class="card-desc">Chat types !join during the lobby to get in — locked once the round starts. Dodgeballs telegraph before launching down a row or column, and chat dodges with up/down/left/right (or !up/u/!u, etc). Starts slow and gets faster the longer it goes. Last one standing wins; host starts the next round from the lobby.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-dodgeball.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-infection.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a0f,#39ff6a)">🧟</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S INFECTION</div>
-          <div class="card-desc">Chat types !join during the lobby — one random player starts infected. Move with up/down/left/right (or !up/u/!u, etc) across a huge shared grid. Land on an infected player's square and you turn too, and can spread it further. Survivors win if anyone's left uninfected when the 5-minute timer runs out; if everyone turns first, the infection wins outright.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-infection.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hangman.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">💀</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HANGMAN</div>
-          <div class="card-desc">You privately set a secret word (masked entry, never shown on screen) and a timer. Chat guesses by typing single letters — every cycle, whichever unguessed letter was typed by the most different people gets locked in, not just whoever spammed it most. Classic hangman rules: 6 wrong guesses and it's over. Word only reveals when the round ends.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hangman.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-economy.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1f0a,#2ecc71)">💰</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S ECONOMY</div>
-          <div class="card-desc">Persistent Discord-style economy, but for Twitch chat — no !join needed, anyone gets auto-registered on their first command. !balance, !collect (daily), !work, !gamble &lt;amt&gt;, and !buy houses/cars that show up on a live leaderboard and shop overlay. Progress saves permanently. You can play too, right in your own chat.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-economy.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='realvsai-builder.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a2a,#3fe6ff)">🖼️</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">REAL VS AI — BUILDER</div>
-          <div class="card-desc">Producer-only prep tool for the Real vs AI segment. Upload images straight from your PC or phone (or paste URLs), tag each one Real or AI, put them in order, then generate one link with the whole set baked in. Send that generated link to Haydo — this builder page itself is just for you.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='realvsai-builder.html'">Open Tool →</button>
-            <span class="card-players">🛠️ Producer tool only</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hungergames.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a0a,#ff5b3d)">🏆</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HUNGER GAMES</div>
-          <div class="card-desc">Chat types !join to enter the arena, then the host starts it and the whole thing simulates itself — narrated day-by-day with real text-to-speech, random survival events, alliances, and eliminations, scaling automatically whether 6 or 60 people join. Chat's one lever: !sponsor username sends a protective care package that can save someone from elimination. Last one standing wins.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hungergames.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='songtransitions-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#000000,#1DB954)">🎧</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">SONG TRANSITIONS</div>
-          <div class="card-desc">Viewers log in with Twitch and submit two songs — the outro of the first blends right into the intro of the second, live on stream. This page has a copy-link button for the viewer submission page, and shows the current transition with a Next button to move through the queue. A separate control page (linked here) lets you delete any submission.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='songtransitions-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='googleform-control.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a2a,#673ab7)">📋</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">INTERACTIVE FORM BUILDER</div>
-          <div class="card-desc">A fully customizable, chat-interactive form styled after Google Forms — drag questions, header, and images anywhere, pick from 6 font styles, set a custom background. Viewers submit anonymously (no login, unlimited responses) through their own link. Built-in Twitch chat voting modes: Agree/Disagree, Yes/No, live 1-10 average, or your own custom keyword list. This is the control panel — it also links out to the host display and viewer submission pages.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='googleform-control.html'">Open Tool →</button>
-            <span class="card-players">🛠️ Producer tool + chat votes</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-wordcloud.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a12,#3fe6ff)">☁️</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">LIVE WORD CLOUD</div>
-          <div class="card-desc">Ask chat any open-ended question — "one word to describe tonight's stream," anything — and they just answer normally in Twitch chat. The more people say the same word, the bigger it grows on screen in real time. Change the prompt anytime for a fresh round. Works for literally any open-ended prompt, no setup required each time.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-wordcloud.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hottakes.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1408,#ff5b3d)">🔥</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HOT TAKES</div>
-          <div class="card-desc">Privately load in a list of hot takes before going live, then go through them one at a time on stream. Chat votes Agree or Disagree by typing normally in chat, with a live split meter showing the real-time result. Click Next Round to reveal the next take and reset the meter for a fresh vote.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hottakes.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-passwordgauntlet.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a12,#2ecc71)">🔐</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">PASSWORD GAUNTLET</div>
-          <div class="card-desc">Chat types !join, then everyone builds their own password live with !password yourAttempt. A new rule gets added every round, stacking on top of every rule before it — must be 8+ characters, then must contain a number, then the digits must add up to 20, and it keeps escalating. Anyone whose password stops working when the timer runs out gets eliminated. Last one standing wins.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-passwordgauntlet.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='bingocard-control.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">🎯</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">CUSTOM BINGO CARD (OBS SOURCE)</div>
-          <div class="card-desc">A 5x5 bingo card built specifically as an OBS Browser Source — the source itself shows only the card on a transparent background, nothing else. Fully editable title and all 25 squares, click any square to mark it live, and a one-click toggle to show or hide the card on stream whenever you want. This is the control panel; it also generates the exact Browser Source link to paste into OBS.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingocard-control.html'">Open Tool →</button>
-            <span class="card-players">🛠️ Producer tool only</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='tierlist-control.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#2d1b69)">🎛</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">TIER LIST — CONTROL PANEL</div>
-          <div class="card-desc">Configure everything once — Twitch channel, JSONBin queue, tier names, vote settings. The host page is fully plug-and-play after setup. Load/clear the Discord image queue from here too.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='tierlist-control.html'">Open Panel →</button>
-            <span class="card-players">🛠️ Producer only</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='tierlist-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🏆</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">TIER LIST — HOST PAGE</div>
-          <div class="card-desc">The exact same tier list Haydo has always used — drag images into tiers, open/close voting, place by chat vote, skip, zoom. Auto-connects to Twitch and loads config set in the control panel. No setup needed.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='tierlist-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card soon">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a1a,#141428)">🎮</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-soon">Coming Soon</span></div>
-          <div class="card-title">MORE TOOLS</div>
-          <div class="card-desc">New tools drop here as they get built.</div>
-          <div class="card-action"><span style="font-size:.75rem;color:var(--muted)">In development</span></div>
-        </div>
-      </div>
-
-    </div>
-  </div>
-
-  <footer>
-    <p>© 2026 FwHaydo &nbsp;·&nbsp; <a href="https://twitch.tv/FwHaydo" target="_blank">Twitch</a></p>
-  </footer>
-</div>
-
-<!-- ═══════════════════════════════════
-     TIER LIST PAGE
-═══════════════════════════════════ -->
 <div id="page-tierlist" class="page">
 
   <div id="tl-topbar">
@@ -815,6 +377,8 @@ footer a{color:var(--purple);text-decoration:none}
 
 
 
+
+
 <!-- Spotlight (floating zoom panel) -->
 <div id="spotlight">
   <div id="sp-handle">
@@ -845,26 +409,16 @@ footer a{color:var(--purple);text-decoration:none}
 
 <div id="toast"></div>
 
+<script src="https://cdn.ably.com/lib/ably.min-2.js"></script>
 <script>
 // ═══════════════════════════════════════
-//  PAGE ROUTING
+//  AUTO-CONFIG VIA ABLY KEY IN URL
 // ═══════════════════════════════════════
-let tlInited = false;
-
-function goHome() {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-home').classList.add('active');
-  window.scrollTo(0,0);
-}
-
-function showTierList() {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-tierlist').classList.add('active');
-  if (!tlInited) { tlInit(); tlInited = true; }
-}
+const ABLY_KEY = new URLSearchParams(location.search).get('key') || '';
+let ablyClient, hostChannel;
 
 // ═══════════════════════════════════════
-//  TIER LIST STATE
+//  TIER LIST STATE (same as original)
 // ═══════════════════════════════════════
 let tiers = [
   {id:'S',label:'S',color:'#FF7F7F'},
@@ -883,6 +437,68 @@ function tlInit() {
   renderTiers();
   updateQCnt();
   initPusher();
+  if(ABLY_KEY) initAbly();
+}
+
+// ═══════════════════════════════════════
+//  ABLY — receive config + queue from control panel
+// ═══════════════════════════════════════
+function initAbly(){
+  ablyClient = new Ably.Realtime({key: ABLY_KEY});
+  ablyClient.connection.on('connected',()=>{
+    hostChannel = ablyClient.channels.get('tierlist-host');
+
+    // Receive config from control panel
+    hostChannel.subscribe('config', msg=>{
+      const d = msg.data;
+      if(d.twitch){
+        document.getElementById('cfg-ch').value = d.twitch;
+        tlConnect();
+      }
+      if(d.title){
+        document.getElementById('cfg-title').value = d.title;
+        document.getElementById('tl-heading').textContent = d.title;
+        document.getElementById('tl-name').textContent = '\u{1F3C6} ' + d.title;
+      }
+      if(d.tiers){ tiers = d.tiers; renderTiers(); renderTierCfg(); }
+      if(d.sv !== undefined) document.getElementById('cfg-sv').checked = d.sv;
+      if(d.ov !== undefined) document.getElementById('cfg-ov').checked = d.ov;
+      toast('Config received from control panel','green');
+    });
+
+    // Receive queue from control panel
+    hostChannel.subscribe('load-queue', msg=>{
+      const q = msg.data.queue || [];
+      q.forEach(item=>{
+        addToQSilent(item.url, item.name || 'Discord', item.msgId || null);
+      });
+      renderQ();
+      toast('Loaded ' + q.length + ' images from queue','green');
+    });
+
+    // Request config on connect
+    hostChannel.publish('host-ready',{ts: Date.now()});
+    setDot('connected','Synced with Control Panel');
+  });
+
+  // Auto-connect Twitch if saved
+  const saved = localStorage.getItem('tl-ctrl');
+  if(saved){
+    try{
+      const cfg = JSON.parse(saved);
+      if(cfg.twitch){
+        document.getElementById('cfg-ch').value = cfg.twitch;
+        setTimeout(tlConnect, 1000);
+      }
+      if(cfg.title){
+        document.getElementById('cfg-title').value = cfg.title;
+        document.getElementById('tl-heading').textContent = cfg.title;
+      }
+      if(cfg.tiers){ tiers = cfg.tiers; renderTiers(); renderTierCfg(); }
+      if(cfg.sv !== undefined) document.getElementById('cfg-sv').checked = cfg.sv;
+      if(cfg.ov !== undefined) document.getElementById('cfg-ov').checked = cfg.ov;
+    }catch(e){}
+  }
 }
 
 // ═══════════════════════════════════════
@@ -1471,6 +1087,8 @@ function editTierLabel(tierId){
   });
 }
 
+
+
 // ═══════════════════════════════════════
 //  PUSHER (Discord bridge)
 // ═══════════════════════════════════════
@@ -1493,6 +1111,8 @@ function initPusher(){
   };
   document.head.appendChild(script);
 }
+
+
 
 // ═══════════════════════════════════════
 //  SAVE / LOAD
@@ -1520,41 +1140,59 @@ function tlLoad(e){
   r.readAsText(file);e.target.value='';
 }
 
+
+
+
+
 // ═══════════════════════════════════════
-//  MODAL / TABS / UTILS
+//  TIER CONFIG
 // ═══════════════════════════════════════
-function openModal(title,def,cb){
-  document.getElementById('modal-t').textContent=title;
-  document.getElementById('modal-in').value=def||'';
-  modalCb=cb;
-  document.getElementById('modal-ov').classList.add('active');
-  setTimeout(()=>document.getElementById('modal-in').focus(),50);
-}
-function closeModal(){document.getElementById('modal-ov').classList.remove('active');modalCb=null;}
-function confirmModal(){const v=document.getElementById('modal-in').value.trim();if(v&&modalCb)modalCb(v);closeModal();}
-document.getElementById('modal-in').addEventListener('keydown',e=>{if(e.key==='Enter')confirmModal();if(e.key==='Escape')closeModal();});
-document.getElementById('modal-ov').addEventListener('click',e=>{if(e.target===document.getElementById('modal-ov'))closeModal();});
-
-function showSbTab(name){
-  const names=['chat','add','config'];
-  document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('sb-'+name)?.classList.add('active');
+function renderTierCfg(){
+  const list=document.getElementById('tier-cfg');
+  list.innerHTML='';
+  tiers.forEach((tier,i)=>{
+    const row=document.createElement('div'); row.className='tcr';
+    row.innerHTML=`<input type="color" value="${tier.color}" onchange="tiers[${i}].color=this.value"/>
+      <input type="text" value="${tier.label}" placeholder="Label" onchange="tiers[${i}].label=this.value;tiers[${i}].id=this.value"/>
+      <button class="rm" onclick="removeTierRow(${i})">✕</button>`;
+    list.appendChild(row);
+  });
 }
 
-function sh(id){document.getElementById(id).style.display='';}
-function hd(id){document.getElementById(id).style.display='none';}
+function addTierRow(){tiers.push({id:'NEW'+Date.now(),label:'NEW',color:'#888888'});renderTierCfg();}
 
-let toastT=null;
-function toast(msg,type=''){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.className='show'+(type?' '+type:'');
-  clearTimeout(toastT);toastT=setTimeout(()=>{el.className='';},2800);
+function removeTierRow(i){
+  const tid=tiers[i].id;
+  Object.values(items).forEach(item=>{if(item.tier===tid){item.tier=null;if(!queue.includes(item.id))queue.push(item.id);}});
+  tiers.splice(i,1);renderTierCfg();renderTiers();renderQ();
 }
 
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function applyTiers(){
+  renderTierCfg();renderTiers();
+  const qel=document.getElementById('queue');qel.innerHTML='';
+  queue.forEach(id=>{const el=mkItem(items[id],true);if(id===curVote)el.classList.add('av');qel.appendChild(el);});
+  updateQCnt();toast('Tiers updated!','green');
+}
 
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeModal();}});
+function editTierLabel(tierId){
+  const tier=tiers.find(t=>t.id===tierId); if(!tier) return;
+  openModal('Rename Tier',tier.label,val=>{
+    const old=tier.id; tier.label=val; tier.id=val;
+    const lt=document.getElementById('lt-'+old);
+    if(lt){lt.textContent=val;lt.id='lt-'+val;}
+    const row=document.getElementById('row-'+old);if(row)row.id='row-'+val;
+    const ti=document.getElementById('ti-'+old);if(ti){ti.id='ti-'+val;ti.dataset.tid=val;}
+    Object.values(items).forEach(item=>{if(item.tier===old)item.tier=val;});
+    if(votes[old]){votes[val]=votes[old];delete votes[old];}
+    renderTierCfg();renderTallies();
+  });
+}
+
+
+
+// Page ready
+function goHome(){ window.location.href='FwHaydo.html'; }
+tlInit();
 </script>
 </body>
 </html>
