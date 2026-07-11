@@ -118,7 +118,7 @@ footer a{color:var(--purple);text-decoration:none}
 #v-status.closed{color:var(--red)}
 #v-iname{flex:1;font-size:.85rem;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 #v-iname strong{color:#fff}
-#v-tallies{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:center;width:100%}
+#v-tallies{display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:flex-start;width:100%;margin-top:6px}
 .tally{display:flex;align-items:center;gap:8px;background:var(--card);border:2px solid var(--border);
   border-radius:10px;padding:12px 24px;min-width:90px;justify-content:center}
 .t-lbl{font-weight:900;font-size:2.2rem;line-height:1}
@@ -154,13 +154,16 @@ footer a{color:var(--purple);text-decoration:none}
   padding:8px;z-index:100;min-width:80px;box-shadow:0 4px 20px rgba(0,0,0,.6);white-space:nowrap}
 .iov::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
   border:6px solid transparent;border-top-color:#1a1a2e}
-.tier-item.menu-open .iov{display:flex}
+.tier-item .iov{display:none;position:absolute;top:2px;right:2px;flex-direction:column;gap:2px;z-index:5}
+.tier-item:hover .iov{display:flex}
 .iov button{background:none;border:1px solid rgba(255,255,255,.3);color:#fff;
   font-size:.7rem;font-weight:700;padding:5px 10px;border-radius:5px;cursor:pointer;
   width:100%;text-align:center;white-space:nowrap}
 .iov .i-del{border-color:var(--red);color:var(--red)}
 .iov .i-del:hover{background:var(--red);color:#fff}
+.iov .i-zoom,.iov .i-del{padding:2px 5px;font-size:.7rem;border-radius:3px;border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.7);color:#fff;cursor:pointer;line-height:1.4}
 .iov .i-zoom:hover{background:var(--purple);border-color:var(--purple)}
+.iov .i-del:hover{background:var(--red);border-color:var(--red)}
 .iov .i-close{border-color:#444;color:var(--muted);font-size:.62rem}
 .iov .i-close:hover{color:#fff;border-color:#888}
 .tier-item.av{border-color:var(--green)!important;box-shadow:0 0 10px rgba(46,204,113,.45)}
@@ -567,7 +570,7 @@ function mkItem(item, inQ) {
   const div = document.createElement('div');
   div.className='tier-item';
   div.dataset.id=item.id;
-  div.title=item.name+(inQ ? ' — click to select · right-click for options' : ' — right-click for options');
+  div.title=item.name;
 
   const img=document.createElement('img');
   img.src=item.url; img.alt=item.name;
@@ -575,35 +578,34 @@ function mkItem(item, inQ) {
 
   const nm=document.createElement('div'); nm.className='iname'; nm.textContent=item.name;
 
+  // Always-visible action buttons overlay
   const ov=document.createElement('div'); ov.className='iov';
-  const zb=document.createElement('button'); zb.className='i-zoom'; zb.textContent='🔍 Zoom';
-  zb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');openLB(item);};
-  const db=document.createElement('button'); db.className='i-del'; db.textContent='✕ Remove';
+  ov.style.cssText='display:flex;flex-direction:column;gap:3px;';
+
+  const zb=document.createElement('button'); zb.className='i-zoom'; zb.textContent='🔍';
+  zb.title='Zoom / Spotlight';
+  zb.onclick=e=>{e.stopPropagation();openLB(item);};
+
+  const db=document.createElement('button'); db.className='i-del'; db.textContent='✕';
+  db.title='Remove';
   db.onclick=e=>{e.stopPropagation();removeItem(item.id);};
-  const cb=document.createElement('button'); cb.className='i-close'; cb.textContent='✕ close menu';
-  cb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');};
-  ov.appendChild(zb); ov.appendChild(db); ov.appendChild(cb);
 
+  ov.appendChild(zb); ov.appendChild(db);
   div.appendChild(img); div.appendChild(nm); div.appendChild(ov);
-
-  // Right-click = show zoom/delete menu
-  div.addEventListener('contextmenu', e=>{
-    e.preventDefault();
-    // Close any other open menus
-    document.querySelectorAll('.tier-item.menu-open').forEach(el=>el.classList.remove('menu-open'));
-    div.classList.add('menu-open');
-  });
-
-  // Close menu if clicking elsewhere
-  document.addEventListener('click', ()=>div.classList.remove('menu-open'), {once:false});
 
   // Left click in queue = select for voting
   if (inQ) {
     div.addEventListener('click', e=>{
-      if(div.classList.contains('menu-open')) return;
+      if(e.target===zb||e.target===db) return;
       selectVote(item.id);
     });
   }
+
+  // Right-click anywhere = zoom
+  div.addEventListener('contextmenu', e=>{
+    e.preventDefault();
+    openLB(item);
+  });
 
   return div;
 }
