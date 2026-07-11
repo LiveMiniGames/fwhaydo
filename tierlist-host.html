@@ -309,8 +309,7 @@ input:checked+.tog-sl:before{transform:translateX(16px)}
     <span>⠿ Drag to move — resize from corner</span>
     <button id="sp-close" onclick="closeSpotlight()">✕</button>
   </div>
-  <img id="sp-img" src="" alt=""/>
-  <div id="sp-name"></div>
+  <div id="sp-name" style="padding:8px 12px;font-size:.82rem;font-weight:700;color:#fff;border-bottom:1px solid var(--border);text-align:center;flex-shrink:0"></div>
 </div>
 
 <!-- MODAL -->
@@ -388,7 +387,7 @@ function initAbly(){
     });
     ch.subscribe('load-queue',msg=>{
       const q=msg.data.queue||[];
-      q.forEach(item=>addToQSilent(item.url,item.name||'Discord',item.msgId||null));
+      q.forEach(item=>addToQSilent(item.url, item.name||'Discord', item.msgId||null, item.files||null));
       renderQ();
       toast('Loaded '+q.length+' images from queue','green');
     });
@@ -421,7 +420,7 @@ async function autoLoadQueue(){
     const data=await res.json();
     const q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
     if(!q.length)return;
-    q.forEach(item=>addToQSilent(item.url,item.name||'Discord',item.msgId||null));
+    q.forEach(item=>addToQSilent(item.url, item.name||'Discord', item.msgId||null, item.files||null));
     renderQ();
     toast('Auto-loaded '+q.length+' images','green');
   }catch(e){console.log('Auto-load:',e);}
@@ -497,10 +496,30 @@ function mkItem(item,inQ){
   div.className='tier-item';
   div.dataset.id=item.id;
 
-  const img=document.createElement('img');
-  img.src=item.url;img.alt=item.name;
-  img.onerror=()=>{img.src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23222'/><text x='40' y='44' text-anchor='middle' fill='%23666' font-size='9'>No img</text></svg>";};
-  div.appendChild(img);
+  const isVid = item.type === 'video';
+  const fileCount = (item.files||[]).length;
+
+  if(isVid){
+    // Video thumbnail — show play icon over dark bg
+    const vthumb=document.createElement('div');
+    vthumb.style.cssText='width:100%;height:100%;background:#111;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;';
+    vthumb.innerHTML='<div style="font-size:1.8rem">▶</div><div style="font-size:.45rem;color:#888;text-align:center;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%">'+esc(item.name)+'</div>';
+    div.appendChild(vthumb);
+  } else {
+    const img=document.createElement('img');
+    img.src=item.url;img.alt=item.name;
+    img.onerror=()=>{img.src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23222'/><text x='40' y='44' text-anchor='middle' fill='%23666' font-size='9'>No img</text></svg>";};
+    div.appendChild(img);
+  }
+
+  // Multi-file badge
+  if(fileCount > 1){
+    const badge=document.createElement('div');
+    badge.style.cssText='position:absolute;top:2px;left:2px;background:rgba(145,71,255,.9);color:#fff;font-size:.55rem;font-weight:800;padding:1px 5px;border-radius:3px;line-height:1.4';
+    badge.textContent='1/'+fileCount;
+    badge.id='badge-'+item.id;
+    div.appendChild(badge);
+  }
 
   const nm=document.createElement('div');nm.className='iname';nm.textContent=item.name;
   div.appendChild(nm);
@@ -763,27 +782,28 @@ function addChatMsg(user,color,msg,isV,vTier){
 }
 
 // ── ADD ITEMS ─────────────────────────────────────────────────────
-function addToQ(url,name,msgId){
-  const lower=url.toLowerCase().split('?')[0];
-  if(VEXTS.some(e=>lower.endsWith(e))){toast('Videos not supported','red');return null;}
+// files = [{url, type}] array. If not provided, wraps single url as image.
+function addToQ(url, name, msgId, files){
   const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
-  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
+  const fileList = files || [{url, type: VEXTS.some(e=>url.toLowerCase().split('?')[0].endsWith(e)) ? 'video' : 'image'}];
+  items[id]={id, url:fileList[0].url, type:fileList[0].type,
+             files:fileList, name:name||'Untitled', tier:null, discordMsgId:msgId||null};
   queue.push(id);
-  if(msgId)discordMap[msgId]=id;
+  if(msgId) discordMap[msgId]=id;
   const qel=document.getElementById('queue');
-  if(qel)qel.appendChild(mkItem(items[id],true));
+  if(qel) qel.appendChild(mkItem(items[id],true));
   updateQCnt();
-  toast('Added: '+(name||'image'),'green');
+  toast('Added: '+(name||'item'),'green');
   return id;
 }
 
-function addToQSilent(url,name,msgId){
-  const lower=url.toLowerCase().split('?')[0];
-  if(VEXTS.some(e=>lower.endsWith(e)))return null;
+function addToQSilent(url, name, msgId, files){
   const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
-  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
+  const fileList = files || [{url, type: VEXTS.some(e=>url.toLowerCase().split('?')[0].endsWith(e)) ? 'video' : 'image'}];
+  items[id]={id, url:fileList[0].url, type:fileList[0].type,
+             files:fileList, name:name||'Untitled', tier:null, discordMsgId:msgId||null};
   queue.push(id);
-  if(msgId)discordMap[msgId]=id;
+  if(msgId) discordMap[msgId]=id;
   return id;
 }
 
@@ -842,14 +862,70 @@ function tlClear(){
 }
 
 // ── SPOTLIGHT ─────────────────────────────────────────────────────
+let spItem=null, spIdx=0;
+
 function openSpotlight(item){
-  document.getElementById('sp-img').src=item.url;
-  document.getElementById('sp-name').textContent=item.name;
+  spItem=item; spIdx=0;
+  renderSpotlight();
   document.getElementById('spotlight').classList.add('active');
 }
+
+function renderSpotlight(){
+  if(!spItem)return;
+  const files=spItem.files||[{url:spItem.url,type:spItem.type||'image'}];
+  const file=files[spIdx];
+  const total=files.length;
+  const sp=document.getElementById('spotlight');
+
+  // Clear media area
+  let media=document.getElementById('sp-media');
+  if(!media){
+    media=document.createElement('div');
+    media.id='sp-media';
+    media.style.cssText='flex:1;display:flex;align-items:center;justify-content:center;background:#000;position:relative;overflow:hidden;min-height:200px';
+    // Insert before sp-name
+    const spName=document.getElementById('sp-name');
+    sp.insertBefore(media,spName);
+    // Remove old sp-img if exists
+    const old=document.getElementById('sp-img');
+    if(old)old.remove();
+  }
+  media.innerHTML='';
+
+  if(file.type==='video'){
+    const vid=document.createElement('video');
+    vid.src=file.url;vid.controls=true;vid.autoplay=true;
+    vid.style.cssText='max-width:100%;max-height:100%;';
+    media.appendChild(vid);
+  } else {
+    const img=document.createElement('img');
+    img.src=file.url;img.alt=spItem.name;
+    img.style.cssText='max-width:100%;max-height:100%;object-fit:contain;';
+    media.appendChild(img);
+  }
+
+  // Arrows if multiple files
+  if(total>1){
+    const prev=document.createElement('button');
+    prev.style.cssText='position:absolute;left:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;z-index:5';
+    prev.textContent='‹';prev.disabled=spIdx===0;
+    prev.onclick=()=>{spIdx--;renderSpotlight();};
+    const next=document.createElement('button');
+    next.style.cssText='position:absolute;right:6px;top:50%;transform:translateY(-50%);background:rgba(0,0,0,.7);color:#fff;border:none;border-radius:50%;width:32px;height:32px;font-size:1.1rem;cursor:pointer;z-index:5';
+    next.textContent='›';next.disabled=spIdx===total-1;
+    next.onclick=()=>{spIdx++;renderSpotlight();};
+    media.appendChild(prev);media.appendChild(next);
+  }
+
+  document.getElementById('sp-name').textContent=spItem.name+(total>1?' ('+(spIdx+1)+'/'+total+')':'');
+}
+
 function closeSpotlight(){
   document.getElementById('spotlight').classList.remove('active');
-  document.getElementById('sp-img').src='';
+  // Stop any playing video
+  const vid=document.querySelector('#sp-media video');
+  if(vid){vid.pause();vid.src='';}
+  spItem=null;spIdx=0;
 }
 
 // Drag spotlight
@@ -922,7 +998,8 @@ function initPusher(){
   s.onload=()=>{
     const p=new Pusher('5cca8bf0eec699f22b22',{cluster:'us2'});
     const ch=p.subscribe('tierlist');
-    ch.bind('image',data=>{addToQ(data.url,data.name||'Discord',data.msgId||null);});
+    ch.bind('image',data=>{addToQ(data.url, data.name||'Discord', data.msgId||null, data.files||null);});
+    ch.bind('group',data=>{addToQ(data.url, data.name||'Discord', data.msgId||null, data.files||null);});
     ch.bind('delete',data=>{
       if(data.msgId){const iid=discordMap[data.msgId];if(iid){removeItem(iid);toast('Removed from Discord','red');}}
     });
