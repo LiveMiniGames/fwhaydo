@@ -22,7 +22,9 @@
 
   h1 { font-size:22px; font-weight:900; color:#1DB954; margin-bottom:20px; }
 
-  #nowPlayingBox { background:#121212; border:1px solid #282828; border-radius:16px; padding:20px 30px; text-align:center; min-width:min(500px,88vw); margin-bottom:16px; }
+  #debugPanel { position:absolute; bottom:80px; left:14px; width:min(420px,80vw); max-height:220px; overflow-y:auto; background:rgba(0,0,0,.88); border:1px solid #3fe6ff; border-radius:8px; padding:8px 12px; font-size:10px; font-family:'Courier New',monospace; color:#7dffb0; z-index:30; }
+  #debugPanel .dbgLine { margin-bottom:2px; white-space:pre-wrap; word-break:break-word; }
+  #debugPanel .dbgTitle { color:#3fe6ff; font-weight:800; font-size:10px; margin-bottom:4px; }
   #npUser { font-size:18px; font-weight:900; color:#fff; margin-bottom:4px; }
   #npStatus { font-size:12px; color:#1DB954; font-weight:700; margin-bottom:14px; text-transform:uppercase; letter-spacing:1px; }
   .playerRow { display:flex; gap:16px; justify-content:center; margin-bottom:10px; }
@@ -41,6 +43,7 @@
 <body>
 <a class="back-home" href="FwHaydo.html">← FwHaydo</a>
 <div id="container">
+  <div id="debugPanel"><div class="dbgTitle">🔍 Debug Log</div></div>
   <div id="linkCallout">
     <div class="lbl">📋 Give this link to chat so viewers can submit</div>
     <div class="urlRow">
@@ -102,6 +105,18 @@
   let ably, channel;
   let queue = [], currentIndex = -1;
   let ytReady = false;
+
+  function debugLog(text){
+    const panel = document.getElementById('debugPanel');
+    const line = document.createElement('div');
+    line.className = 'dbgLine';
+    const t = new Date();
+    const ts = t.toLocaleTimeString('en-US',{hour12:false}) + '.' + String(t.getMilliseconds()).padStart(3,'0');
+    line.textContent = '[' + ts + '] ' + text;
+    panel.appendChild(line);
+    panel.scrollTop = panel.scrollHeight;
+    while(panel.children.length > 40) panel.removeChild(panel.children[1]); // keep the title, trim oldest lines
+  }
   let transitionTimer1 = null, transitionTimer2 = null;
 
   document.getElementById('viewerLinkText').textContent = location.origin + location.pathname.replace('songtransitions-host','songtransitions-submit');
@@ -131,7 +146,7 @@
   let scWidgets = { 1:null, 2:null };
 
   // ---------- YouTube IFrame API ----------
-  window.onYouTubeIframeAPIReady = function(){ ytReady = true; tryPlayCurrent(); };
+  window.onYouTubeIframeAPIReady = function(){ debugLog('YouTube IFrame API ready.'); ytReady = true; tryPlayCurrent(); };
 
   function clearTransitionTimers(){
     if(transitionTimer1){ clearTimeout(transitionTimer1); transitionTimer1=null; }
@@ -145,11 +160,13 @@
   function waitForValidDuration(player, callback, attempts){
     attempts = attempts || 0;
     const duration = player.getDuration ? player.getDuration() : 0;
+    debugLog('waitForValidDuration attempt '+attempts+': getDuration() = '+duration);
     if(duration && duration > 0){
       callback(duration);
     } else if(attempts < 20){
       setTimeout(()=>waitForValidDuration(player, callback, attempts+1), 150);
     } else {
+      debugLog('⚠️ Gave up waiting for a valid duration after 20 attempts -- falling back to CLIP_SECONDS');
       callback(CLIP_SECONDS); // give up after ~3s and just play from the start rather than hang forever
     }
   }
@@ -162,36 +179,49 @@
     container.innerHTML = '';
     if(platform === 'youtube'){
       const id = extractYouTubeId(url);
+      debugLog('loadSlotActive('+slotNum+'): YouTube, videoId='+id);
       const div = document.createElement('div');
       div.id = 'ytplayer'+slotNum;
       container.appendChild(div);
       const player = new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{
         onReady:()=>{
+          debugLog('Slot '+slotNum+' YT onReady fired.');
           waitForValidDuration(player, (duration)=>{
-            player.seekTo(Math.max(0, duration-CLIP_SECONDS), true);
+            const seekTo = Math.max(0, duration-CLIP_SECONDS);
+            debugLog('Slot '+slotNum+' duration='+duration+'s, seeking to '+seekTo+'s (last '+CLIP_SECONDS+'s)');
+            player.seekTo(seekTo, true);
             player.playVideo();
+            debugLog('Slot '+slotNum+' playVideo() called.');
             onStarted(player);
           });
         },
-        onStateChange:(e)=>{ if(e.data === YT.PlayerState.ENDED && onEnded) onEnded(); }
+        onStateChange:(e)=>{
+          debugLog('Slot '+slotNum+' onStateChange: state='+e.data+' (1=playing, 2=paused, 0=ended)');
+          if(e.data === YT.PlayerState.ENDED && onEnded){ debugLog('Slot '+slotNum+' ENDED event -> advancing'); onEnded(); }
+        }
       }});
     } else if(platform === 'soundcloud'){
+      debugLog('loadSlotActive('+slotNum+'): SoundCloud, url='+url);
       const iframe = document.createElement('iframe');
       iframe.id = 'scplayer'+slotNum;
       iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = 'no'; iframe.scrolling = 'no';
       iframe.src = 'https://w.soundcloud.com/player/?url=' + encodeURIComponent(url) + '&auto_play=false';
       container.appendChild(iframe);
       iframe.onload = () => {
+        debugLog('Slot '+slotNum+' SoundCloud iframe loaded, creating widget...');
         const widget = SC.Widget(iframe);
         widget.bind(SC.Widget.Events.READY, ()=>{
+          debugLog('Slot '+slotNum+' SC widget READY.');
           widget.getDuration((durationMs)=>{
+            debugLog('Slot '+slotNum+' SC getDuration() = '+durationMs+'ms');
             const safeDurationMs = durationMs && durationMs > 0 ? durationMs : CLIP_SECONDS*1000;
             const seekMs = Math.max(0, safeDurationMs - CLIP_SECONDS*1000);
+            debugLog('Slot '+slotNum+' seeking to '+seekMs+'ms');
             widget.seekTo(seekMs);
             widget.play();
             onStarted(widget);
           });
-          if(onEnded) widget.bind(SC.Widget.Events.FINISH, onEnded);
+          if(onEnded) widget.bind(SC.Widget.Events.FINISH, ()=>{ debugLog('Slot '+slotNum+' SC FINISH event -> advancing'); onEnded(); });
         });
       };
     } else if(platform === 'spotify'){
@@ -250,16 +280,19 @@
 
   function tryPlayCurrent(){
     clearTransitionTimers();
-    if(currentIndex < 0 || currentIndex >= queue.length) return;
+    debugLog('=== tryPlayCurrent() called. currentIndex='+currentIndex+', queue.length='+queue.length);
+    if(currentIndex < 0 || currentIndex >= queue.length){ debugLog('No valid current item -- nothing to play.'); return; }
     const item = queue[currentIndex];
     const platform1 = item.platform1 || detectPlatform(item.song1Url);
     const platform2 = item.platform2 || detectPlatform(item.song2Url);
+    debugLog('Item: '+item.displayName+' | song1='+item.song1Url+' (platform='+platform1+') | song2='+item.song2Url+' (platform='+platform2+')');
     document.getElementById('npUser').textContent = item.displayName + "'s transition";
     if(!platform1 || !platform2){
+      debugLog('⚠️ Invalid platform detected for one of the links -- aborting.');
       document.getElementById('npStatus').textContent = 'One of these links looks invalid — skip with Next';
       return;
     }
-    if(platform1 === 'youtube' && !ytReady) return; // wait for the YT API to finish loading first
+    if(platform1 === 'youtube' && !ytReady){ debugLog('⚠️ YouTube API not ready yet -- aborting this call (will retry once ready).'); return; }
     document.getElementById('npStatus').textContent = 'Playing outro of song 1' + (platform1!=='youtube'&&platform1!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
 
     // song 2 is visible immediately, just not playing yet
@@ -267,23 +300,27 @@
 
     let advanced = false;
     function advanceToSongTwo(){
-      if(advanced) return; // the "ended" event and the timer fallback could both fire -- only act once
+      if(advanced){ debugLog('advanceToSongTwo() called again -- ignoring (already advanced).'); return; }
       advanced = true;
+      debugLog('>>> Advancing to song 2 now.');
       clearTransitionTimers();
       playSongTwo();
     }
     loadSlotActive(1, item.song1Url, platform1, ()=>{
+      debugLog('Slot 1 onStarted -- setting '+(CLIP_SECONDS+1.5)+'s safety-net timer as fallback.');
       // safety-net timer in case the platform's "ended" event never fires
       transitionTimer1 = setTimeout(advanceToSongTwo, CLIP_SECONDS*1000 + 1500);
     }, advanceToSongTwo);
   }
 
   function playSongTwo(){
+    debugLog('=== playSongTwo() called.');
     const item = queue[currentIndex];
-    if(!item) return;
+    if(!item){ debugLog('⚠️ No current item -- aborting playSongTwo.'); return; }
     const platform2 = item.platform2 || detectPlatform(item.song2Url);
     document.getElementById('npStatus').textContent = 'Playing intro of song 2' + (platform2!=='youtube'&&platform2!=='soundcloud' ? ' (preview only for this platform)' : '') + '...';
     loadSlotActive(2, item.song2Url, platform2, ()=>{
+      debugLog('Slot 2 onStarted -- transition should be audible now.');
       transitionTimer2 = setTimeout(()=>{
         document.getElementById('npStatus').textContent = 'Transition complete — click Next when ready';
       }, CLIP_SECONDS*1000 + 800);
