@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo Card — Control Panel</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:'Segoe UI', Arial, sans-serif; }
+  body { background:#0a0a0f; color:#efeff1; min-height:100vh; padding:20px; }
+  .wrap { max-width:1100px; margin:0 auto; display:flex; gap:20px; }
+  h1 { font-size:18px; font-weight:900; color:#9147ff; margin-bottom:4px; }
+  .sub { font-size:11px; color:#888; margin-bottom:16px; }
+
+  #leftCol { width:340px; flex-shrink:0; }
+  #rightCol { flex:1; }
+
+  .card { background:#15151f; border:1px solid #2a2a35; border-radius:12px; padding:14px; margin-bottom:14px; }
+  .cardTitle { font-size:10px; font-weight:800; color:#9147ff; text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+
+  label { font-size:11px; color:#aaa; display:block; margin-bottom:4px; }
+  input[type="text"] { width:100%; background:#0a0a0f; border:1px solid #333; color:#fff; border-radius:6px; padding:8px 10px; font-size:13px; }
+  select { background:#0a0a0f; border:1px solid #333; color:#fff; border-radius:6px; padding:8px 10px; font-size:13px; }
+
+  #status { font-size:10px; font-weight:700; margin-bottom:10px; }
+  #status.ok { color:#2ecc71; }
+  #status.bad { color:#e74c3c; }
+
+  .visToggle { width:100%; border:none; outline:none; cursor:pointer; font-weight:900; border-radius:10px; padding:14px; font-size:14px; margin-top:6px; }
+  .visToggle.showing { background:#e74c3c; color:#fff; }
+  .visToggle.hidden { background:#2ecc71; color:#000; }
+
+  #linkBox { font-size:10.5px; color:#8899aa; background:#0a0a0f; border-radius:8px; padding:8px 10px; word-break:break-all; margin-top:8px; }
+  #linkBox b { color:#3fe6ff; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:8px; padding:7px 14px; font-size:11px; color:#fff; background:#333; margin-top:6px; }
+  .btn:hover { background:#444; }
+  .btn.reset { background:#7a4a1e; }
+  .btn.reset:hover { background:#96601f; }
+
+  .sizeRow { display:flex; gap:10px; align-items:center; }
+  .sizeRow > div { flex:1; }
+
+  #gridEditor { display:grid; gap:8px; }
+  .cellEditor { background:#15151f; border:2px solid #2a2a35; border-radius:8px; padding:8px; display:flex; flex-direction:column; gap:6px; min-height:110px; }
+  .cellEditor.marked { border-color:#2ecc71; background:#0e2818; }
+  .cellEditor textarea { flex:1; background:#0a0a0f; border:1px solid #333; color:#fff; border-radius:6px; padding:6px; font-size:11px; resize:none; }
+  .markBtn { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:6px; padding:5px; font-size:10px; }
+  .markBtn.off { background:#2a2a35; color:#999; }
+  .markBtn.on { background:#2ecc71; color:#000; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div id="leftCol">
+    <h1>🎯 Bingo Card Control</h1>
+    <div class="sub">Everything here syncs live to the OBS source.</div>
+    <div id="status">Connecting...</div>
+
+    <div class="card">
+      <div class="cardTitle">Card Title</div>
+      <input type="text" id="titleInput" value="Stream Bingo">
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Grid Size</div>
+      <div class="sizeRow">
+        <div>
+          <label for="rowsSelect">Rows</label>
+          <select id="rowsSelect"></select>
+        </div>
+        <div>
+          <label for="colsSelect">Columns</label>
+          <select id="colsSelect"></select>
+        </div>
+      </div>
+      <div class="sub" style="margin-top:8px;">Changing this resizes the card. Existing squares keep their text/marks where they still fit.</div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">On Stream</div>
+      <button class="visToggle showing" id="visBtn">🔴 CURRENTLY SHOWING — CLICK TO HIDE</button>
+      <div class="sub" style="margin-top:8px;">Toggle this before/after the segment — the card only appears on stream while this is set to Showing.</div>
+    </div>
+
+    <div class="card">
+      <div class="cardTitle">Browser Source URL</div>
+      <div id="linkBox"><span id="sourceLink">loading...</span></div>
+      <button class="btn" id="copyLinkBtn">Copy Link</button>
+      <div class="sub" style="margin-top:8px;">In OBS: Add Source → Browser → paste this URL. Recommended size: 520 x 520. Leave "Shutdown source when not visible" unchecked.</div>
+    </div>
+
+    <div class="card">
+      <button class="btn reset" id="resetMarksBtn" style="width:100%;">Reset All Marks (keeps text)</button>
+    </div>
+  </div>
+
+  <div id="rightCol">
+    <h1>Card Contents</h1>
+    <div class="sub">Click a square to mark/unmark it. Type in the box to edit its text.</div>
+    <div id="gridEditor"></div>
+  </div>
+</div>
+
+<script>
+(function loadAblyWithFallbacks(){
+  const sources = [
+    'https://cdn.ably.com/lib/ably.min-2.js',
+    'https://cdn.jsdelivr.net/npm/ably@2',
+    'https://unpkg.com/ably@2'
+  ];
+  let i = 0;
+  function tryNext(){
+    if(i >= sources.length){ window.__ablyLoadFailed = true; window.dispatchEvent(new Event('ably-load-done')); return; }
+    const url = sources[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=>{ window.dispatchEvent(new Event('ably-load-done')); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'bingocard-tool';
+  const STORAGE_KEY = 'bingocard-config-v2';
+  const MIN_SIZE = 2, MAX_SIZE = 5;
+
+  let config = {
+    title: 'Stream Bingo',
+    visible: true,
+    rows: 5,
+    cols: 5,
+    cells: Array.from({length:25}, ()=> ({text:'', marked:false}))
+  };
+  let ably, channel;
+
+  function persist(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(config)); }catch(e){} }
+  function loadPersisted(){
+    try{ const s = localStorage.getItem(STORAGE_KEY); if(s){ const parsed = JSON.parse(s); if(parsed.rows && parsed.cols) config = parsed; } }catch(e){}
+  }
+  function broadcast(){ if(channel) channel.publish('config-snapshot', config); }
+
+  function setupSizeSelects(){
+    const rowsSel = document.getElementById('rowsSelect');
+    const colsSel = document.getElementById('colsSelect');
+    [rowsSel, colsSel].forEach(sel=>{
+      sel.innerHTML = '';
+      for(let n=MIN_SIZE;n<=MAX_SIZE;n++){
+        const opt = document.createElement('option');
+        opt.value = n; opt.textContent = n;
+        sel.appendChild(opt);
+      }
+    });
+    rowsSel.value = config.rows;
+    colsSel.value = config.cols;
+  }
+
+  // Resizes the cells array to match rows*cols, keeping existing cell data
+  // wherever the old and new grid positions overlap (row-major order).
+  function resizeCells(newRows, newCols){
+    const oldCells = config.cells;
+    const oldCols = config.cols;
+    const newCells = [];
+    for(let r=0;r<newRows;r++){
+      for(let c=0;c<newCols;c++){
+        if(r < config.rows && c < oldCols){
+          newCells.push(oldCells[r*oldCols + c]);
+        } else {
+          newCells.push({text:'', marked:false});
+        }
+      }
+    }
+    config.rows = newRows;
+    config.cols = newCols;
+    config.cells = newCells;
+  }
+
+  function renderGrid(){
+    const grid = document.getElementById('gridEditor');
+    grid.style.gridTemplateColumns = 'repeat(' + config.cols + ', 1fr)';
+    grid.innerHTML = '';
+    config.cells.forEach((cell,i)=>{
+      const div = document.createElement('div');
+      div.className = 'cellEditor' + (cell.marked?' marked':'');
+      div.innerHTML = `
+        <textarea data-idx="${i}" placeholder="Square ${i+1}">${cell.text.replace(/</g,'&lt;')}</textarea>
+        <button class="markBtn ${cell.marked?'on':'off'}" data-idx="${i}">${cell.marked?'✓ MARKED':'Mark'}</button>
+      `;
+      grid.appendChild(div);
+    });
+    grid.querySelectorAll('textarea').forEach(ta=>{
+      ta.addEventListener('input', ()=>{
+        config.cells[parseInt(ta.dataset.idx,10)].text = ta.value;
+        broadcast(); persist();
+      });
+    });
+    grid.querySelectorAll('.markBtn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const idx = parseInt(btn.dataset.idx,10);
+        config.cells[idx].marked = !config.cells[idx].marked;
+        renderGrid();
+        broadcast(); persist();
+      });
+    });
+  }
+
+  function updateVisBtn(){
+    const btn = document.getElementById('visBtn');
+    if(config.visible){
+      btn.className = 'visToggle showing';
+      btn.textContent = '🔴 CURRENTLY SHOWING — CLICK TO HIDE';
+    } else {
+      btn.className = 'visToggle hidden';
+      btn.textContent = '🟢 CURRENTLY HIDDEN — CLICK TO SHOW';
+    }
+  }
+
+  document.getElementById('titleInput').addEventListener('input', (e)=>{
+    config.title = e.target.value;
+    broadcast(); persist();
+  });
+
+  document.getElementById('rowsSelect').addEventListener('change', (e)=>{
+    resizeCells(parseInt(e.target.value,10), config.cols);
+    renderGrid(); broadcast(); persist();
+  });
+  document.getElementById('colsSelect').addEventListener('change', (e)=>{
+    resizeCells(config.rows, parseInt(e.target.value,10));
+    renderGrid(); broadcast(); persist();
+  });
+
+  document.getElementById('visBtn').addEventListener('click', ()=>{
+    config.visible = !config.visible;
+    updateVisBtn();
+    broadcast(); persist();
+  });
+
+  document.getElementById('resetMarksBtn').addEventListener('click', ()=>{
+    config.cells.forEach(c=>{ c.marked = false; });
+    renderGrid();
+    broadcast(); persist();
+  });
+
+  document.getElementById('copyLinkBtn').addEventListener('click', async ()=>{
+    const text = document.getElementById('sourceLink').textContent;
+    try{ await navigator.clipboard.writeText(text); }catch(e){}
+    const btn = document.getElementById('copyLinkBtn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied!';
+    setTimeout(()=>btn.textContent=orig, 1500);
+  });
+
+  function setupLink(){
+    const base = location.origin + location.pathname.replace('bingocard-control','');
+    document.getElementById('sourceLink').textContent = base + 'bingocard-source.html';
+  }
+
+  function setStatus(text, cls){
+    const el = document.getElementById('status');
+    el.textContent = text; el.className = cls||'';
+  }
+
+  function waitForAbly(){
+    return new Promise(resolve=>{
+      if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ resolve(); return; }
+      window.addEventListener('ably-load-done', ()=>resolve(), {once:true});
+    });
+  }
+
+  async function init(){
+    loadPersisted();
+    document.getElementById('titleInput').value = config.title;
+    setupSizeSelects();
+    updateVisBtn();
+    renderGrid();
+    setupLink();
+    await waitForAbly();
+    if(typeof Ably === 'undefined'){ setStatus('Connection library failed to load', 'bad'); return; }
+    ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{
+      setStatus('Connected \u2713', 'ok');
+      channel = ably.channels.get(CHANNEL_NAME);
+      channel.subscribe('request-snapshot', ()=>broadcast());
+      broadcast(); // push current state immediately so a freshly-added OBS source picks it up
+    });
+    ably.connection.on('failed', ()=>setStatus('Connection failed — check network', 'bad'));
+  }
+  init();
+})();
+</script>
+</body>
+</html>

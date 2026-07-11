@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S LIVE WORD CLOUD</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a12; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; background:radial-gradient(ellipse at 50% 30%, #16162a, #0a0a12 75%); overflow:hidden; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(10,10,18,.96), rgba(0,0,0,.99)); color:#fff; text-align:center; padding:20px; z-index:60; overflow-y:auto; }
+  .hidden { display:none !important; }
+  .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #fff; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  h1.title { font-size:clamp(24px,5.5vw,42px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#3fe6ff,#b84dff); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:2px; }
+  .subtitle { font-size:12px; letter-spacing:3px; color:#8899aa; font-weight:700; margin-bottom:20px; text-transform:uppercase; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:14px 36px; font-size:16px; color:#111; background:linear-gradient(90deg,#3fe6ff,#b84dff); box-shadow:0 6px 0 #1a3a6a; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #1a3a6a; }
+  #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:12px; color:#ccc; }
+  #channelRow input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:7px 10px; font-size:13px; width:140px; }
+  #chatStatus { font-size:11px; font-weight:700; }
+  .howto { margin-top:18px; font-size:12.5px; color:#aaa; line-height:1.7; max-width:440px; }
+  .howto b { color:#3fe6ff; }
+
+  /* ---- Live display ---- */
+  #topBar { position:absolute; top:0; left:0; width:100%; padding:16px 20px; display:flex; justify-content:space-between; align-items:flex-start; z-index:10; }
+  #promptBox { background:rgba(0,0,0,.55); border:1px solid rgba(63,230,255,.4); border-radius:14px; padding:10px 20px; max-width:60%; }
+  #promptLabel { font-size:9px; letter-spacing:1.5px; color:#888; text-transform:uppercase; margin-bottom:3px; }
+  #promptText { font-size:16px; font-weight:800; color:#fff; }
+  #statsBox { background:rgba(0,0,0,.55); border:1px solid rgba(184,77,255,.4); border-radius:14px; padding:10px 18px; text-align:center; }
+  #statsBox .num { font-size:18px; font-weight:900; color:#b84dff; }
+  #statsBox .lbl { font-size:9px; color:#888; letter-spacing:1px; text-transform:uppercase; }
+
+  #controlBar { position:absolute; top:78px; left:20px; right:20px; display:flex; gap:8px; align-items:center; z-index:10; }
+  #newPromptInput { flex:1; max-width:400px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.25); color:#fff; border-radius:10px; padding:8px 12px; font-size:12px; }
+  #setPromptBtn, #resetBtn { border:none; outline:none; cursor:pointer; font-weight:800; border-radius:10px; padding:8px 16px; font-size:11px; }
+  #setPromptBtn { color:#111; background:#3fe6ff; }
+  #resetBtn { color:#fff; background:rgba(255,255,255,.1); border:1px solid rgba(255,255,255,.25); }
+
+  #cloudArea { position:absolute; inset:0; display:flex; flex-wrap:wrap; align-content:center; justify-content:center; align-items:center; gap:14px; padding:180px 60px 60px; overflow:hidden; }
+  .cloudWord { font-weight:900; line-height:1; transition:font-size .5s cubic-bezier(.34,1.2,.64,1), color .3s ease, opacity .3s ease; white-space:nowrap; }
+  #emptyState { color:#555; font-size:16px; text-align:center; }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="gameContainer">
+
+  <div class="overlay" id="startScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title">☁️ LIVE WORD CLOUD</h1>
+    <div class="subtitle">Ask Anything. Watch Chat Answer.</div>
+    <div id="channelRow">
+      <label for="channelInput">Twitch channel:</label>
+      <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
+      <div id="chatStatus"></div>
+    </div>
+    <button class="btn" id="startBtn">OPEN THE CLOUD</button>
+    <div class="howto">
+      Type any open-ended prompt — like <b>"one word to describe tonight's stream"</b> — and chat just replies
+      normally in Twitch chat. Whatever word gets said by the most different people grows the biggest on screen,
+      live, as more responses come in. You can change the prompt anytime, which clears the board for a fresh round.
+    </div>
+  </div>
+
+  <div id="liveScreen" class="hidden">
+    <div id="topBar">
+      <div id="promptBox">
+        <div id="promptLabel">Prompt</div>
+        <div id="promptText">—</div>
+      </div>
+      <div id="statsBox">
+        <div class="num" id="responseCount">0</div>
+        <div class="lbl">Responses</div>
+      </div>
+    </div>
+    <div id="controlBar">
+      <input type="text" id="newPromptInput" placeholder="Type a new prompt and hit Set...">
+      <button id="setPromptBtn">Set New Prompt</button>
+      <button id="resetBtn">Reset Board</button>
+    </div>
+    <div id="cloudArea"><div id="emptyState">Waiting for chat to respond...</div></div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const MIN_FONT = 16, MAX_FONT = 130;
+  const WORD_COLORS = ['#3fe6ff','#b84dff','#ffd83d','#2ecc71','#ff8a6b','#ff6bd6','#7dd3fc'];
+
+  let state = 'menu';
+  let currentPrompt = 'one word to describe tonight\u2019s stream';
+  let userWords = new Map(); // login -> their current single word (last one wins)
+  let wordColorAssignment = new Map(); // word -> a stable color so it doesn't flicker between colors
+
+  function normalizeWord(raw){
+    let w = raw.trim().split(/\s+/)[0]; // only take the first token -- prompt asks for ONE word
+    if(!w) return null;
+    w = w.replace(/[^a-zA-Z0-9'-]/g, ''); // strip punctuation/emoji
+    w = w.toLowerCase();
+    if(w.length < 2) return null; // too short, likely noise
+    if(!/[a-zA-Z]/.test(w)) return null; // must contain at least one real letter
+    return w;
+  }
+
+  function computeCounts(){
+    const counts = new Map();
+    userWords.forEach(word=>{
+      counts.set(word, (counts.get(word)||0)+1);
+    });
+    return counts;
+  }
+
+  function colorFor(word){
+    if(!wordColorAssignment.has(word)){
+      wordColorAssignment.set(word, WORD_COLORS[wordColorAssignment.size % WORD_COLORS.length]);
+    }
+    return wordColorAssignment.get(word);
+  }
+
+  function renderCloud(){
+    const counts = computeCounts();
+    const area = document.getElementById('cloudArea');
+    document.getElementById('responseCount').textContent = userWords.size;
+
+    if(counts.size === 0){
+      area.innerHTML = '<div id="emptyState">Waiting for chat to respond...</div>';
+      return;
+    }
+    const maxCount = Math.max(...counts.values());
+    const entries = [...counts.entries()].sort((a,b)=>b[1]-a[1]);
+
+    area.innerHTML = '';
+    entries.forEach(([word,count])=>{
+      const pct = count / maxCount;
+      const fontSize = Math.round(MIN_FONT + pct*(MAX_FONT-MIN_FONT));
+      const span = document.createElement('span');
+      span.className = 'cloudWord';
+      span.style.fontSize = fontSize+'px';
+      span.style.color = colorFor(word);
+      span.style.opacity = String(0.55 + pct*0.45);
+      span.title = count + ' response' + (count===1?'':'s');
+      span.textContent = word;
+      area.appendChild(span);
+    });
+  }
+
+  function setPrompt(text){
+    currentPrompt = text.trim() || currentPrompt;
+    document.getElementById('promptText').textContent = currentPrompt;
+    userWords = new Map();
+    wordColorAssignment = new Map();
+    renderCloud();
+  }
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectChat(channel){
+    const statusEl = document.getElementById('chatStatus');
+    statusEl.textContent = 'Connecting...'; statusEl.style.color = '#ffd83d';
+    try {
+      chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      chatSocket.onopen = () => {
+        chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+        chatSocket.send('PASS SCHMOOPIE');
+        chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+        chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
+      };
+      let ircBuffer = '';
+      chatSocket.onmessage = (e) => {
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop();
+        lines.forEach(line=>{
+          if(!line) return;
+          if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+          if(line.includes(' 366 ')){ statusEl.textContent='Connected \u2713'; statusEl.style.color='#7dff45'; }
+          const parsed = parseIRCLine(line);
+          if(parsed) handleChatMessage(parsed);
+        });
+      };
+      chatSocket.onerror = () => { statusEl.textContent='Connection failed'; statusEl.style.color='#ff5b3d'; };
+      chatSocket.onclose = () => { setTimeout(()=>connectChat(channel), 3000); };
+    } catch(e){ document.getElementById('chatStatus').textContent = 'Connection failed'; }
+  }
+  function parseIRCLine(line){
+    let tags = {}; let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{ const eq=kv.indexOf('='); if(eq>=0) tags[kv.slice(0,eq)]=kv.slice(eq+1); });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const nick = m[1].split('!')[0];
+    return { login: nick.toLowerCase(), message: m[3] };
+  }
+
+  function handleChatMessage(parsed){
+    if(state !== 'live') return;
+    const raw = parsed.message.trim();
+    if(raw.startsWith('!')) return; // ignore commands meant for other tools
+    const word = normalizeWord(raw);
+    if(!word) return;
+    userWords.set(parsed.login, word); // last response per person wins, no vote-stacking
+    renderCloud();
+  }
+
+  // ---------- UI wiring ----------
+  document.getElementById('startBtn').addEventListener('click', ()=>{
+    const channel = document.getElementById('channelInput').value || 'fwhaydo';
+    connectChat(channel);
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('liveScreen').classList.remove('hidden');
+    state = 'live';
+    setPrompt(currentPrompt);
+  });
+
+  document.getElementById('setPromptBtn').addEventListener('click', ()=>{
+    const val = document.getElementById('newPromptInput').value;
+    if(!val.trim()) return;
+    setPrompt(val);
+    document.getElementById('newPromptInput').value = '';
+  });
+  document.getElementById('newPromptInput').addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter') document.getElementById('setPromptBtn').click();
+  });
+  document.getElementById('resetBtn').addEventListener('click', ()=>{
+    userWords = new Map();
+    wordColorAssignment = new Map();
+    renderCloud();
+  });
+
+})();
+</script>
+</body>
+</html>

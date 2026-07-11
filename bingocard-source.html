@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bingo Card</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; font-family:Arial, 'Segoe UI', sans-serif; }
+  html, body { width:100%; height:100%; background:transparent; overflow:hidden; }
+  #wrap { width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:10px; }
+  #wrap.hiddenState { display:none; }
+
+  #cardTitle { font-size:clamp(18px,3.5vw,28px); font-weight:700; color:#fff; text-shadow:0 2px 8px rgba(0,0,0,.85), 0 0 3px #000; margin-bottom:10px; text-align:center; }
+
+  /* Matches the plain reference sheet: white background, thin black grid lines, plain text */
+  #grid { display:grid; background:#000; border:1px solid #000; }
+  .cell { background:#fff; display:flex; align-items:center; justify-content:center; text-align:center; padding:6px; position:relative; border:1px solid #000; margin:-0.5px; }
+  .cellText { font-size:15px; font-weight:400; color:#000; line-height:1.2; word-break:break-word; position:relative; z-index:2; }
+  .cell.marked { background:#eafaf0; }
+  .cell.marked::after {
+    content:'\2713'; position:absolute; top:3px; right:6px; font-size:16px; font-weight:900; color:#2ecc71; z-index:3;
+  }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="cardTitle">Stream Bingo</div>
+  <div id="grid"></div>
+</div>
+
+<script>
+(function loadAblyWithFallbacks(){
+  const sources = [
+    'https://cdn.ably.com/lib/ably.min-2.js',
+    'https://cdn.jsdelivr.net/npm/ably@2',
+    'https://unpkg.com/ably@2'
+  ];
+  let i = 0;
+  function tryNext(){
+    if(i >= sources.length){ window.__ablyLoadFailed = true; window.dispatchEvent(new Event('ably-load-done')); return; }
+    const url = sources[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=>{ window.dispatchEvent(new Event('ably-load-done')); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
+<script>
+(function(){
+  const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
+  const CHANNEL_NAME = 'bingocard-tool';
+
+  function render(config){
+    const wrap = document.getElementById('wrap');
+    if(!config.visible){ wrap.classList.add('hiddenState'); return; }
+    wrap.classList.remove('hiddenState');
+
+    document.getElementById('cardTitle').textContent = config.title || '';
+
+    const rows = config.rows || 5;
+    const cols = config.cols || 5;
+    // keep the overall card a consistent size regardless of how many
+    // rows/cols are configured -- more cells means each one is smaller
+    const cellSize = Math.floor(Math.min(460/cols, 460/rows));
+
+    const grid = document.getElementById('grid');
+    grid.style.gridTemplateColumns = 'repeat(' + cols + ', ' + cellSize + 'px)';
+    grid.innerHTML = '';
+    config.cells.forEach(cell=>{
+      const div = document.createElement('div');
+      div.className = 'cell' + (cell.marked ? ' marked' : '');
+      div.style.width = cellSize+'px';
+      div.style.height = cellSize+'px';
+      const fontSize = Math.max(10, Math.min(16, cellSize/7));
+      div.innerHTML = '<div class="cellText" style="font-size:'+fontSize+'px;">'+(cell.text||'').replace(/</g,'&lt;')+'</div>';
+      grid.appendChild(div);
+    });
+  }
+
+  function waitForAbly(){
+    return new Promise(resolve=>{
+      if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ resolve(); return; }
+      window.addEventListener('ably-load-done', ()=>resolve(), {once:true});
+    });
+  }
+
+  async function init(){
+    // start fully hidden until real config arrives, so OBS never shows a
+    // half-loaded/placeholder card while waiting to connect
+    document.getElementById('wrap').classList.add('hiddenState');
+    await waitForAbly();
+    if(typeof Ably === 'undefined') return;
+    const ably = new Ably.Realtime({ key: ABLY_KEY });
+    ably.connection.on('connected', ()=>{
+      const channel = ably.channels.get(CHANNEL_NAME);
+      channel.subscribe('config-snapshot', (msg)=>{ render(msg.data); });
+      channel.publish('request-snapshot', {});
+    });
+  }
+  init();
+})();
+</script>
+</body>
+</html>

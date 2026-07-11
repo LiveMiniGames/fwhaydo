@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>HAYDO'S HOT TAKES</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none; }
+  html, body { width:100%; height:100%; overflow:hidden; background:#0a0a12; font-family:'Segoe UI', Arial, sans-serif; }
+  #gameContainer { position:relative; width:100%; height:100%; background:radial-gradient(ellipse at 50% 20%, #1f1220, #0a0a12 75%); overflow:hidden; }
+
+  .back-home{position:absolute;top:14px;left:14px;z-index:50;color:#7a7a96;text-decoration:none;font-size:.78rem;font-weight:600;
+    border:1px solid #2a2a3a;border-radius:6px;padding:5px 11px;background:rgba(0,0,0,.4);backdrop-filter:blur(2px)}
+  .back-home:hover{color:#fff;border-color:#9147ff}
+
+  .overlay { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(180deg, rgba(10,10,18,.97), rgba(0,0,0,.99)); color:#fff; text-align:center; padding:20px; z-index:60; overflow-y:auto; }
+  .hidden { display:none !important; }
+  .logo-fw { font-weight:900; font-size:16px; letter-spacing:6px; color:#fff; background:#000; border:2px solid #fff; padding:4px 14px; border-radius:20px; margin-bottom:10px; }
+  h1.title { font-size:clamp(24px,5.5vw,42px); font-weight:900; letter-spacing:1px; background:linear-gradient(90deg,#ff5b3d,#ffd83d); -webkit-background-clip:text; background-clip:text; color:transparent; margin-bottom:2px; }
+  .subtitle { font-size:12px; letter-spacing:3px; color:#8899aa; font-weight:700; margin-bottom:20px; text-transform:uppercase; }
+  .btn { border:none; outline:none; cursor:pointer; font-weight:800; letter-spacing:1px; border-radius:14px; padding:14px 36px; font-size:16px; color:#111; background:linear-gradient(90deg,#ff5b3d,#ffd83d); box-shadow:0 6px 0 #8a3a1a; }
+  .btn:active { transform:translateY(6px); box-shadow:0 0 0 #8a3a1a; }
+  .btn.secondary { background:linear-gradient(180deg,#3a3a3a,#1c1c1c); color:#fff; box-shadow:0 6px 0 #000; margin-top:12px; }
+  #channelRow { display:flex; align-items:center; gap:8px; margin-bottom:16px; font-size:12px; color:#ccc; }
+  #channelRow input { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.3); color:#fff; border-radius:8px; padding:7px 10px; font-size:13px; width:140px; }
+  #chatStatus { font-size:11px; font-weight:700; }
+
+  #takesInput { width:min(560px,88vw); min-height:200px; background:rgba(255,255,255,.06); border:1.5px solid rgba(255,255,255,.25); color:#fff; border-radius:12px; padding:14px; font-size:14px; line-height:1.6; resize:vertical; margin-bottom:14px; }
+  #takesInput:focus { outline:none; border-color:#ffd83d; }
+  .howto { margin-top:10px; font-size:12.5px; color:#aaa; line-height:1.7; max-width:460px; }
+  .howto b { color:#ffd83d; }
+  #takeCountNote { font-size:11px; color:#888; margin-bottom:14px; }
+
+  /* ---- Live screen ---- */
+  #liveScreen { position:absolute; inset:0; display:none; flex-direction:column; align-items:center; justify-content:center; padding:20px; }
+  #liveScreen.show { display:flex; }
+  #roundBadge { position:absolute; top:16px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,.55); border:1px solid rgba(255,216,61,.4); border-radius:20px; padding:6px 18px; font-size:12px; font-weight:800; color:#ffd83d; letter-spacing:1px; }
+  #chatStatusLive { position:absolute; top:16px; right:14px; font-size:10px; color:#888; }
+
+  #takeCard { background:rgba(255,255,255,.05); border:2px solid rgba(255,255,255,.15); border-radius:20px; padding:40px 50px; max-width:min(760px,88vw); text-align:center; margin-bottom:30px; box-shadow:0 10px 40px rgba(0,0,0,.4); }
+  #takeLabel { font-size:11px; letter-spacing:2px; color:#ff8a6b; text-transform:uppercase; font-weight:800; margin-bottom:14px; }
+  #takeText { font-size:clamp(22px,3.6vw,34px); font-weight:800; line-height:1.35; color:#fff; }
+
+  #meterWrap { width:min(680px,88vw); margin-bottom:24px; }
+  #meterLabels { display:flex; justify-content:space-between; font-size:13px; font-weight:800; margin-bottom:8px; }
+  #agreeLabel { color:#2ecc71; }
+  #disagreeLabel { color:#e74c3c; }
+  #meterTrack { width:100%; height:34px; background:rgba(255,255,255,.08); border-radius:17px; overflow:hidden; display:flex; box-shadow:inset 0 2px 6px rgba(0,0,0,.4); }
+  #agreeBar { background:linear-gradient(90deg,#1e9e4a,#2ecc71); transition:width .4s cubic-bezier(.34,1.2,.64,1); display:flex; align-items:center; justify-content:flex-start; padding-left:10px; }
+  #disagreeBar { background:linear-gradient(90deg,#e74c3c,#c0392b); transition:width .4s cubic-bezier(.34,1.2,.64,1); display:flex; align-items:center; justify-content:flex-end; padding-right:10px; }
+  #meterTrack .barPct { font-size:12px; font-weight:900; color:#fff; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  #voteCountNote { text-align:center; font-size:12px; color:#999; margin-top:8px; }
+
+  #nextBtn { border:none; outline:none; cursor:pointer; font-weight:900; letter-spacing:1px; border-radius:30px; padding:14px 38px; font-size:15px; color:#111; background:linear-gradient(90deg,#3fe6ff,#b84dff); }
+  #nextBtn:hover { opacity:.92; }
+
+  .howtoLive { font-size:11px; color:#666; margin-top:14px; }
+  .howtoLive b { color:#3fe6ff; }
+</style>
+</head>
+<body>
+<a class="back-home" href="FwHaydo.html">← FwHaydo</a>
+<div id="gameContainer">
+
+  <div class="overlay" id="startScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title">🔥 HAYDO'S HOT TAKES</h1>
+    <div class="subtitle">You Say It. Chat Judges It.</div>
+    <div id="channelRow">
+      <label for="channelInput">Twitch channel:</label>
+      <input type="text" id="channelInput" value="fwhaydo" autocomplete="off" spellcheck="false">
+      <div id="chatStatus"></div>
+    </div>
+    <button class="btn" id="connectBtn">CONNECT</button>
+    <div class="howto">Connect first, then you'll privately type in your list of hot takes before going live with them.</div>
+  </div>
+
+  <div class="overlay hidden" id="setupScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:30px;">LOAD YOUR HOT TAKES</h1>
+    <div class="subtitle">One Per Line</div>
+    <textarea id="takesInput" placeholder="Pineapple belongs on pizza
+The prequels are better than the original trilogy
+Cereal is a soup
+Comic Sans is underrated
+..."></textarea>
+    <div id="takeCountNote">0 hot takes loaded</div>
+    <button class="btn" id="startTakesBtn">START HOT TAKES</button>
+    <div class="howto">This screen is just for you — go live with this tool only once you've moved past this part, so chat never sees the full list ahead of time.</div>
+  </div>
+
+  <div id="liveScreen">
+    <div id="roundBadge">HOT TAKE <span id="roundVal">1</span> / <span id="roundTotal">1</span></div>
+    <div id="chatStatusLive"></div>
+
+    <div id="takeCard">
+      <div id="takeLabel">🔥 Haydo's Hot Take</div>
+      <div id="takeText">—</div>
+    </div>
+
+    <div id="meterWrap">
+      <div id="meterLabels"><span id="agreeLabel">✅ AGREE</span><span id="disagreeLabel">DISAGREE ❌</span></div>
+      <div id="meterTrack">
+        <div id="agreeBar" style="width:50%;"><span class="barPct" id="agreePctText">0%</span></div>
+        <div id="disagreeBar" style="width:50%;"><span class="barPct" id="disagreePctText">0%</span></div>
+      </div>
+      <div id="voteCountNote">0 votes</div>
+    </div>
+
+    <button id="nextBtn">NEXT ROUND ▶</button>
+    <div class="howtoLive">Chat votes by typing <b>agree</b> or <b>disagree</b> — changing their mind just replaces their last vote.</div>
+  </div>
+
+  <div class="overlay hidden" id="endScreen">
+    <div class="logo-fw">FW</div>
+    <h1 class="title" style="font-size:32px;">THAT'S ALL THE HOT TAKES!</h1>
+    <div class="subtitle" id="endSubtitle"></div>
+    <button class="btn" id="restartBtn">LOAD A NEW SET</button>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  let state = 'menu'; // menu, setup, live, ended
+  let takes = [];
+  let currentIndex = 0;
+  let userVotes = new Map(); // login -> 'agree'|'disagree'
+
+  function updateTakeCount(){
+    const lines = document.getElementById('takesInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    document.getElementById('takeCountNote').textContent = lines.length + ' hot take' + (lines.length===1?'':'s') + ' loaded';
+  }
+  document.getElementById('takesInput').addEventListener('input', updateTakeCount);
+
+  function computeTally(){
+    let agree=0, disagree=0;
+    userVotes.forEach(v=>{ if(v==='agree') agree++; else disagree++; });
+    const total = agree+disagree;
+    return {
+      agree, disagree, total,
+      agreePct: total ? Math.round(agree/total*100) : 50,
+      disagreePct: total ? Math.round(disagree/total*100) : 50
+    };
+  }
+
+  function renderMeter(){
+    const { agree, disagree, total, agreePct, disagreePct } = computeTally();
+    document.getElementById('agreeBar').style.width = agreePct+'%';
+    document.getElementById('disagreeBar').style.width = disagreePct+'%';
+    document.getElementById('agreePctText').textContent = agreePct+'%';
+    document.getElementById('disagreePctText').textContent = disagreePct+'%';
+    document.getElementById('voteCountNote').textContent = total + ' vote' + (total===1?'':'s') + ' (' + agree + ' agree, ' + disagree + ' disagree)';
+  }
+
+  function showRound(){
+    if(currentIndex >= takes.length){
+      state = 'ended';
+      document.getElementById('liveScreen').classList.remove('show');
+      document.getElementById('endSubtitle').textContent = 'Went through all ' + takes.length + ' hot takes.';
+      document.getElementById('endScreen').classList.remove('hidden');
+      return;
+    }
+    userVotes = new Map();
+    document.getElementById('roundVal').textContent = currentIndex+1;
+    document.getElementById('roundTotal').textContent = takes.length;
+    document.getElementById('takeText').textContent = takes[currentIndex];
+    renderMeter();
+  }
+
+  document.getElementById('nextBtn').addEventListener('click', ()=>{
+    currentIndex++;
+    showRound();
+  });
+
+  // ---------- Twitch chat connection (anonymous, read-only) ----------
+  let chatSocket = null;
+  function connectChat(channel){
+    const statusEl = document.getElementById('chatStatus');
+    const statusElLive = document.getElementById('chatStatusLive');
+    statusEl.textContent = 'Connecting...'; statusEl.style.color = '#ffd83d';
+    try {
+      chatSocket = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+      chatSocket.onopen = () => {
+        chatSocket.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
+        chatSocket.send('PASS SCHMOOPIE');
+        chatSocket.send('NICK justinfan' + Math.floor(10000+Math.random()*89999));
+        chatSocket.send('JOIN #' + channel.trim().toLowerCase().replace(/^#/,''));
+      };
+      let ircBuffer = '';
+      chatSocket.onmessage = (e) => {
+        ircBuffer += e.data;
+        const lines = ircBuffer.split('\r\n');
+        ircBuffer = lines.pop();
+        lines.forEach(line=>{
+          if(!line) return;
+          if(line.startsWith('PING')){ chatSocket.send('PONG :tmi.twitch.tv'); return; }
+          if(line.includes(' 366 ')){
+            statusEl.textContent='Connected \u2713'; statusEl.style.color='#7dff45';
+            statusElLive.textContent='Chat connected \u2713';
+          }
+          const parsed = parseIRCLine(line);
+          if(parsed) handleChatMessage(parsed);
+        });
+      };
+      chatSocket.onerror = () => { statusEl.textContent='Connection failed'; statusEl.style.color='#ff5b3d'; };
+      chatSocket.onclose = () => { setTimeout(()=>connectChat(channel), 3000); };
+    } catch(e){ document.getElementById('chatStatus').textContent = 'Connection failed'; }
+  }
+  function parseIRCLine(line){
+    let tags = {}; let rest = line;
+    if(rest.startsWith('@')){
+      const spaceIdx = rest.indexOf(' ');
+      const tagPart = rest.slice(1, spaceIdx);
+      rest = rest.slice(spaceIdx+1);
+      tagPart.split(';').forEach(kv=>{ const eq=kv.indexOf('='); if(eq>=0) tags[kv.slice(0,eq)]=kv.slice(eq+1); });
+    }
+    const m = rest.match(/^:(\S+) PRIVMSG (#\S+) :(.*)$/);
+    if(!m) return null;
+    const nick = m[1].split('!')[0];
+    return { login: nick.toLowerCase(), message: m[3] };
+  }
+
+  function handleChatMessage(parsed){
+    if(state !== 'live') return;
+    const msg = parsed.message.trim().toLowerCase();
+    if(msg !== 'agree' && msg !== 'disagree') return;
+    userVotes.set(parsed.login, msg); // last vote per person wins
+    renderMeter();
+  }
+
+  // ---------- UI wiring ----------
+  document.getElementById('connectBtn').addEventListener('click', ()=>{
+    const channel = document.getElementById('channelInput').value || 'fwhaydo';
+    connectChat(channel);
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    state = 'setup';
+  });
+
+  document.getElementById('startTakesBtn').addEventListener('click', ()=>{
+    takes = document.getElementById('takesInput').value.split('\n').map(s=>s.trim()).filter(Boolean);
+    if(takes.length === 0){ alert('Type at least one hot take first.'); return; }
+    currentIndex = 0;
+    document.getElementById('setupScreen').classList.add('hidden');
+    document.getElementById('liveScreen').classList.add('show');
+    state = 'live';
+    showRound();
+  });
+
+  document.getElementById('restartBtn').addEventListener('click', ()=>{
+    document.getElementById('endScreen').classList.add('hidden');
+    document.getElementById('setupScreen').classList.remove('hidden');
+    document.getElementById('takesInput').value = '';
+    updateTakeCount();
+    state = 'setup';
+  });
+
+})();
+</script>
+</body>
+</html>
