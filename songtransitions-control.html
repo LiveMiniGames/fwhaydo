@@ -44,7 +44,33 @@
   </div>
 </div>
 
-<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+// Try multiple CDNs across different infrastructure in sequence -- if one is
+// blocked by an ad-blocker/firewall/DNS filter, the others are very unlikely
+// to be blocked by the same rule since they're entirely different providers
+(function loadAblyWithFallbacks(){
+  const sources = [
+    'https://cdn.ably.com/lib/ably.min-2.js',
+    'https://cdn.jsdelivr.net/npm/ably@2',
+    'https://unpkg.com/ably@2'
+  ];
+  let i = 0;
+  function tryNext(){
+    if(i >= sources.length){
+      window.__ablyLoadFailed = true;
+      window.dispatchEvent(new Event('ably-load-done'));
+      return;
+    }
+    const url = sources[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=>{ window.dispatchEvent(new Event('ably-load-done')); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
 <script>
 (function(){
   const ABLY_KEY = 'IPJIJg.izmQMA:dEekjEM8ipsEN235S1EdkKEjCpF6y7-A_zfq0-6GGBA';
@@ -52,6 +78,7 @@
   const STORAGE_KEY = 'songtransitions-queue';
 
   let queue = [];
+  let seenMessageIds = new Set();
   let currentIndex = -1;
   let ably, channel;
 
@@ -117,9 +144,17 @@
     el.className = cls || '';
   }
 
-  function init(){
+  function waitForAbly(){
+    return new Promise(resolve=>{
+      if(typeof Ably !== 'undefined' || window.__ablyLoadFailed){ resolve(); return; }
+      window.addEventListener('ably-load-done', ()=>resolve(), {once:true});
+    });
+  }
+
+  async function init(){
     loadPersisted();
     renderQueue();
+    await waitForAbly();
     if(typeof Ably === 'undefined'){
       setStatus('Connection library failed to load — check network and reload', 'bad');
       return;
@@ -127,15 +162,36 @@
     try{
       ably = new Ably.Realtime({ key: ABLY_KEY });
       ably.connection.on('connected', ()=>{
-        setStatus('Connected ✓ — listening for submissions', 'ok');
+        setStatus('Connected ✓ — checking for missed submissions...', 'ok');
         channel = ably.channels.get(CHANNEL_NAME);
-        channel.subscribe('submit', (msg)=>{
+
+        function addSubmission(msg){
+          if(seenMessageIds.has(msg.id)) return; // avoid double-counting if history and live overlap
+          seenMessageIds.add(msg.id);
           const d = msg.data;
-          queue.push({ twitchLogin:d.twitchLogin, displayName:d.displayName, song1Url:d.song1Url, song2Url:d.song2Url, submittedAt:Date.now() });
+          queue.push({ twitchLogin:d.twitchLogin, displayName:d.displayName, song1Url:d.song1Url, song2Url:d.song2Url, submittedAt:msg.timestamp || Date.now() });
+        }
+
+        channel.subscribe('submit', (msg)=>{
+          addSubmission(msg);
           persist();
           renderQueue();
           broadcastSnapshot();
         });
+
+        // catch up on anything published before this page was open --
+        // Ably keeps recent message history even for subscribers who weren't
+        // connected yet, this is what was missing before
+        channel.history({ direction:'backwards', limit:100 }, (err, resultPage)=>{
+          if(err){ console.error('history fetch failed', err); setStatus('Connected ✓ — but history fetch failed, live submissions will still work', 'ok'); return; }
+          const submitMessages = resultPage.items.filter(m=>m.name==='submit').reverse(); // oldest first
+          submitMessages.forEach(addSubmission);
+          renderQueue();
+          broadcastSnapshot();
+          persist();
+          setStatus('Connected ✓ — listening for submissions', 'ok');
+        });
+
         channel.subscribe('next-requested', ()=>{
           if(currentIndex < queue.length-1){
             currentIndex++;

@@ -66,7 +66,33 @@
   </div>
 </div>
 
-<script src="https://cdn.ably.com/lib/ably.min-2.js" onerror="window.__ablyLoadFailed=true"></script>
+<script>
+// Try multiple CDNs across different infrastructure in sequence -- if one is
+// blocked by an ad-blocker/firewall/DNS filter, the others are very unlikely
+// to be blocked by the same rule since they're entirely different providers
+(function loadAblyWithFallbacks(){
+  const sources = [
+    'https://cdn.ably.com/lib/ably.min-2.js',
+    'https://cdn.jsdelivr.net/npm/ably@2',
+    'https://unpkg.com/ably@2'
+  ];
+  let i = 0;
+  function tryNext(){
+    if(i >= sources.length){
+      window.__ablyLoadFailed = true;
+      window.dispatchEvent(new Event('ably-load-done'));
+      return;
+    }
+    const url = sources[i++];
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = ()=>{ window.dispatchEvent(new Event('ably-load-done')); };
+    s.onerror = ()=>{ s.remove(); tryNext(); };
+    document.head.appendChild(s);
+  }
+  tryNext();
+})();
+</script>
 <script>
 (function(){
   const TWITCH_CLIENT_ID = '8ythx1b4k9bxjraxodiwjyhx4ws4pi';
