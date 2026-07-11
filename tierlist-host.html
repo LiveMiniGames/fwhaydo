@@ -1190,9 +1190,32 @@ function editTierLabel(tierId){
 
 
 
+// ═══════════════════════════════════════
+//  AUTO-LOAD FROM JSONBIN ON OPEN
+// ═══════════════════════════════════════
+async function autoLoadQueue(){
+  // Try to get JSONBin config from localStorage (saved by control panel)
+  const saved = localStorage.getItem('tl-ctrl');
+  if(!saved) return;
+  try{
+    const cfg = JSON.parse(saved);
+    const binId = cfg.binId, key = cfg.binKey;
+    if(!binId || !key) return;
+    const res = await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
+    const data = await res.json();
+    const q = Array.isArray(data.record&&data.record.queue) ? data.record.queue : [];
+    if(!q.length) return;
+    q.forEach(item=>{ addToQSilent(item.url, item.name||'Discord', item.msgId||null); });
+    renderQ();
+    toast('Auto-loaded '+q.length+' images from queue','green');
+  }catch(e){ console.log('Auto-load error:',e); }
+}
+
 // Page ready
 function goHome(){ window.location.href='FwHaydo.html'; }
 tlInit();
+// Auto-load queue from JSONBin 1.5s after page opens
+setTimeout(autoLoadQueue, 1500);
 </script>
 </body>
 </html>

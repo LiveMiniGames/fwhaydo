@@ -292,19 +292,25 @@ async function loadQueue(){
     const res=await fetch('https://api.jsonbin.io/v3/b/'+binId+'/latest',{headers:{'X-Master-Key':key}});
     const data=await res.json();
     const q=Array.isArray(data.record&&data.record.queue)?data.record.queue:[];
-    if(!q.length){setStatus('bin-status','Queue is empty','idle');return;}
-    // Broadcast to host page
+    if(!q.length){setStatus('bin-status','Queue is empty — no images saved yet','idle');return;}
+
+    // Get Ably key — from input field, or from saved config, or use default
     const cfg=getSaved();
-    if(cfg.ablyKey){
-      const ab=new Ably.Realtime({key:cfg.ablyKey});
-      ab.connection.on('connected',()=>{
-        const ch=ab.channels.get('tierlist-host');
-        ch.publish('load-queue',{queue:q});
-        setTimeout(()=>ab.close(),2000);
-      });
-    }
-    setStatus('bin-status','✅ Sent '+q.length+' images to host page','ok');
-    renderQueuePreview(q);
+    const ablyKey = document.getElementById('cfg-ably').value.trim()
+                 || cfg.ablyKey
+                 || 'IPJIJg.DKgG0Q:D9MT68Ii7IXk2jXiSzc2HoPTYVMeREpJ7__8_uY53qY';
+
+    const ab=new Ably.Realtime({key:ablyKey});
+    ab.connection.on('connected',()=>{
+      const ch=ab.channels.get('tierlist-host');
+      ch.publish('load-queue',{queue:q});
+      setStatus('bin-status','✅ Sent '+q.length+' images to host page','ok');
+      renderQueuePreview(q);
+      setTimeout(()=>ab.close(),3000);
+    });
+    ab.connection.on('failed',()=>{
+      setStatus('bin-status','Ably connection failed — check key','err');
+    });
   }catch(e){setStatus('bin-status','Error: '+e.message,'err');}
 }
 
