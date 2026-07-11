@@ -174,18 +174,26 @@
   // Loads a slot and actually plays it, seeking to the last CLIP_SECONDS.
   // onEnded fires the moment the track genuinely finishes (for platforms that
   // support it), separate from onStarted which fires once playback begins.
-  function loadSlotActive(slotNum, url, platform, onStarted, onEnded){
+  function loadSlotActive(slotNum, url, platform, onStarted, onEnded, seekMode){
+    seekMode = seekMode || 'end'; // 'end' = last CLIP_SECONDS, 'start' = first CLIP_SECONDS (no seek needed)
     const container = document.getElementById('player'+slotNum);
     container.innerHTML = '';
     if(platform === 'youtube'){
       const id = extractYouTubeId(url);
-      debugLog('loadSlotActive('+slotNum+'): YouTube, videoId='+id);
+      debugLog('loadSlotActive('+slotNum+'): YouTube, videoId='+id+', seekMode='+seekMode);
       const div = document.createElement('div');
       div.id = 'ytplayer'+slotNum;
       container.appendChild(div);
       const player = new YT.Player(div.id, { height:'158', width:'280', videoId:id, playerVars:{controls:1}, events:{
         onReady:()=>{
           debugLog('Slot '+slotNum+' YT onReady fired.');
+          if(seekMode === 'start'){
+            debugLog('Slot '+slotNum+' playing from the start (0s) -- no seek needed.');
+            player.playVideo();
+            debugLog('Slot '+slotNum+' playVideo() called.');
+            onStarted(player);
+            return;
+          }
           waitForValidDuration(player, (duration)=>{
             const seekTo = Math.max(0, duration-CLIP_SECONDS);
             debugLog('Slot '+slotNum+' duration='+duration+'s, seeking to '+seekTo+'s (last '+CLIP_SECONDS+'s)');
@@ -201,7 +209,7 @@
         }
       }});
     } else if(platform === 'soundcloud'){
-      debugLog('loadSlotActive('+slotNum+'): SoundCloud, url='+url);
+      debugLog('loadSlotActive('+slotNum+'): SoundCloud, url='+url+', seekMode='+seekMode);
       const iframe = document.createElement('iframe');
       iframe.id = 'scplayer'+slotNum;
       iframe.width = '280'; iframe.height = '158'; iframe.frameBorder = 'no'; iframe.scrolling = 'no';
@@ -212,15 +220,21 @@
         const widget = SC.Widget(iframe);
         widget.bind(SC.Widget.Events.READY, ()=>{
           debugLog('Slot '+slotNum+' SC widget READY.');
-          widget.getDuration((durationMs)=>{
-            debugLog('Slot '+slotNum+' SC getDuration() = '+durationMs+'ms');
-            const safeDurationMs = durationMs && durationMs > 0 ? durationMs : CLIP_SECONDS*1000;
-            const seekMs = Math.max(0, safeDurationMs - CLIP_SECONDS*1000);
-            debugLog('Slot '+slotNum+' seeking to '+seekMs+'ms');
-            widget.seekTo(seekMs);
+          if(seekMode === 'start'){
+            debugLog('Slot '+slotNum+' playing from the start (0ms) -- no seek needed.');
             widget.play();
             onStarted(widget);
-          });
+          } else {
+            widget.getDuration((durationMs)=>{
+              debugLog('Slot '+slotNum+' SC getDuration() = '+durationMs+'ms');
+              const safeDurationMs = durationMs && durationMs > 0 ? durationMs : CLIP_SECONDS*1000;
+              const seekMs = Math.max(0, safeDurationMs - CLIP_SECONDS*1000);
+              debugLog('Slot '+slotNum+' seeking to '+seekMs+'ms');
+              widget.seekTo(seekMs);
+              widget.play();
+              onStarted(widget);
+            });
+          }
           if(onEnded) widget.bind(SC.Widget.Events.FINISH, ()=>{ debugLog('Slot '+slotNum+' SC FINISH event -> advancing'); onEnded(); });
         });
       };
@@ -310,7 +324,7 @@
       debugLog('Slot 1 onStarted -- setting '+(CLIP_SECONDS+1.5)+'s safety-net timer as fallback.');
       // safety-net timer in case the platform's "ended" event never fires
       transitionTimer1 = setTimeout(advanceToSongTwo, CLIP_SECONDS*1000 + 1500);
-    }, advanceToSongTwo);
+    }, advanceToSongTwo, 'end');
   }
 
   function playSongTwo(){
@@ -324,7 +338,7 @@
       transitionTimer2 = setTimeout(()=>{
         document.getElementById('npStatus').textContent = 'Transition complete — click Next when ready';
       }, CLIP_SECONDS*1000 + 800);
-    }, null);
+    }, null, 'start');
   }
 
   // ---------- Queue sync ----------
