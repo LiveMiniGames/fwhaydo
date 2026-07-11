@@ -219,8 +219,9 @@ function saveAll(){
 
 function updateHostUrl(cfg){
   const base = location.origin + location.pathname.replace('tierlist-control','tierlist-host');
-  const key  = encodeURIComponent(cfg.ablyKey||'');
-  const url  = base + '?key=' + key;
+  const key  = encodeURIComponent(cfg.ablyKey || 'IPJIJg.DKgG0Q:D9MT68Ii7IXk2jXiSzc2HoPTYVMeREpJ7__8_uY53qY');
+  const ch   = encodeURIComponent(cfg.twitch || '');
+  const url  = base + '?key=' + key + (ch ? '&ch=' + ch : '');
   document.getElementById('host-url-text').textContent = url;
 }
 

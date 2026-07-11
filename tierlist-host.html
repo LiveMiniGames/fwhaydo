@@ -332,6 +332,7 @@ input:checked+.tog-sl:before{transform:translateX(16px)}
 // ── CONFIG ───────────────────────────────────────────────────────
 const ABLY_KEY = new URLSearchParams(location.search).get('key')
               || 'IPJIJg.DKgG0Q:D9MT68Ii7IXk2jXiSzc2HoPTYVMeREpJ7__8_uY53qY';
+const URL_CHANNEL = new URLSearchParams(location.search).get('ch') || '';
 
 // ── STATE ────────────────────────────────────────────────────────
 let tiers = [
@@ -353,6 +354,11 @@ window.addEventListener('load', ()=>{
   updateQCnt();
   initPusher();
   initAbly();
+  // If channel is in URL, connect to Twitch immediately without waiting for localStorage
+  if(URL_CHANNEL){
+    document.getElementById('cfg-ch').value = URL_CHANNEL;
+    setTimeout(tlConnect, 800);
+  }
   autoLoadQueue();
   document.getElementById('modal-in').addEventListener('keydown',e=>{
     if(e.key==='Enter')confirmModal();
@@ -397,8 +403,10 @@ async function autoLoadQueue(){
   if(!saved)return;
   try{
     const cfg=JSON.parse(saved);
-    if(cfg.twitch&&!document.getElementById('cfg-ch').value){
-      document.getElementById('cfg-ch').value=cfg.twitch;
+    // URL param takes priority, then saved config
+    const chToUse = URL_CHANNEL || cfg.twitch || '';
+    if(chToUse && !document.getElementById('cfg-ch').value){
+      document.getElementById('cfg-ch').value=chToUse;
       setTimeout(tlConnect,1200);
     }
     if(cfg.title){
