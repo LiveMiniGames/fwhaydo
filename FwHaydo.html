@@ -33,7 +33,6 @@ nav{position:sticky;top:0;z-index:50;background:rgba(14,14,22,0.95);backdrop-fil
 /* PAGES */
 .page{display:none}
 .page.active{display:block}
-#page-tierlist.active{display:flex;flex-direction:column;height:100vh}
 
 /* HOME HERO */
 .hero{padding:72px 28px 52px;text-align:center;max-width:700px;margin:0 auto}
@@ -54,6 +53,12 @@ nav{position:sticky;top:0;z-index:50;background:rgba(14,14,22,0.95);backdrop-fil
 .sec-count{font-size:.73rem;color:var(--muted);background:var(--surface);
   border:1px solid var(--border);border-radius:10px;padding:2px 8px}
 .game-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px}
+.categorized-tools{display:flex;flex-direction:column;gap:8px}
+.category-header{display:flex;align-items:baseline;gap:12px;margin:28px 0 4px;padding-bottom:10px;border-bottom:2px solid var(--purple)}
+.category-header:first-child{margin-top:0}
+.category-header h2{font-size:1.15rem;font-weight:800;color:#fff;letter-spacing:.3px}
+.category-header .category-count{font-size:.75rem;color:var(--muted);background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:3px 10px}
+.category-grid{margin-bottom:10px}
 .game-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;
   display:flex;flex-direction:column;transition:border-color .18s,transform .18s,box-shadow .18s;cursor:pointer;position:relative}
 .game-card:hover{border-color:var(--purple);transform:translateY(-3px);box-shadow:0 8px 32px rgba(145,71,255,.18)}
@@ -288,30 +293,108 @@ footer a{color:var(--purple);text-decoration:none}
   </div>
 
   <div class="section" id="sec-tools">
-    <div class="sec-header">
-      <h2>🛠 Stream Tools</h2>
-      <span class="sec-count">26 tools</span>
-    </div>
-    <div class="game-grid">
-
-      <div class="game-card" onclick="showTierList()">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0533,#2d1060)">🏆</div>
+    <div class="categorized-tools">
+      <div class="category-header"><h2>No Setup Needed</h2><span class="category-count">10 tools</span></div>
+      <div class="game-grid category-grid">
+        <div class="game-card" onclick="window.location.href='coin-flip.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🪙</div>
         <div class="card-body">
           <div class="card-tags">
-            <span class="tag tag-twitch">Twitch</span>
-            <span class="tag tag-discord">Discord</span>
             <span class="tag tag-new">New</span>
           </div>
-          <div class="card-title">INTERACTIVE TIER LIST</div>
-          <div class="card-desc">Viewers submit room photos in Discord. Chat votes to rank them live on a fully customizable tier list. You control when voting opens and closes — nothing ever auto-places.</div>
+          <div class="card-title">HAYDO COIN FLIP</div>
+          <div class="card-desc">A fully custom coin flip built for FwHaydo. Upload your face for Heads and the FW logo for Tails — they get engraved onto a 3D spinning coin. Tracks heads/tails counts, streaks, and flip history.</div>
           <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();showTierList()">Open Tool →</button>
-            <span class="card-players">👥 Unlimited viewers</span>
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='coin-flip.html'">Open Tool →</button>
+            <span class="card-players">👤 Streamer controls</span>
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='wordhunt.html'">
+        <div class="game-card" onclick="window.location.href='higher-lower.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0a2010,#0e3a1a)">🃏</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HIGHER OR LOWER</div>
+          <div class="card-desc">An 8-deck card shoe shuffled like a real casino. Guess whether the next card is higher or lower than the current one. Odds update live so you always know the probability before guessing. Green/red streak tracker, full history strip.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='higher-lower.html'">Open Tool →</button>
+            <span class="card-players">👤 Streamer controls</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-surfer.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#1a0a3a)">🏃</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO SURFER</div>
+          <div class="card-desc">Infinite runner starring Haydo. Dodge thrown controllers, big L's, lag spikes, chat messages and cops. Collect Twitch followers as coins. Viewer count climbs the further you run. Arrow keys or swipe to move. Space to jump.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-surfer.html'">Play →</button>
+            <span class="card-players">🎮 Single player</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-corn-maze.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0f1c08,#2f5c1c)">🌽</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S CORN MAZE</div>
+          <div class="card-desc">Chat types !join to drop into a shared corn maze together. Move with up/down/left/right or !up/!down/!left/!right (both work so non-mods can dodge Twitch's repeat-message block). Everyone starts in the same spot — first one to find the exit wins. A brand new maze generates automatically every round, so nobody can just memorize the route.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-corn-maze.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-dodgeball.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1206,#ff5b3d)">🏐</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S DODGEBALL</div>
+          <div class="card-desc">Chat types !join during the lobby to get in — locked once the round starts. Dodgeballs telegraph before launching down a row or column, and chat dodges with up/down/left/right (or !up/u/!u, etc). Starts slow and gets faster the longer it goes. Last one standing wins; host starts the next round from the lobby.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-dodgeball.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-hangman.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">💀</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S HANGMAN</div>
+          <div class="card-desc">You privately set a secret word (masked entry, never shown on screen) and a timer. Chat guesses by typing single letters — every cycle, whichever unguessed letter was typed by the most different people gets locked in, not just whoever spammed it most. Classic hangman rules: 6 wrong guesses and it's over. Word only reveals when the round ends.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hangman.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-infection.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a0f,#39ff6a)">🧟</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S INFECTION</div>
+          <div class="card-desc">Chat types !join during the lobby — one random player starts infected. Move with up/down/left/right (or !up/u/!u, etc) across a huge shared grid. Land on an infected player's square and you turn too, and can spread it further. Survivors win if anyone's left uninfected when the 5-minute timer runs out; if everyone turns first, the infection wins outright.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-infection.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='haydo-passwordgauntlet.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a12,#2ecc71)">🔐</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">PASSWORD GAUNTLET</div>
+          <div class="card-desc">Chat types !join, then everyone builds their own password live with !password yourAttempt. A new rule gets added every round, stacking on top of every rule before it — must be 8+ characters, then must contain a number, then the digits must add up to 20, and it keeps escalating. Anyone whose password stops working when the timer runs out gets eliminated. Last one standing wins.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-passwordgauntlet.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='wordhunt.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a2e,#0e2e4a)">🔎</div>
         <div class="card-body">
           <div class="card-tags">
@@ -326,8 +409,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='codle.html'">
+        <div class="game-card" onclick="window.location.href='codle.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#2e1a0a,#4a2e0e)">🔢</div>
         <div class="card-body">
           <div class="card-tags">
@@ -341,8 +423,35 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
+      </div>
 
-      <div class="game-card" onclick="window.location.href='quizlive.html'">
+      <div class="category-header"><h2>Setup Before Stream</h2><span class="category-count">7 tools</span></div>
+      <div class="game-grid category-grid">
+        <div class="game-card" onclick="window.location.href='haydo-hottakes.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1408,#ff5b3d)">🔥</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">HAYDO'S HOT TAKES</div>
+          <div class="card-desc">Privately load in a list of hot takes before going live, then go through them one at a time on stream. Chat votes Agree or Disagree by typing normally in chat, with a live split meter showing the real-time result. Click Next Round to reveal the next take and reset the meter for a fresh vote.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hottakes.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat plays</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='wur-host.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#3b0764,#6b21a8)">🤔</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">WOULD U RATHER</div>
+          <div class="card-desc">Three modes: viewers submit their own Would U Rathers for approval, bulk paste your own list, or random pick. Chat votes 1 or 2. Live vote bars on the overlay update in real time.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='wur-host.html'">Open Tool →</button>
+            <span class="card-players">👥 Entire chat votes</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='quizlive.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#2e0a1a,#4a0e2e)">🧠</div>
         <div class="card-body">
           <div class="card-tags">
@@ -357,8 +466,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='bracket-host.html'">
+        <div class="game-card" onclick="window.location.href='bracket-host.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a2e,#2e0e4a)">🥊</div>
         <div class="card-body">
           <div class="card-tags">
@@ -373,8 +481,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='two-truths-lie.html'">
+        <div class="game-card" onclick="window.location.href='two-truths-lie.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#2e0a2e,#4a0e4a)">🎭</div>
         <div class="card-body">
           <div class="card-tags">
@@ -389,36 +496,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='coin-flip.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🪙</div>
-        <div class="card-body">
-          <div class="card-tags">
-            <span class="tag tag-new">New</span>
-          </div>
-          <div class="card-title">HAYDO COIN FLIP</div>
-          <div class="card-desc">A fully custom coin flip built for FwHaydo. Upload your face for Heads and the FW logo for Tails — they get engraved onto a 3D spinning coin. Tracks heads/tails counts, streaks, and flip history.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='coin-flip.html'">Open Tool →</button>
-            <span class="card-players">👤 Streamer controls</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='higher-lower.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a2010,#0e3a1a)">🃏</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HIGHER OR LOWER</div>
-          <div class="card-desc">An 8-deck card shoe shuffled like a real casino. Guess whether the next card is higher or lower than the current one. Odds update live so you always know the probability before guessing. Green/red streak tracker, full history strip.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='higher-lower.html'">Open Tool →</button>
-            <span class="card-players">👤 Streamer controls</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='familyfeud.html'">
+        <div class="game-card" onclick="window.location.href='familyfeud.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a1200,#3a2a00)">🎮</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
@@ -430,35 +508,23 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='wur-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#3b0764,#6b21a8)">🤔</div>
+        <div class="game-card" onclick="window.location.href='songtransitions-host.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#000000,#1DB954)">🎧</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">WOULD U RATHER</div>
-          <div class="card-desc">Three modes: viewers submit their own Would U Rathers for approval, bulk paste your own list, or random pick. Chat votes 1 or 2. Live vote bars on the overlay update in real time.</div>
+          <div class="card-title">SONG TRANSITIONS</div>
+          <div class="card-desc">Viewers log in with Twitch and submit two songs — the outro of the first blends right into the intro of the second, live on stream. This page has a copy-link button for the viewer submission page, and shows the current transition with a Next button to move through the queue. A separate control page (linked here) lets you delete any submission.</div>
           <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='wur-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat votes</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='bingo-host.html'">
-        <div class="not-finished-ribbon">NOT FINISHED</div>
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🎱</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">INTERACTIVE BINGO</div>
-          <div class="card-desc">Fully customizable bingo cards for any stream segment. Fill in all 24 squares yourself, pick a mode (Standard, Blackout, Four Corners, X Pattern, T Shape), share the viewer link, and mark squares live. Auto-detects bingo — no trolling possible.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingo-host.html'">Open Tool →</button>
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='songtransitions-host.html'">Open Tool →</button>
             <span class="card-players">👥 Entire chat plays</span>
           </div>
         </div>
       </div>
+      </div>
 
-      <div class="game-card" onclick="window.location.href='haydolife.html'">
+      <div class="category-header"><h2>Not Finished Yet</h2><span class="category-count">6 tools</span></div>
+      <div class="game-grid category-grid">
+        <div class="game-card" onclick="window.location.href='haydolife.html'">
         <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a2a,#1a1060)">🎮</div>
         <div class="card-body">
@@ -471,73 +537,20 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-surfer.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#1a0a3a)">🏃</div>
+        <div class="game-card" onclick="window.location.href='bingo-host.html'">
+        <div class="not-finished-ribbon">NOT FINISHED</div>
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🎱</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO SURFER</div>
-          <div class="card-desc">Infinite runner starring Haydo. Dodge thrown controllers, big L's, lag spikes, chat messages and cops. Collect Twitch followers as coins. Viewer count climbs the further you run. Arrow keys or swipe to move. Space to jump.</div>
+          <div class="card-title">INTERACTIVE BINGO</div>
+          <div class="card-desc">Fully customizable bingo cards for any stream segment. Fill in all 24 squares yourself, pick a mode (Standard, Blackout, Four Corners, X Pattern, T Shape), share the viewer link, and mark squares live. Auto-detects bingo — no trolling possible.</div>
           <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-surfer.html'">Play →</button>
-            <span class="card-players">🎮 Single player</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-corn-maze.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0f1c08,#2f5c1c)">🌽</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S CORN MAZE</div>
-          <div class="card-desc">Chat types !join to drop into a shared corn maze together. Move with up/down/left/right or !up/!down/!left/!right (both work so non-mods can dodge Twitch's repeat-message block). Everyone starts in the same spot — first one to find the exit wins. A brand new maze generates automatically every round, so nobody can just memorize the route.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-corn-maze.html'">Open Tool →</button>
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingo-host.html'">Open Tool →</button>
             <span class="card-players">👥 Entire chat plays</span>
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-dodgeball.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1206,#ff5b3d)">🏐</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S DODGEBALL</div>
-          <div class="card-desc">Chat types !join during the lobby to get in — locked once the round starts. Dodgeballs telegraph before launching down a row or column, and chat dodges with up/down/left/right (or !up/u/!u, etc). Starts slow and gets faster the longer it goes. Last one standing wins; host starts the next round from the lobby.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-dodgeball.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-infection.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a0f,#39ff6a)">🧟</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S INFECTION</div>
-          <div class="card-desc">Chat types !join during the lobby — one random player starts infected. Move with up/down/left/right (or !up/u/!u, etc) across a huge shared grid. Land on an infected player's square and you turn too, and can spread it further. Survivors win if anyone's left uninfected when the 5-minute timer runs out; if everyone turns first, the infection wins outright.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-infection.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hangman.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">💀</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HANGMAN</div>
-          <div class="card-desc">You privately set a secret word (masked entry, never shown on screen) and a timer. Chat guesses by typing single letters — every cycle, whichever unguessed letter was typed by the most different people gets locked in, not just whoever spammed it most. Classic hangman rules: 6 wrong guesses and it's over. Word only reveals when the round ends.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hangman.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-economy.html'">
+        <div class="game-card" onclick="window.location.href='haydo-economy.html'">
         <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#0a1f0a,#2ecc71)">💰</div>
         <div class="card-body">
@@ -550,8 +563,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='realvsai-builder.html'">
+        <div class="game-card" onclick="window.location.href='realvsai-builder.html'">
         <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a2a,#3fe6ff)">🖼️</div>
         <div class="card-body">
@@ -564,34 +576,7 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hungergames.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a0a,#ff5b3d)">🏆</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HUNGER GAMES</div>
-          <div class="card-desc">Chat types !join to enter the arena, then the host starts it and the whole thing simulates itself — narrated day-by-day with real text-to-speech, random survival events, alliances, and eliminations, scaling automatically whether 6 or 60 people join. Chat's one lever: !sponsor username sends a protective care package that can save someone from elimination. Last one standing wins.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hungergames.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='songtransitions-host.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#000000,#1DB954)">🎧</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">SONG TRANSITIONS</div>
-          <div class="card-desc">Viewers log in with Twitch and submit two songs — the outro of the first blends right into the intro of the second, live on stream. This page has a copy-link button for the viewer submission page, and shows the current transition with a Next button to move through the queue. A separate control page (linked here) lets you delete any submission.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='songtransitions-host.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='googleform-control.html'">
+        <div class="game-card" onclick="window.location.href='googleform-control.html'">
         <div class="not-finished-ribbon">NOT FINISHED</div>
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a2a,#673ab7)">📋</div>
         <div class="card-body">
@@ -604,73 +589,24 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-wordcloud.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a12,#3fe6ff)">☁️</div>
+        <div class="game-card" onclick="window.location.href='haydo-hungergames.html'">
+        <div class="not-finished-ribbon">NOT FINISHED</div>
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a0a,#ff5b3d)">🏆</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">LIVE WORD CLOUD</div>
-          <div class="card-desc">Ask chat any open-ended question — "one word to describe tonight's stream," anything — and they just answer normally in Twitch chat. The more people say the same word, the bigger it grows on screen in real time. Change the prompt anytime for a fresh round. Works for literally any open-ended prompt, no setup required each time.</div>
+          <div class="card-title">HAYDO'S HUNGER GAMES</div>
+          <div class="card-desc">Chat types !join to enter the arena, then the host starts it and the whole thing simulates itself — narrated day-by-day with real text-to-speech, random survival events, alliances, and eliminations, scaling automatically whether 6 or 60 people join. Chat's one lever: !sponsor username sends a protective care package that can save someone from elimination. Last one standing wins.</div>
           <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-wordcloud.html'">Open Tool →</button>
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hungergames.html'">Open Tool →</button>
             <span class="card-players">👥 Entire chat plays</span>
           </div>
         </div>
       </div>
-
-      <div class="game-card" onclick="window.location.href='haydo-hottakes.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#2a1408,#ff5b3d)">🔥</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">HAYDO'S HOT TAKES</div>
-          <div class="card-desc">Privately load in a list of hot takes before going live, then go through them one at a time on stream. Chat votes Agree or Disagree by typing normally in chat, with a live split meter showing the real-time result. Click Next Round to reveal the next take and reset the meter for a fresh vote.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-hottakes.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
       </div>
 
-      <div class="game-card" onclick="window.location.href='haydo-passwordgauntlet.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a1a12,#2ecc71)">🔐</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">PASSWORD GAUNTLET</div>
-          <div class="card-desc">Chat types !join, then everyone builds their own password live with !password yourAttempt. A new rule gets added every round, stacking on top of every rule before it — must be 8+ characters, then must contain a number, then the digits must add up to 20, and it keeps escalating. Anyone whose password stops working when the timer runs out gets eliminated. Last one standing wins.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='haydo-passwordgauntlet.html'">Open Tool →</button>
-            <span class="card-players">👥 Entire chat plays</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='bingocard-control.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">🎯</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">CUSTOM BINGO CARD (OBS SOURCE)</div>
-          <div class="card-desc">A 5x5 bingo card built specifically as an OBS Browser Source — the source itself shows only the card on a transparent background, nothing else. Fully editable title and all 25 squares, click any square to mark it live, and a one-click toggle to show or hide the card on stream whenever you want. This is the control panel; it also generates the exact Browser Source link to paste into OBS.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingocard-control.html'">Open Tool →</button>
-            <span class="card-players">🛠️ Producer tool only</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='tierlist-control.html'">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#2d1b69)">🎛</div>
-        <div class="card-body">
-          <div class="card-tags"><span class="tag tag-new">New</span></div>
-          <div class="card-title">TIER LIST — CONTROL PANEL</div>
-          <div class="card-desc">Configure everything once — Twitch channel, JSONBin queue, tier names, vote settings. The host page is fully plug-and-play after setup. Load/clear the Discord image queue from here too.</div>
-          <div class="card-action">
-            <button class="play-btn" onclick="event.stopPropagation();window.location.href='tierlist-control.html'">Open Panel →</button>
-            <span class="card-players">🛠️ Producer only</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="game-card" onclick="window.location.href='tierlist-host.html'">
+      <div class="category-header"><h2>Control Panel (Don't Touch)</h2><span class="category-count">3 tools</span></div>
+      <div class="game-grid category-grid">
+        <div class="game-card" onclick="window.location.href='tierlist-host.html'">
         <div class="card-thumb" style="background:linear-gradient(135deg,#1a0a3f,#2d1b69)">🏆</div>
         <div class="card-body">
           <div class="card-tags"><span class="tag tag-new">New</span></div>
@@ -682,16 +618,44 @@ footer a{color:var(--purple);text-decoration:none}
           </div>
         </div>
       </div>
-
-      <div class="game-card soon">
-        <div class="card-thumb" style="background:linear-gradient(135deg,#0a0a1a,#141428)">🎮</div>
+        <div class="game-card" onclick="window.location.href='tierlist-control.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#0d0520,#2d1b69)">🎛</div>
         <div class="card-body">
-          <div class="card-tags"><span class="tag tag-soon">Coming Soon</span></div>
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">TIER LIST — CONTROL PANEL</div>
+          <div class="card-desc">Configure everything once — Twitch channel, JSONBin queue, tier names, vote settings. The host page is fully plug-and-play after setup. Load/clear the Discord image queue from here too.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='tierlist-control.html'">Open Panel →</button>
+            <span class="card-players">🛠️ Producer only</span>
+          </div>
+        </div>
+      </div>
+        <div class="game-card" onclick="window.location.href='bingocard-control.html'">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a1a,#ffffff)">🎯</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag tag-new">New</span></div>
+          <div class="card-title">CUSTOM BINGO CARD (OBS SOURCE)</div>
+          <div class="card-desc">A 5x5 bingo card built specifically as an OBS Browser Source — the source itself shows only the card on a transparent background, nothing else. Fully editable title and all 25 squares, click any square to mark it live, and a one-click toggle to show or hide the card on stream whenever you want. This is the control panel; it also generates the exact Browser Source link to paste into OBS.</div>
+          <div class="card-action">
+            <button class="play-btn" onclick="event.stopPropagation();window.location.href='bingocard-control.html'">Open Tool →</button>
+            <span class="card-players">🛠️ Producer tool only</span>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      <div class="game-grid category-grid">
+      <div class="game-card soon">
+        <div class="card-thumb" style="background:linear-gradient(135deg,#1a1a2a,#2a2a3a)">➕</div>
+        <div class="card-body">
+          <div class="card-tags"><span class="tag" style="background:rgba(255,255,255,.08);color:var(--muted)">Coming Soon</span></div>
           <div class="card-title">MORE TOOLS</div>
           <div class="card-desc">New tools drop here as they get built.</div>
           <div class="card-action"><span style="font-size:.75rem;color:var(--muted)">In development</span></div>
         </div>
       </div>
+      </div>
+</div>
 
     </div>
   </div>
@@ -701,860 +665,17 @@ footer a{color:var(--purple);text-decoration:none}
   </footer>
 </div>
 
-<!-- ═══════════════════════════════════
-     TIER LIST PAGE
-═══════════════════════════════════ -->
-<div id="page-tierlist" class="page">
-
-  <div id="tl-topbar">
-    <button class="back-home" onclick="goHome()">← FwHaydo</button>
-    <span id="tl-name">🏆 INTERACTIVE TIER LIST</span>
-    <div id="tl-conn"><div id="tl-dot"></div><span id="tl-dot-txt">Not connected</span></div>
-    <button class="btn sec" onclick="showSbTab('settings')">⚙️</button>
-    <button class="btn sec" onclick="tlSave()">💾</button>
-    <button class="btn dng" onclick="tlClear()">🗑️ Clear</button>
-  </div>
-
-  <div id="vote-bar">
-    <div id="vote-bar-top">
-      <span id="v-status" class="closed">● IDLE</span>
-      <span id="v-iname">Click an image in the queue to select it for voting</span>
-      <button class="btn suc"  id="b-open"  onclick="openVoting()"  style="display:none">▶ Open Voting</button>
-      <button class="btn dng"  id="b-close" onclick="closeVoting()" style="display:none">⏹ Close Voting</button>
-      <button class="btn"      id="b-place" onclick="placeByVote()" style="display:none">✅ Place by Vote</button>
-      <button class="btn sec"  id="b-skip"  onclick="skipCurrent()" style="display:none">⏭ Skip</button>
-    </div>
-    <div id="v-tallies"></div>
-  </div>
-
-  <div id="tl-main">
-    <div id="tl-area">
-      <div id="tl-heading">INTERACTIVE TIER LIST</div>
-      <div id="tier-rows"></div>
-      <div id="q-wrap">
-        <div id="q-lbl">📥 Queue <span id="q-cnt">0</span>
-          <span style="color:var(--muted);font-size:.62rem">— click to select · drag to place manually</span>
-        </div>
-        <div id="queue"></div>
-      </div>
-    </div>
-
-    <div id="tl-sb">
-      <div id="sb-tabs">
-        <button class="sb-tab active" onclick="showSbTab('chat')">Chat</button>
-        <button class="sb-tab" onclick="showSbTab('add')">Add</button>
-        <button class="sb-tab" onclick="showSbTab('config')">Config</button>
-      </div>
-
-      <div id="sb-chat" class="sb-panel active">
-        <div class="sb-lbl">Live Twitch Chat</div>
-        <div id="chat-log"></div>
-      </div>
-
-      <div id="sb-add" class="sb-panel">
-        <div class="sb-sec">
-          <div class="sb-lbl">Add by URL</div>
-          <input class="sb-in" id="m-url" type="text" placeholder="https://i.imgur.com/..."/>
-          <input class="sb-in" id="m-name" type="text" placeholder="Label (e.g. Viewer's Room)"/>
-          <button class="btn" style="width:100%" onclick="addManual()">Add to Queue</button>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Bulk Add (paste a list)</div>
-          <textarea class="sb-in" id="bulk-box" rows="6" style="resize:vertical;font-family:monospace;font-size:.72rem"
-            placeholder="One per line:&#10;https://example.com/img1.jpg, Lakers&#10;https://example.com/img2.jpg, Celtics&#10;https://example.com/img3.jpg&#10;&#10;(label after comma is optional)"></textarea>
-          <button class="btn" style="width:100%;margin-top:4px" onclick="addBulk()">📋 Add All to Queue</button>
-          <p style="font-size:.65rem;color:var(--muted);line-height:1.5;margin-top:6px">Paste one image URL per line. Add <code>, Label</code> after the URL to name it — otherwise it auto-numbers. Great for pasting in a whole TierMaker template's image list at once.</p>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Upload File</div>
-          <input class="sb-in" id="f-lbl" type="text" placeholder="Label for this image"/>
-          <button class="btn sec" style="width:100%;margin-bottom:5px" onclick="document.getElementById('file-in').click()">📁 Pick Image</button>
-          <input type="file" id="file-in" accept="image/*" style="display:none" onchange="addFile(event)"/>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Discord Auto-Feed</div>
-          <p style="font-size:.7rem;color:var(--muted);line-height:1.55">Run the included Discord bot (see <strong style="color:var(--purple)">DISCORD SETUP.md</strong>) and images posted in the channel appear here automatically. If a message is deleted from Discord, it removes itself from the tier list too.</p>
-        </div>
-      </div>
-
-      <div id="sb-config" class="sb-panel">
-        <div class="sb-sec">
-          <div class="sb-lbl">Twitch Channel</div>
-          <input class="sb-in" id="cfg-ch" type="text" placeholder="FwHaydo" value="FwHaydo"/>
-          <button class="btn" style="width:100%;margin-bottom:5px" onclick="tlConnect()">Connect</button>
-          <button class="btn sec" style="width:100%" onclick="tlDisconnect()">Disconnect</button>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Title</div>
-          <input class="sb-in" id="cfg-title" type="text" value="INTERACTIVE TIER LIST"
-            oninput="document.getElementById('tl-heading').textContent=this.value;document.getElementById('tl-name').textContent='🏆 '+this.value"/>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Vote Settings</div>
-          <div class="tog-row"><label>Show votes in chat log</label>
-            <label class="tog"><input type="checkbox" id="cfg-sv" checked/><span class="tog-sl"></span></label></div>
-          <div class="tog-row"><label>One vote per viewer</label>
-            <label class="tog"><input type="checkbox" id="cfg-ov" checked/><span class="tog-sl"></span></label></div>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Tiers</div>
-          <div id="tier-cfg"></div>
-          <button class="btn sec" style="width:100%;margin-top:4px" onclick="addTierRow()">+ Add Tier</button>
-          <button class="btn" style="width:100%;margin-top:5px" onclick="applyTiers()">✅ Apply</button>
-        </div>
-        <div class="sb-sec">
-          <div class="sb-lbl">Save / Load</div>
-          <button class="btn sec" style="width:100%;margin-bottom:5px" onclick="tlSave()">💾 Save</button>
-          <button class="btn sec" style="width:100%" onclick="document.getElementById('load-in').click()">📂 Load</button>
-          <input type="file" id="load-in" accept=".json" style="display:none" onchange="tlLoad(event)"/>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
-
-
-
-<!-- Spotlight (floating zoom panel) -->
-<div id="spotlight">
-  <div id="sp-handle">
-    <span id="sp-handle-label">Drag to move</span>
-    <button id="sp-close" onclick="closeSpotlight()">✕</button>
-  </div>
-  <div id="spotlight-body">
-    <img id="spotlight-img" src="" alt=""/>
-    <div id="spotlight-info">
-      <div id="spotlight-name"></div>
-      <div id="spotlight-sub">Zoomed in — votes and tier list still visible</div>
-    </div>
-  </div>
-  <div id="sp-resize"></div>
-</div>
-
-<!-- Modal -->
-<div id="modal-ov">
-  <div id="modal">
-    <h2 id="modal-t">Edit</h2>
-    <input type="text" id="modal-in"/>
-    <div class="mbtns">
-      <button class="btn sec" onclick="closeModal()">Cancel</button>
-      <button class="btn" onclick="confirmModal()">Save</button>
-    </div>
-  </div>
-</div>
-
 <div id="toast"></div>
 
 <script>
 // ═══════════════════════════════════════
 //  PAGE ROUTING
 // ═══════════════════════════════════════
-let tlInited = false;
-
 function goHome() {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.getElementById('page-home').classList.add('active');
   window.scrollTo(0,0);
 }
-
-function showTierList() {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById('page-tierlist').classList.add('active');
-  if (!tlInited) { tlInit(); tlInited = true; }
-}
-
-// ═══════════════════════════════════════
-//  TIER LIST STATE
-// ═══════════════════════════════════════
-let tiers = [
-  {id:'S',label:'S',color:'#FF7F7F'},
-  {id:'A',label:'A',color:'#FFBF7F'},
-  {id:'B',label:'B',color:'#FFDF80'},
-  {id:'C',label:'C',color:'#FFFF7F'},
-  {id:'D',label:'D',color:'#BFFF7F'},
-  {id:'F',label:'F',color:'#8080FF'},
-];
-let items = {}, queue = [], curVote = null, votingOpen = false, votes = {};
-let tmiClient = null, sortables = {}, modalCb = null, discordMap = {};
-const VEXTS = ['.mp4','.mov','.webm','.avi','.mkv','.m4v','.ogg'];
-
-function tlInit() {
-  renderTierCfg();
-  renderTiers();
-  updateQCnt();
-  initPusher();
-}
-
-// ═══════════════════════════════════════
-//  RENDER
-// ═══════════════════════════════════════
-function renderTiers() {
-  const cont = document.getElementById('tier-rows');
-  cont.innerHTML = '';
-  Object.values(sortables).forEach(s=>{try{s.destroy()}catch(e){}});
-  sortables = {};
-
-  tiers.forEach(tier => {
-    const row = document.createElement('div');
-    row.className = 'tier-row';
-    row.id = 'row-'+tier.id;
-
-    const lbl = document.createElement('div');
-    lbl.className = 'tier-lbl';
-    lbl.style.background = tier.color;
-    lbl.onclick = () => editTierLabel(tier.id);
-    const lt = document.createElement('div');
-    lt.className = 'tier-lbl-t';
-    lt.textContent = tier.label;
-    lt.id = 'lt-'+tier.id;
-    lbl.appendChild(lt);
-
-    const tItems = document.createElement('div');
-    tItems.className = 'tier-items';
-    tItems.id = 'ti-'+tier.id;
-
-    Object.values(items).filter(i=>i.tier===tier.id).forEach(item=>{
-      tItems.appendChild(mkItem(item, false));
-    });
-
-    row.appendChild(lbl);
-    row.appendChild(tItems);
-    cont.appendChild(row);
-
-    sortables[tier.id] = new Sortable(tItems, {
-      group:'tl', animation:120, ghostClass:'sortable-ghost', chosenClass:'sortable-chosen',
-      onAdd(evt) {
-        const id = evt.item.dataset.id;
-        const wasQ = items[id]?.tier===null||items[id]?.tier===undefined;
-        items[id].tier = tier.id;
-        if (wasQ) {
-          queue = queue.filter(q=>q!==id);
-          if (curVote===id){curVote=null;votingOpen=false;updateVBar();}
-          updateQCnt();
-        }
-      }
-    });
-  });
-
-  sortables['queue'] = new Sortable(document.getElementById('queue'),{
-    group:'tl', animation:120, ghostClass:'sortable-ghost',
-    onAdd(evt){
-      const id=evt.item.dataset.id;
-      items[id].tier=null;
-      if(!queue.includes(id)) queue.push(id);
-      updateQCnt();
-    }
-  });
-}
-
-function mkItem(item, inQ) {
-  const div = document.createElement('div');
-  div.className='tier-item';
-  div.dataset.id=item.id;
-  div.title=item.name+(inQ ? ' — click to select · right-click for options' : ' — right-click for options');
-
-  const img=document.createElement('img');
-  img.src=item.url; img.alt=item.name;
-  img.onerror=()=>{img.src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='80' height='80' fill='%23222'/><text x='40' y='42' text-anchor='middle' fill='%23666' font-size='8' font-family='sans-serif'>No img</text></svg>";};
-
-  const nm=document.createElement('div'); nm.className='iname'; nm.textContent=item.name;
-
-  const ov=document.createElement('div'); ov.className='iov';
-  const zb=document.createElement('button'); zb.className='i-zoom'; zb.textContent='🔍 Zoom';
-  zb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');openLB(item);};
-  const db=document.createElement('button'); db.className='i-del'; db.textContent='✕ Remove';
-  db.onclick=e=>{e.stopPropagation();removeItem(item.id);};
-  const cb=document.createElement('button'); cb.className='i-close'; cb.textContent='✕ close menu';
-  cb.onclick=e=>{e.stopPropagation();div.classList.remove('menu-open');};
-  ov.appendChild(zb); ov.appendChild(db); ov.appendChild(cb);
-
-  div.appendChild(img); div.appendChild(nm); div.appendChild(ov);
-
-  // Right-click = show zoom/delete menu
-  div.addEventListener('contextmenu', e=>{
-    e.preventDefault();
-    // Close any other open menus
-    document.querySelectorAll('.tier-item.menu-open').forEach(el=>el.classList.remove('menu-open'));
-    div.classList.add('menu-open');
-  });
-
-  // Close menu if clicking elsewhere
-  document.addEventListener('click', ()=>div.classList.remove('menu-open'), {once:false});
-
-  // Left click in queue = select for voting
-  if (inQ) {
-    div.addEventListener('click', e=>{
-      if(div.classList.contains('menu-open')) return;
-      selectVote(item.id);
-    });
-  }
-
-  return div;
-}
-
-function renderQ() {
-  const qel=document.getElementById('queue');
-  qel.innerHTML='';
-  queue.forEach(id=>{
-    const el=mkItem(items[id],true);
-    if(id===curVote) el.classList.add('av');
-    qel.appendChild(el);
-  });
-  updateQCnt();
-}
-
-function updateQCnt(){document.getElementById('q-cnt').textContent=queue.length;}
-
-// ═══════════════════════════════════════
-//  ADD / REMOVE
-// ═══════════════════════════════════════
-function addToQ(url, name, msgId) {
-  const lower=url.toLowerCase().split('?')[0];
-  if (VEXTS.some(e=>lower.endsWith(e))){toast('Videos not supported — images only','red');return null;}
-  const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
-  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
-  queue.push(id);
-  if(msgId) discordMap[msgId]=id;
-  const qel=document.getElementById('queue');
-  if(qel){const el=mkItem(items[id],true);qel.appendChild(el);}
-  updateQCnt();
-  toast('Added: '+(name||'image'),'green');
-  return id;
-}
-
-function addManual(){
-  const url=document.getElementById('m-url').value.trim();
-  const name=document.getElementById('m-name').value.trim()||'Room';
-  if(!url){toast('Enter an image URL','red');return;}
-  addToQ(url,name);
-  document.getElementById('m-url').value='';
-  document.getElementById('m-name').value='';
-}
-
-function addBulk(){
-  const raw=document.getElementById('bulk-box').value.trim();
-  if(!raw){toast('Paste some image URLs first','red');return;}
-  const lines=raw.split('\n').map(l=>l.trim()).filter(l=>l.length>0);
-  let added=0, skipped=0;
-  lines.forEach((line,i)=>{
-    // Split on first comma to separate URL from optional label
-    const commaIdx=line.indexOf(',');
-    let url, name;
-    if(commaIdx>-1){
-      url=line.slice(0,commaIdx).trim();
-      name=line.slice(commaIdx+1).trim();
-    } else {
-      url=line;
-      name='';
-    }
-    if(!url.startsWith('http')){skipped++;return;}
-    if(!name) name='Item '+(i+1);
-    const result=addToQSilent(url,name);
-    if(result) added++; else skipped++;
-  });
-  document.getElementById('bulk-box').value='';
-  renderQ();
-  if(skipped>0){
-    toast(`Added ${added} images, skipped ${skipped} (videos or invalid)`,'red');
-  } else {
-    toast(`Added ${added} images to queue!`,'green');
-  }
-}
-
-// Same as addToQ but doesn't re-render the queue each time (for bulk speed) and doesn't toast per-item
-function addToQSilent(url, name, msgId) {
-  const lower=url.toLowerCase().split('?')[0];
-  if (VEXTS.some(e=>lower.endsWith(e))) return null;
-  const id='img-'+Date.now()+'-'+Math.random().toString(36).slice(2,5);
-  items[id]={id,url,name:name||'Untitled',tier:null,discordMsgId:msgId||null};
-  queue.push(id);
-  if(msgId) discordMap[msgId]=id;
-  return id;
-}
-
-function addFile(e){
-  const file=e.target.files[0]; if(!file) return;
-  if(!file.type.startsWith('image/')){toast('Videos not supported — images only','red');return;}
-  const name=document.getElementById('f-lbl').value.trim()||file.name.replace(/\.[^.]+$/,'');
-  const r=new FileReader();
-  r.onload=ev=>addToQ(ev.target.result,name);
-  r.readAsDataURL(file);
-  document.getElementById('f-lbl').value='';
-  e.target.value='';
-}
-
-function removeItem(id){
-  if(!items[id]) return;
-  if(items[id].discordMsgId) delete discordMap[items[id].discordMsgId];
-  delete items[id];
-  queue=queue.filter(q=>q!==id);
-  document.querySelectorAll(`[data-id="${id}"]`).forEach(el=>el.remove());
-  if(curVote===id){curVote=null;votingOpen=false;updateVBar();}
-  updateQCnt();
-}
-
-function tlClear(){
-  if(!confirm('Clear everything?')) return;
-  items={};queue=[];curVote=null;votingOpen=false;votes={};discordMap={};
-  renderTiers();renderQ();updateVBar();
-}
-
-// ═══════════════════════════════════════
-//  VOTING
-// ═══════════════════════════════════════
-function selectVote(id){
-  if(votingOpen){toast('Close voting before switching images','red');return;}
-  if(curVote===id) return;
-  curVote=id; votes={};
-  tiers.forEach(t=>{votes[t.id]=new Set();});
-  document.querySelectorAll('.tier-item.av').forEach(e=>e.classList.remove('av'));
-  document.querySelector(`#queue [data-id="${id}"]`)?.classList.add('av');
-  updateVBar(); renderTallies();
-  sh('b-open'); hd('b-close'); hd('b-place'); sh('b-skip');
-}
-
-function openVoting(){
-  if(!curVote){toast('Select an image first','red');return;}
-  votingOpen=true; votes={};
-  tiers.forEach(t=>{votes[t.id]=new Set();});
-  hd('b-open'); sh('b-close'); hd('b-place');
-  updateVBar(); renderTallies();
-  toast('Voting OPEN — chat types a tier label (S, A, B…)','green');
-}
-
-function closeVoting(){
-  votingOpen=false;
-  sh('b-open'); hd('b-close'); sh('b-place');
-  updateVBar();
-  toast('Voting closed');
-}
-
-function updateVBar(){
-  const vs=document.getElementById('v-status');
-  const vi=document.getElementById('v-iname');
-  if(!curVote){
-    vs.textContent='● IDLE'; vs.className='closed';
-    vi.innerHTML='Click an image in the queue to select it for voting';
-    ['b-open','b-close','b-place','b-skip'].forEach(hd);
-    document.getElementById('v-tallies').innerHTML='';
-    return;
-  }
-  vs.textContent=votingOpen?'● VOTING OPEN':'● VOTING CLOSED';
-  vs.className=votingOpen?'open':'closed';
-  vi.innerHTML='Now: <strong>'+esc(items[curVote]?.name||'')+'</strong>';
-}
-
-function renderTallies(){
-  const el=document.getElementById('v-tallies');
-  el.innerHTML='';
-  if(!curVote) return;
-  tiers.forEach(tier=>{
-    const c=document.createElement('div'); c.className='tally';
-    c.innerHTML=`<span class="t-lbl" style="color:${tier.color}">${esc(tier.label)}</span><span class="t-cnt">${votes[tier.id]?.size||0}</span>`;
-    el.appendChild(c);
-  });
-}
-
-function placeByVote(){
-  if(!curVote) return;
-  let max=0,winId=null;
-  tiers.forEach(t=>{const v=votes[t.id]?.size||0;if(v>max){max=v;winId=t.id;}});
-  if(!winId||max===0){toast('No votes yet — drag manually or keep voting','red');return;}
-  const lbl=tiers.find(t=>t.id===winId)?.label||winId;
-  doPlace(curVote,winId);
-  toast(`Placed in ${lbl} tier (${max} votes)`,'green');
-}
-
-function doPlace(itemId,tierId){
-  const item=items[itemId]; if(!item) return;
-  item.tier=tierId;
-  queue=queue.filter(q=>q!==itemId);
-  document.querySelector(`#queue [data-id="${itemId}"]`)?.remove();
-  const td=document.getElementById('ti-'+tierId);
-  if(td) td.appendChild(mkItem(item,false));
-  curVote=null;votingOpen=false;votes={};
-  updateVBar();updateQCnt();
-}
-
-function skipCurrent(){
-  if(!curVote) return;
-  const id=curVote;
-  document.querySelector(`#queue [data-id="${id}"]`)?.classList.remove('av');
-  curVote=null;votingOpen=false;votes={};
-  queue=queue.filter(q=>q!==id);queue.push(id);
-  renderQ();updateVBar();
-}
-
-// ═══════════════════════════════════════
-//  TWITCH — direct WebSocket IRC (no tmi.js needed)
-// ═══════════════════════════════════════
-function tlConnect(){
-  const ch=document.getElementById('cfg-ch').value.trim().toLowerCase();
-  if(!ch){toast('Enter channel name','red');return;}
-  tlDisconnect();
-  setDot('connecting','Connecting...');
-  try{
-    tmiClient=new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-    tmiClient.onopen=()=>{
-      tmiClient.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
-      tmiClient.send('PASS SCHMOOPIIE');
-      tmiClient.send('NICK justinfan'+Math.floor(Math.random()*99999));
-      tmiClient.send('JOIN #'+ch);
-    };
-    tmiClient.onmessage=e=>{
-      const raw=e.data;
-      // Keep alive
-      if(raw.startsWith('PING')){tmiClient.send('PONG :tmi.twitch.tv');return;}
-      // Confirm joined
-      if(raw.includes('366')||raw.includes('JOIN #'+ch)){
-        setDot('connected','#'+ch);
-      }
-      // Parse chat messages
-      if(raw.includes('PRIVMSG')){
-        try{
-          // Extract tags
-          let color='#9147ff', user='user', msg='';
-          const tagMatch=raw.match(/^@([^ ]+)/);
-          if(tagMatch){
-            const tags={};
-            tagMatch[1].split(';').forEach(t=>{const[k,v]=t.split('=');tags[k]=v;});
-            color=tags['color']||'#9147ff';
-            user=tags['display-name']||tags['login']||'user';
-          }
-          const msgMatch=raw.match(/PRIVMSG #\S+ :(.+)/);
-          if(msgMatch) msg=msgMatch[1].replace(/\r?\n/,'');
-          if(user&&msg) handleMsg(user,color,msg);
-        }catch(err){}
-      }
-    };
-    tmiClient.onerror=()=>setDot('error','Connection failed');
-    tmiClient.onclose=()=>{
-      if(document.getElementById('tl-dot').className==='connected'){
-        setDot('error','Disconnected');
-      }
-    };
-  }catch(e){setDot('error','Error: '+e.message);}
-}
-
-function tlDisconnect(){
-  if(tmiClient){try{tmiClient.close()}catch(e){}tmiClient=null;}
-  setDot('','Not connected');
-}
-
-function setDot(type,text){
-  document.getElementById('tl-dot').className=type;
-  document.getElementById('tl-dot-txt').textContent=text;
-}
-
-function handleMsg(user,color,message){
-  const msg=message.trim();
-  let isV=false,vTier=null;
-  if(votingOpen&&curVote){
-    const lowerMsg=msg.toLowerCase();
-    // First try exact match (handles multi-letter tier names normally)
-    let match=tiers.find(t=>t.label.toLowerCase()===lowerMsg);
-    // If no exact match, check if message is just one character repeated
-    // (e.g. "ff", "fff", "ssss") and match it to a single-letter tier
-    if(!match && /^(.)\1*$/.test(lowerMsg)){
-      const singleChar=lowerMsg[0];
-      match=tiers.find(t=>t.label.toLowerCase()===singleChar);
-    }
-    if(match){
-      isV=true;vTier=match;
-      if(document.getElementById('cfg-ov')?.checked) tiers.forEach(t=>votes[t.id]?.delete(user));
-      votes[match.id].add(user);
-      renderTallies();
-    }
-  }
-  const showV=document.getElementById('cfg-sv')?.checked??true;
-  if(showV||!isV) addChatMsg(user,color,msg,isV,vTier);
-}
-
-// ═══════════════════════════════════════
-//  CHAT LOG
-// ═══════════════════════════════════════
-function addChatMsg(user,color,msg,isV,vTier){
-  const log=document.getElementById('chat-log');
-  const div=document.createElement('div');
-  div.className='cmsg'+(isV?' isv':'');
-  let html=`<span class="un" style="color:${esc(color)}">${esc(user)}</span>: ${esc(msg)}`;
-  if(isV&&vTier) html+=` <span class="vtag" style="background:${esc(vTier.color)}">${esc(vTier.label)}</span>`;
-  div.innerHTML=html;
-  log.appendChild(div);
-  while(log.children.length>100) log.removeChild(log.firstChild);
-  log.scrollTop=log.scrollHeight;
-}
-
-// ═══════════════════════════════════════
-//  SPOTLIGHT (persistent zoom panel — draggable & resizable)
-// ═══════════════════════════════════════
-let spPositioned=false; // tracks if user has moved/resized it manually
-
-function openLB(item){
-  document.getElementById('spotlight-img').src=item.url;
-  document.getElementById('spotlight-name').textContent=item.name;
-  document.getElementById('spotlight-sub').textContent='Zoomed in — votes and tier list still visible below';
-  document.getElementById('spotlight').classList.add('active');
-}
-function closeSpotlight(){
-  document.getElementById('spotlight').classList.remove('active');
-  document.getElementById('spotlight-img').src='';
-}
-function closeLB(){closeSpotlight();}
-
-// ── Dragging ──
-(function initSpotlightDrag(){
-  const panel=document.getElementById('spotlight');
-  const handle=document.getElementById('sp-handle');
-  let dragging=false, startX=0, startY=0, startLeft=0, startTop=0;
-
-  function toPixelPosition(){
-    // Convert centered transform-based position into explicit left/top pixels
-    // so dragging can take over from there
-    if(spPositioned) return;
-    const rect=panel.getBoundingClientRect();
-    panel.style.left=rect.left+'px';
-    panel.style.top=rect.top+'px';
-    panel.style.transform='none';
-    spPositioned=true;
-  }
-
-  handle.addEventListener('mousedown',e=>{
-    if(e.target.id==='sp-close') return;
-    toPixelPosition();
-    dragging=true;
-    startX=e.clientX; startY=e.clientY;
-    const rect=panel.getBoundingClientRect();
-    startLeft=rect.left; startTop=rect.top;
-    document.body.style.userSelect='none';
-  });
-
-  document.addEventListener('mousemove',e=>{
-    if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    let newLeft=startLeft+dx, newTop=startTop+dy;
-    // Keep on screen
-    const rect=panel.getBoundingClientRect();
-    newLeft=Math.max(0,Math.min(newLeft,window.innerWidth-rect.width));
-    newTop=Math.max(0,Math.min(newTop,window.innerHeight-rect.height));
-    panel.style.left=newLeft+'px';
-    panel.style.top=newTop+'px';
-  });
-
-  document.addEventListener('mouseup',()=>{
-    dragging=false;
-    document.body.style.userSelect='';
-  });
-
-  // Touch support for streamers on tablets etc
-  handle.addEventListener('touchstart',e=>{
-    if(e.target.id==='sp-close') return;
-    toPixelPosition();
-    dragging=true;
-    const t=e.touches[0];
-    startX=t.clientX; startY=t.clientY;
-    const rect=panel.getBoundingClientRect();
-    startLeft=rect.left; startTop=rect.top;
-  },{passive:true});
-  document.addEventListener('touchmove',e=>{
-    if(!dragging) return;
-    const t=e.touches[0];
-    const dx=t.clientX-startX, dy=t.clientY-startY;
-    let newLeft=startLeft+dx, newTop=startTop+dy;
-    const rect=panel.getBoundingClientRect();
-    newLeft=Math.max(0,Math.min(newLeft,window.innerWidth-rect.width));
-    newTop=Math.max(0,Math.min(newTop,window.innerHeight-rect.height));
-    panel.style.left=newLeft+'px';
-    panel.style.top=newTop+'px';
-  },{passive:true});
-  document.addEventListener('touchend',()=>{dragging=false;});
-})();
-
-// ── Resizing ──
-(function initSpotlightResize(){
-  const panel=document.getElementById('spotlight');
-  const handle=document.getElementById('sp-resize');
-  let resizing=false, startX=0, startY=0, startW=0, startH=0;
-
-  function toPixelPosition(){
-    if(spPositioned) return;
-    const rect=panel.getBoundingClientRect();
-    panel.style.left=rect.left+'px';
-    panel.style.top=rect.top+'px';
-    panel.style.transform='none';
-    spPositioned=true;
-  }
-
-  handle.addEventListener('mousedown',e=>{
-    e.stopPropagation();
-    toPixelPosition();
-    resizing=true;
-    startX=e.clientX; startY=e.clientY;
-    const rect=panel.getBoundingClientRect();
-    startW=rect.width; startH=rect.height;
-    document.body.style.userSelect='none';
-  });
-
-  document.addEventListener('mousemove',e=>{
-    if(!resizing) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    const newW=Math.max(220,startW+dx);
-    const newH=Math.max(240,startH+dy);
-    panel.style.width=newW+'px';
-  });
-
-  document.addEventListener('mouseup',()=>{
-    resizing=false;
-    document.body.style.userSelect='';
-  });
-
-  handle.addEventListener('touchstart',e=>{
-    e.stopPropagation();
-    toPixelPosition();
-    resizing=true;
-    const t=e.touches[0];
-    startX=t.clientX; startY=t.clientY;
-    const rect=panel.getBoundingClientRect();
-    startW=rect.width; startH=rect.height;
-  },{passive:true});
-  document.addEventListener('touchmove',e=>{
-    if(!resizing) return;
-    const t=e.touches[0];
-    const dx=t.clientX-startX;
-    const newW=Math.max(220,startW+dx);
-    panel.style.width=newW+'px';
-  },{passive:true});
-  document.addEventListener('touchend',()=>{resizing=false;});
-})();
-
-// ═══════════════════════════════════════
-//  TIER CONFIG
-// ═══════════════════════════════════════
-function renderTierCfg(){
-  const list=document.getElementById('tier-cfg');
-  list.innerHTML='';
-  tiers.forEach((tier,i)=>{
-    const row=document.createElement('div'); row.className='tcr';
-    row.innerHTML=`<input type="color" value="${tier.color}" onchange="tiers[${i}].color=this.value"/>
-      <input type="text" value="${tier.label}" placeholder="Label" onchange="tiers[${i}].label=this.value;tiers[${i}].id=this.value"/>
-      <button class="rm" onclick="removeTierRow(${i})">✕</button>`;
-    list.appendChild(row);
-  });
-}
-
-function addTierRow(){tiers.push({id:'NEW'+Date.now(),label:'NEW',color:'#888888'});renderTierCfg();}
-
-function removeTierRow(i){
-  const tid=tiers[i].id;
-  Object.values(items).forEach(item=>{if(item.tier===tid){item.tier=null;if(!queue.includes(item.id))queue.push(item.id);}});
-  tiers.splice(i,1);renderTierCfg();renderTiers();renderQ();
-}
-
-function applyTiers(){
-  renderTierCfg();renderTiers();
-  const qel=document.getElementById('queue');qel.innerHTML='';
-  queue.forEach(id=>{const el=mkItem(items[id],true);if(id===curVote)el.classList.add('av');qel.appendChild(el);});
-  updateQCnt();toast('Tiers updated!','green');
-}
-
-function editTierLabel(tierId){
-  const tier=tiers.find(t=>t.id===tierId); if(!tier) return;
-  openModal('Rename Tier',tier.label,val=>{
-    const old=tier.id; tier.label=val; tier.id=val;
-    const lt=document.getElementById('lt-'+old);
-    if(lt){lt.textContent=val;lt.id='lt-'+val;}
-    const row=document.getElementById('row-'+old);if(row)row.id='row-'+val;
-    const ti=document.getElementById('ti-'+old);if(ti){ti.id='ti-'+val;ti.dataset.tid=val;}
-    Object.values(items).forEach(item=>{if(item.tier===old)item.tier=val;});
-    if(votes[old]){votes[val]=votes[old];delete votes[old];}
-    renderTierCfg();renderTallies();
-  });
-}
-
-// ═══════════════════════════════════════
-//  PUSHER (Discord bridge)
-// ═══════════════════════════════════════
-function initPusher(){
-  const script=document.createElement('script');
-  script.src='https://js.pusher.com/8.2.0/pusher.min.js';
-  script.onload=()=>{
-    const pusher=new Pusher('5cca8bf0eec699f22b22',{cluster:'us2'});
-    const channel=pusher.subscribe('tierlist');
-    channel.bind('image',data=>{
-      addToQ(data.url,data.name||'Discord',data.msgId||null);
-    });
-    channel.bind('delete',data=>{
-      if(data.msgId){
-        const iid=discordMap[data.msgId];
-        if(iid){removeItem(iid);toast('Removed (deleted from Discord)','red');}
-      }
-    });
-    console.log('[Pusher] Connected to Discord bridge');
-  };
-  document.head.appendChild(script);
-}
-
-// ═══════════════════════════════════════
-//  SAVE / LOAD
-// ═══════════════════════════════════════
-function tlSave(){
-  const state={tiers,items,queue,title:document.getElementById('cfg-title').value,channel:document.getElementById('cfg-ch').value};
-  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='fwhaydo-tierlist.json';a.click();
-  toast('Saved!','green');
-}
-
-function tlLoad(e){
-  const file=e.target.files[0];if(!file) return;
-  const r=new FileReader();
-  r.onload=ev=>{
-    try{
-      const s=JSON.parse(ev.target.result);
-      tiers=s.tiers||tiers;items=s.items||{};queue=s.queue||[];discordMap={};
-      Object.values(items).forEach(item=>{if(item.discordMsgId)discordMap[item.discordMsgId]=item.id;});
-      if(s.title){document.getElementById('cfg-title').value=s.title;document.getElementById('tl-heading').textContent=s.title;}
-      if(s.channel)document.getElementById('cfg-ch').value=s.channel;
-      renderTierCfg();renderTiers();renderQ();toast('Loaded!','green');
-    }catch(err){toast('Load failed: '+err.message,'red');}
-  };
-  r.readAsText(file);e.target.value='';
-}
-
-// ═══════════════════════════════════════
-//  MODAL / TABS / UTILS
-// ═══════════════════════════════════════
-function openModal(title,def,cb){
-  document.getElementById('modal-t').textContent=title;
-  document.getElementById('modal-in').value=def||'';
-  modalCb=cb;
-  document.getElementById('modal-ov').classList.add('active');
-  setTimeout(()=>document.getElementById('modal-in').focus(),50);
-}
-function closeModal(){document.getElementById('modal-ov').classList.remove('active');modalCb=null;}
-function confirmModal(){const v=document.getElementById('modal-in').value.trim();if(v&&modalCb)modalCb(v);closeModal();}
-document.getElementById('modal-in').addEventListener('keydown',e=>{if(e.key==='Enter')confirmModal();if(e.key==='Escape')closeModal();});
-document.getElementById('modal-ov').addEventListener('click',e=>{if(e.target===document.getElementById('modal-ov'))closeModal();});
-
-function showSbTab(name){
-  const names=['chat','add','config'];
-  document.querySelectorAll('.sb-tab').forEach((b,i)=>b.classList.toggle('active',names[i]===name));
-  document.querySelectorAll('.sb-panel').forEach(p=>p.classList.remove('active'));
-  document.getElementById('sb-'+name)?.classList.add('active');
-}
-
-function sh(id){document.getElementById(id).style.display='';}
-function hd(id){document.getElementById(id).style.display='none';}
-
-let toastT=null;
-function toast(msg,type=''){
-  const el=document.getElementById('toast');
-  el.textContent=msg;el.className='show'+(type?' '+type:'');
-  clearTimeout(toastT);toastT=setTimeout(()=>{el.className='';},2800);
-}
-
-function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
-
-document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeLB();closeModal();}});
 </script>
 </body>
 </html>
