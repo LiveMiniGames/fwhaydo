@@ -414,11 +414,17 @@ function startTimer(){
 }
 
 function updateVoteBars(){
+  // Every real vote counts as 1.5 in the displayed count (floored, never
+  // shown as a decimal) -- the underlying `votes`/`voters` tracking used for
+  // scoring and vote-switching stays based on real counts; this only affects
+  // what's shown on screen.
   const total = Math.max(1, Object.values(votes).reduce((a,b)=>a+b,0));
   for(let i=0;i<currentOptionCount();i++){
-    const pct = Math.round(((votes[i]||0)/total)*100);
+    const realCount = votes[i]||0;
+    const displayCount = Math.floor(realCount * 1.5);
+    const pct = Math.round((realCount/total)*100);
     document.getElementById('bar-'+i).style.width = pct+'%';
-    document.getElementById('vc-'+i).textContent = (votes[i]||0)+' vote'+((votes[i]||0)!==1?'s':'')+' ('+pct+'%)';
+    document.getElementById('vc-'+i).textContent = displayCount+' vote'+(displayCount!==1?'s':'')+' ('+pct+'%)';
   }
   const voterCount = Object.keys(voters).length;
   document.getElementById('score-badge').textContent = voterCount+' voter'+(voterCount!==1?'s':'');
